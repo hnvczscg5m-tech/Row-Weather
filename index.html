@@ -153,26 +153,29 @@
   .tide-freshwater{padding:14px 16px;background:rgba(72,202,228,.05);border-radius:6px;
     border:1px dashed rgba(72,202,228,.2);font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px}
 
-  /* Multi-day tide tiles — horizontal scroll-snap */
-  .tide-days-head{display:flex;align-items:center;gap:8px;margin:14px 0 10px;flex-wrap:wrap}
-  .tide-range-btns{display:flex;gap:6px;margin-left:auto}
-  .tide-days{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
-    -webkit-overflow-scrolling:touch;padding:2px 2px 10px;
-    scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
-  .tide-day-tile{scroll-snap-align:start;flex:0 0 auto;width:150px;
-    background:var(--panel2);border:1px solid rgba(72,202,228,.15);border-radius:8px;padding:12px}
-  .tide-day-tile.is-today{border-color:var(--tide);background:rgba(72,202,228,.07)}
-  .tdt-day{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
-    letter-spacing:1px;text-transform:uppercase;color:var(--text)}
-  .tdt-date{font-size:10px;color:var(--muted);margin-bottom:8px}
-  .tdt-row{display:flex;justify-content:space-between;align-items:baseline;
-    padding:4px 0;border-bottom:1px solid rgba(72,202,228,.08);font-size:12px}
-  .tdt-row:last-child{border-bottom:none}
-  .tdt-type{font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;color:var(--muted)}
-  .tdt-type.hw{color:var(--tide)}
-  .tdt-h{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--text)}
-  .tdt-t{color:var(--muted);font-size:11px;min-width:58px;text-align:right}
-  .tide-scroll-hint{font-size:10px;color:var(--muted);margin-top:4px}
+  /* WillyWeather-style tide chart */
+  .tide-next{display:flex;gap:10px;margin-bottom:14px}
+  .tide-next-card{flex:1;background:var(--panel2);border:1px solid rgba(72,202,228,.15);
+    border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .tide-next-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;position:relative;
+    background:radial-gradient(circle at 50% 30%,#48cae4 0%,#0077b6 100%);overflow:hidden}
+  .tide-next-icon::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;
+    margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#fff;opacity:.9}
+  .tide-next-icon.low{background:radial-gradient(circle at 50% 70%,#48cae4 0%,#0077b6 100%)}
+  .tide-next-info{min-width:0}
+  .tide-next-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--muted)}
+  .tide-next-time{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);line-height:1.1}
+  .tide-next-time small{font-size:12px;font-weight:300;color:var(--muted)}
+  .tide-range-seg{display:flex;background:var(--panel2);border:1px solid var(--border);
+    border-radius:8px;padding:3px;margin-bottom:12px}
+  .tide-seg-btn{flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;
+    letter-spacing:1px;padding:7px 0;border:none;background:none;color:var(--muted);
+    border-radius:6px;cursor:pointer;transition:all .2s}
+  .tide-seg-btn.active{background:var(--accent2);color:#fff}
+  .tide-chart-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .tide-chart-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  #tide-canvas{display:block;height:240px}
 
   .wind-graph-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 8px 8px;margin-bottom:4px}
   .wind-graph-legend{display:flex;gap:18px;flex-wrap:wrap;padding:0 8px 10px;font-size:11px;color:var(--muted)}
@@ -193,8 +196,11 @@
   .hourly-wind{font-size:10px;color:var(--muted);margin-top:3px}
   .hourly-rain{font-size:10px;color:var(--accent);margin-top:1px}
 
-  .daily-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
-  .daily-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 10px;text-align:center;transition:border-color .2s}
+  .daily-grid{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;padding:2px 2px 10px;
+    scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  .daily-card{scroll-snap-align:start;flex:0 0 130px;background:var(--panel);border:1px solid var(--border);
+    border-radius:8px;padding:12px 10px;text-align:center;transition:border-color .2s}
   .daily-card:hover{border-color:var(--accent2)}
   .daily-card.today{border-color:var(--accent2)}
   .daily-day{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -545,46 +551,43 @@ function getTides() {
   return {current: tideHeight(now), extrema: extrema.filter(e => e.ms >= now).slice(0, 4)};
 }
 
-// Multi-day tide extrema, grouped by Perth calendar day
-function getTidesRange(days) {
-  const startMs = new Date(); startMs.setHours(0,0,0,0);
-  const start = startMs.getTime();
-  const end = start + days * 24 * 3600000;
+// Next high & low after now (for the countdown cards)
+function nextExtrema() {
+  const now = Date.now();
   const samples = [];
-  for (let ms = start - 3600000; ms <= end + 3600000; ms += 5 * 60000) {
+  for (let dt = 0; dt <= 36*60; dt += 5) {            // look 36h ahead
+    const ms = now + dt*60000;
     samples.push({ms, h: tideHeight(ms)});
   }
-  const extrema = [];
-  for (let i = 1; i < samples.length - 1; i++) {
+  let nextHigh = null, nextLow = null;
+  for (let i = 1; i < samples.length-1; i++) {
     const a = samples[i-1].h, b = samples[i].h, c = samples[i+1].h;
-    if (b > a && b > c) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
-    else if (b < a && b < c) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
+    if (!nextHigh && b > a && b > c) nextHigh = samples[i];
+    if (!nextLow  && b < a && b < c) nextLow  = samples[i];
+    if (nextHigh && nextLow) break;
   }
-  const dayKey = ms => new Date(ms).toLocaleDateString('en-AU',{timeZone:'Australia/Perth'});
-  const byDay = new Map();
-  for (let d = 0; d < days; d++) {
-    const dms = start + d * 24 * 3600000;
-    byDay.set(dayKey(dms), {ms: dms, tides: []});
-  }
-  for (const e of extrema) {
-    const k = dayKey(e.ms);
-    if (byDay.has(k)) byDay.get(k).tides.push(e);
-  }
-  return [...byDay.values()];
+  return {nextHigh, nextLow};
 }
 
-// ── TIDE DAY-RANGE STATE ──────────────────────────────────────────────────
-let tideRangeDays = 3;            // default view: 3-day
-let tideLocRef = null;            // remember current tidal location for re-render
+// ── TIDE CHART STATE ──────────────────────────────────────────────────────
+let tideRangeDays = 5;            // default: 5-day (matches photo)
+let tideLocRef = null;
 
 function setTideRange(days) {
   tideRangeDays = days;
-  document.getElementById('tide-r3')?.classList.toggle('active', days === 3);
-  document.getElementById('tide-r7')?.classList.toggle('active', days === 7);
-  if (tideLocRef) renderTides(tideLocRef);
+  ['1','3','5'].forEach(d =>
+    document.getElementById('tide-seg-'+d)?.classList.toggle('active', +d === days));
+  drawTideChart();
 }
 
-// ── RENDER TIDES (now + multi-day scroll-snap tiles) ──────────────────────
+// countdown formatter: ms-from-now → "11hr 9min"
+function untilStr(ms) {
+  let mins = Math.max(0, Math.round((ms - Date.now())/60000));
+  const hr = Math.floor(mins/60); mins -= hr*60;
+  return `${hr}<small>hr</small> ${mins}<small>min</small>`;
+}
+
+// ── RENDER TIDES (WillyWeather-style chart) ───────────────────────────────
 function renderTides(loc) {
   const sec = document.getElementById('tide-section');
   if (!loc.tidal) {
@@ -593,62 +596,175 @@ function renderTides(loc) {
   }
   tideLocRef = loc;
 
-  const td = getTides();          // current height + next 4 extrema
+  const {nextHigh, nextLow} = nextExtrema();
   const fmt = ms => new Date(ms).toLocaleTimeString('en-AU',
     {hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});
 
-  // "Next tides" strip
-  const nextCards = td.extrema.map((e,i) => `
-    <div class="tide-card${i===0?' next-tide':''}">
-      <div class="tide-type">${e.type==='HW'?'▲ High':'▼ Low'}</div>
-      <div class="tide-val">${e.h.toFixed(2)}<span style="font-size:11px;color:var(--muted)"> m</span></div>
-      <div class="tide-time">${fmt(e.ms)}</div>
-    </div>`).join('');
-
-  // Multi-day scroll-snap tiles
-  const todayKey = new Date().toLocaleDateString('en-AU',{timeZone:'Australia/Perth'});
-  const dayTiles = getTidesRange(tideRangeDays).map(day => {
-    const d = new Date(day.ms);
-    const isToday = d.toLocaleDateString('en-AU',{timeZone:'Australia/Perth'}) === todayKey;
-    const dayName = isToday ? 'Today'
-      : d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'});
-    const dateLbl = d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',timeZone:'Australia/Perth'});
-    const rows = day.tides.length
-      ? day.tides.map(t => `
-          <div class="tdt-row">
-            <span class="tdt-type ${t.type==='HW'?'hw':''}">${t.type==='HW'?'▲ High':'▼ Low'}</span>
-            <span class="tdt-h">${t.h.toFixed(2)}m</span>
-            <span class="tdt-t">${fmt(t.ms)}</span>
-          </div>`).join('')
-      : `<div class="tdt-row"><span class="tdt-type">No turning points</span></div>`;
-    return `
-      <div class="tide-day-tile${isToday?' is-today':''}">
-        <div class="tdt-day">${dayName}</div>
-        <div class="tdt-date">${dateLbl}</div>
-        ${rows}
-      </div>`;
-  }).join('');
+  const lowCard = nextLow ? `
+    <div class="tide-next-card">
+      <div class="tide-next-icon low"></div>
+      <div class="tide-next-info">
+        <div class="tide-next-label">Next Low</div>
+        <div class="tide-next-time">${untilStr(nextLow.ms)}</div>
+        <div class="tide-next-label">${nextLow.h.toFixed(2)} m · ${fmt(nextLow.ms)}</div>
+      </div>
+    </div>` : '';
+  const highCard = nextHigh ? `
+    <div class="tide-next-card">
+      <div class="tide-next-icon"></div>
+      <div class="tide-next-info">
+        <div class="tide-next-label">Next High</div>
+        <div class="tide-next-time">${untilStr(nextHigh.ms)}</div>
+        <div class="tide-next-label">${nextHigh.h.toFixed(2)} m · ${fmt(nextHigh.ms)}</div>
+      </div>
+    </div>` : '';
 
   sec.innerHTML = `
     <div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
     <div class="tide-widget">
       <div class="tide-header">
         <div class="tide-title">🌊 Fremantle gauge — ~4 km from venue</div>
-        <div class="tide-note">Now: <strong style="color:var(--tide)">${td.current.toFixed(2)} m</strong> ACD</div>
+        <div class="tide-note">Now: <strong style="color:var(--tide)">${tideHeight(Date.now()).toFixed(2)} m</strong> ACD</div>
       </div>
-      <div class="tide-row">${nextCards}</div>
-
-      <div class="tide-days-head">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Daily highs &amp; lows</span>
-        <span class="tide-range-btns">
-          <button class="range-btn ${tideRangeDays===3?'active':''}" id="tide-r3" onclick="setTideRange(3)">3 Day</button>
-          <button class="range-btn ${tideRangeDays===7?'active':''}" id="tide-r7" onclick="setTideRange(7)">7 Day</button>
-        </span>
+      <div class="tide-next">${lowCard}${highCard}</div>
+      <div class="tide-range-seg">
+        <button class="tide-seg-btn ${tideRangeDays===1?'active':''}" id="tide-seg-1" onclick="setTideRange(1)">1 day</button>
+        <button class="tide-seg-btn ${tideRangeDays===3?'active':''}" id="tide-seg-3" onclick="setTideRange(3)">3 days</button>
+        <button class="tide-seg-btn ${tideRangeDays===5?'active':''}" id="tide-seg-5" onclick="setTideRange(5)">5 days</button>
       </div>
-      <div class="tide-days">${dayTiles}</div>
-      <div class="tide-scroll-hint">← swipe for more days · harmonic prediction above Chart Datum (ACD)</div>
+      <div class="tide-chart-label">Tide Height</div>
+      <div class="tide-chart-scroll"><canvas id="tide-canvas"></canvas></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">Harmonic prediction above Chart Datum (ACD) · approximate — use live gauge for launch decisions</div>
     </div>`;
+
+  drawTideChart();
 }
+
+// ── DRAW TIDE CHART ───────────────────────────────────────────────────────
+function drawTideChart() {
+  const canvas = document.getElementById('tide-canvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const days = tideRangeDays;
+
+  // window starts at local midnight today
+  const startD = new Date(); startD.setHours(0,0,0,0);
+  const start = startD.getTime();
+  const end = start + days*24*3600000;
+  const now = Date.now();
+
+  // sample the curve every 10 min
+  const step = 10*60000;
+  const pts = [];
+  for (let ms = start; ms <= end; ms += step) pts.push({ms, h: tideHeight(ms)});
+
+  // layout: ~per-day width so multi-day scrolls horizontally
+  const dayW = days === 1 ? 320 : days === 3 ? 230 : 200;
+  const padL = 40, padR = 16, padT = 30, padB = 34;
+  const plotW = dayW * days;
+  const cssW = padL + padR + plotW;
+  const plotH = 150;
+  const cssH = padT + plotH + padB;
+
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssW,cssH);
+
+  // y-scale with headroom
+  const hs = pts.map(p=>p.h);
+  let lo = Math.min(...hs), hi = Math.max(...hs);
+  const padv = (hi-lo)*0.18 || 0.2;
+  lo = Math.floor((lo-padv)*10)/10;
+  hi = Math.ceil((hi+padv)*10)/10;
+  const range = Math.max(0.1, hi-lo);
+
+  const x = ms => padL + ((ms-start)/(end-start))*plotW;
+  const y = h => padT + plotH - ((h-lo)/range)*plotH;
+
+  // horizontal gridlines + labels (0.5 m steps)
+  ctx.font = '11px Barlow, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (let g = Math.ceil(lo/0.5)*0.5; g <= hi; g += 0.5) {
+    const yy = y(g);
+    ctx.strokeStyle = 'rgba(0,180,216,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cssW-padR, yy); ctx.stroke();
+    // pill label
+    const lbl = g.toFixed(1)+' m';
+    ctx.fillStyle = 'rgba(13,32,64,0.9)';
+    const tw = ctx.measureText(lbl).width;
+    ctx.fillRect(2, yy-9, tw+10, 18);
+    ctx.fillStyle = '#8fb0d0';
+    ctx.fillText(lbl, 7, yy+1);
+  }
+
+  // day boundaries + labels
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  for (let d = 0; d <= days; d++) {
+    const dms = start + d*24*3600000;
+    const cx = x(dms);
+    ctx.strokeStyle = 'rgba(0,180,216,0.14)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx, padT-6); ctx.lineTo(cx, padT+plotH); ctx.stroke();
+    if (d < days) {
+      const dd = new Date(dms);
+      const isToday = d === 0;
+      ctx.fillStyle = isToday ? '#48cae4' : '#deeaf8';
+      ctx.font = '700 12px "Barlow Condensed", sans-serif';
+      ctx.fillText(dd.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'}), cx+6, 4);
+      ctx.fillStyle = '#6b8fb5';
+      ctx.font = '11px "Barlow Condensed", sans-serif';
+      const wd = ctx.measureText(dd.toLocaleDateString('en-AU',{weekday:'short'})).width;
+      ctx.fillText(dd.toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'Australia/Perth'}), cx+6+wd+16, 4);
+    }
+  }
+
+  // filled area under curve
+  ctx.beginPath();
+  ctx.moveTo(x(pts[0].ms), y(pts[0].h));
+  for (const p of pts) ctx.lineTo(x(p.ms), y(p.h));
+  ctx.lineTo(x(pts[pts.length-1].ms), padT+plotH);
+  ctx.lineTo(x(pts[0].ms), padT+plotH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, padT, 0, padT+plotH);
+  grad.addColorStop(0, 'rgba(72,202,228,0.30)');
+  grad.addColorStop(1, 'rgba(72,202,228,0.03)');
+  ctx.fillStyle = grad; ctx.fill();
+
+  // curve stroke
+  ctx.beginPath();
+  ctx.moveTo(x(pts[0].ms), y(pts[0].h));
+  for (const p of pts) ctx.lineTo(x(p.ms), y(p.h));
+  ctx.strokeStyle = '#48cae4'; ctx.lineWidth = 2.4; ctx.stroke();
+
+  // max-tide dashed reference line
+  const yMax = y(hi - padv*0.5);
+  ctx.strokeStyle = 'rgba(72,202,228,0.55)'; ctx.lineWidth = 1; ctx.setLineDash([6,5]);
+  ctx.beginPath(); ctx.moveTo(padL, yMax); ctx.lineTo(cssW-padR, yMax); ctx.stroke(); ctx.setLineDash([]);
+
+  // "now" vertical line + dot
+  if (now >= start && now <= end) {
+    const nx = x(now), nh = tideHeight(now);
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(nx, padT-6); ctx.lineTo(nx, padT+plotH); ctx.stroke();
+    ctx.beginPath(); ctx.arc(nx, y(nh), 6, 0, 2*Math.PI);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#48cae4'; ctx.lineWidth = 2; ctx.stroke();
+    // current reading pill
+    const lbl = `${fmt2(now)}  ${nh.toFixed(2)} m`;
+    ctx.font = '700 11px "Barlow Condensed", sans-serif';
+    const tw = ctx.measureText(lbl).width;
+    let px = nx - (tw+16)/2;
+    px = Math.max(padL, Math.min(px, cssW-padR-(tw+16)));
+    ctx.fillStyle = 'rgba(13,32,64,0.95)';
+    ctx.fillRect(px, padT-2, tw+16, 18);
+    ctx.fillStyle = '#deeaf8'; ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText(lbl, px+8, padT+1);
+  }
+}
+function fmt2(ms){return new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});}
 
 // ── FETCH (16-day) ──────────────────────────────────────────────────────────
 async function fetchWeather(idx) {
@@ -1327,7 +1443,7 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (!cache[currentLoc]) return;
-    if (currentView === 'live') renderWindGraph(lastHourly, lastHIdx);
+    if (currentView === 'live') { renderWindGraph(lastHourly, lastHIdx); drawTideChart(); }
     else renderExtended(cache[currentLoc], LOCATIONS[currentLoc]);
   }, 150);
 });
