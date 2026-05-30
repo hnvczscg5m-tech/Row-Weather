@@ -523,66 +523,81 @@ const HARMONICS = [
 ];
 const MSL = 0.78;
 
-function tideHeight(ms) {
-  const t = ms / 3600000;
-  let h = MSL;
-  for (const c of HARMONICS) h += c.amp * Math.cos(2*Math.PI*t/c.period - c.phase*Math.PI/180);
-  return Math.round(h * 100) / 100;
+// ── TIDE DAY-RANGE STATE ──────────────────────────────────────────────────
+let tideRangeDays = 3; // default view: 3-day
+let tideLocRef = null; // remember current tidal location for re-render
+
+function setTideRange(days) {
+tideRangeDays = days;
+document.getElementById('tide-r3')?.classList.toggle('active', days === 3);
+document.getElementById('tide-r7')?.classList.toggle('active', days === 7);
+if (tideLocRef) renderTides(tideLocRef);
 }
 
-function getTidesRange(days) {
-  const startMs = new Date(); startMs.setHours(0,0,0,0);
-  const start = startMs.getTime();
-  const end = start + days * 24 * 3600000;
-  const samples = [];
-  for (let ms = start - 3600000; ms <= end + 3600000; ms += 5 * 60000) {
-    samples.push({ms, h: tideHeight(ms)});
-  }
-  // find all highs/lows across the whole window
-  const extrema = [];
-  for (let i = 1; i < samples.length - 1; i++) {
-    const a = samples[i-1].h, b = samples[i].h, c = samples[i+1].h;
-    if (b > a && b > c) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
-    else if (b < a && b < c) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
-  }
-  // group extrema by calendar day (Perth time)
-  const dayKey = ms => new Date(ms).toLocaleDateString('en-AU',{timeZone:'Australia/Perth'});
-  const byDay = new Map();
-  for (let d = 0; d < days; d++) {
-    const dms = start + d * 24 * 3600000;
-    byDay.set(dayKey(dms), {ms: dms, tides: []});
-  }
-  for (const e of extrema) {
-    const k = dayKey(e.ms);
-    if (byDay.has(k)) byDay.get(k).tides.push(e);
-  }
-  return [...byDay.values()];
-}
-
+// ── RENDER TIDES (now + multi-day scroll-snap tiles) ──────────────────────
 function renderTides(loc) {
-  const sec = document.getElementById('tide-section');
-  if (!loc.tidal) {
-    sec.innerHTML = `<div class="tide-freshwater">🌊 <strong style="color:var(--text)">Tidal data:</strong> ${loc.name} is a freshwater / inland venue — tides are not applicable. River flow and lake levels are monitored by local authorities for competition planning.</div>`;
-    return;
-  }
-  const td = getTides();
-  const fmt = ms => new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});
-  const cards = td.extrema.map((e,i) => `
-    <div class="tide-card${i===0?' next-tide':''}">
-      <div class="tide-type">${e.type==='HW'?'▲ High':'▼ Low'}</div>
-      <div class="tide-val">${e.h.toFixed(2)}<span style="font-size:11px;color:var(--muted)"> m</span></div>
-      <div class="tide-time">${fmt(e.ms)}</div>
-    </div>`).join('');
-  sec.innerHTML = `
-    <div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
-    <div class="tide-widget">
-      <div class="tide-header">
-        <div class="tide-title">🌊 Fremantle gauge — ~4 km from venue</div>
-        <div class="tide-note">Now: <strong style="color:var(--tide)">${td.current.toFixed(2)} m</strong> ACD</div>
-      </div>
-      <div class="tide-row">${cards}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:10px">Harmonic prediction above Chart Datum (ACD) · For crew launches &amp; dock access planning</div>
-    </div>`;
+const sec = document.getElementById('tide-section');
+if (!loc.tidal) {
+sec.innerHTML = `<div class="tide-freshwater">🌊 <strong style="color:var(--text)">Tidal data:</strong> ${loc.name} is a freshwater / inland venue — tides are not applicable. River flow and lake levels are monitored by local authorities for competition planning.</div>`;
+return;
+}
+tideLocRef = loc;
+
+const td = getTides(); // existing: current height + next 4 extrema
+const fmt = ms => new Date(ms).toLocaleTimeString('en-AU',
+{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});
+
+// "Next tides" strip (unchanged behaviour)
+const nextCards = td.extrema.map((e,i) => `
+<div class="tide-card${i===0?' next-tide':''}">
+<div class="tide-type">${e.type==='HW'?'▲ High':'▼ Low'}</div>
+<div class="tide-val">${e.h.toFixed(2)}<span style="font-size:11px;color:var(--muted)"> m</span></div>
+<div class="tide-time">${fmt(e.ms)}</div>
+</div>`).join('');
+
+// Multi-day tiles
+const todayKey = new Date().toLocaleDateString('en-AU',{timeZone:'Australia/Perth'});
+const dayTiles = getTidesRange(tideRangeDays).map(day => {
+const d = new Date(day.ms);
+const isToday = d.toLocaleDateString('en-AU',{timeZone:'Australia/Perth'}) === todayKey;
+const dayName = isToday ? 'Today'
+: d.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'});
+const dateLbl = d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',timeZone:'Australia/Perth'});
+const rows = day.tides.length
+? day.tides.map(t => `
+<div class="tdt-row">
+<span class="tdt-type ${t.type==='HW'?'hw':''}">${t.type==='HW'?'▲ High':'▼ Low'}</span>
+<span class="tdt-h">${t.h.toFixed(2)}m</span>
+<span class="tdt-t">${fmt(t.ms)}</span>
+</div>`).join('')
+: `<div class="tdt-row"><span class="tdt-type">No turning points</span></div>`;
+return `
+<div class="tide-day-tile${isToday?' is-today':''}">
+<div class="tdt-day">${dayName}</div>
+<div class="tdt-date">${dateLbl}</div>
+${rows}
+</div>`;
+}).join('');
+
+sec.innerHTML = `
+<div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
+<div class="tide-widget">
+<div class="tide-header">
+<div class="tide-title">🌊 Fremantle gauge — ~4 km from venue</div>
+<div class="tide-note">Now: <strong style="color:var(--tide)">${td.current.toFixed(2)} m</strong> ACD</div>
+</div>
+<div class="tide-row">${nextCards}</div>
+
+<div class="tide-days-head">
+<span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Daily highs &amp; lows</span>
+<span class="tide-range-btns">
+<button class="range-btn ${tideRangeDays===3?'active':''}" id="tide-r3" onclick="setTideRange(3)">3 Day</button>
+<button class="range-btn ${tideRangeDays===7?'active':''}" id="tide-r7" onclick="setTideRange(7)">7 Day</button>
+</span>
+</div>
+<div class="tide-days">${dayTiles}</div>
+<div class="tide-scroll-hint">← swipe for more days · harmonic prediction above Chart Datum (ACD)</div>
+</div>`;
 }
 
 // ── FETCH (16-day) ──────────────────────────────────────────────────────────
