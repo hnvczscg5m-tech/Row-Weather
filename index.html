@@ -152,6 +152,28 @@
   .tide-time{font-size:11px;color:var(--muted)}
   .tide-freshwater{padding:14px 16px;background:rgba(72,202,228,.05);border-radius:6px;
     border:1px dashed rgba(72,202,228,.2);font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px}
+  
+    /* Multi-day tide tiles — horizontal scroll-snap */
+  .tide-days-head{display:flex;align-items:center;gap:8px;margin:14px 0 10px;flex-wrap:wrap}
+  .tide-range-btns{display:flex;gap:6px;margin-left:auto}
+  .tide-days{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;padding:2px 2px 10px;
+    scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  .tide-day-tile{scroll-snap-align:start;flex:0 0 auto;width:150px;
+    background:var(--panel2);border:1px solid rgba(72,202,228,.15);border-radius:8px;padding:12px}
+  .tide-day-tile.is-today{border-color:var(--tide);background:rgba(72,202,228,.07)}
+  .tdt-day{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;color:var(--text)}
+  .tdt-date{font-size:10px;color:var(--muted);margin-bottom:8px}
+  .tdt-row{display:flex;justify-content:space-between;align-items:baseline;
+    padding:4px 0;border-bottom:1px solid rgba(72,202,228,.08);font-size:12px}
+  .tdt-row:last-child{border-bottom:none}
+  .tdt-type{font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;color:var(--muted)}
+  .tdt-type.hw{color:var(--tide)}
+  .tdt-h{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--text)}
+  .tdt-t{color:var(--muted);font-size:11px;min-width:58px;text-align:right}
+  .tide-scroll-hint{font-size:10px;color:var(--muted);margin-top:4px}
+
 
   .wind-graph-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 8px 8px;margin-bottom:4px}
   .wind-graph-legend{display:flex;gap:18px;flex-wrap:wrap;padding:0 8px 10px;font-size:11px;color:var(--muted)}
@@ -508,20 +530,33 @@ function tideHeight(ms) {
   return Math.round(h * 100) / 100;
 }
 
-function getTides() {
-  const now = Date.now();
+function getTidesRange(days) {
+  const startMs = new Date(); startMs.setHours(0,0,0,0);
+  const start = startMs.getTime();
+  const end = start + days * 24 * 3600000;
   const samples = [];
-  for (let dt = -24*60; dt <= 24*60; dt += 5) {
-    const ms = now + dt * 60000;
+  for (let ms = start - 3600000; ms <= end + 3600000; ms += 5 * 60000) {
     samples.push({ms, h: tideHeight(ms)});
   }
+  // find all highs/lows across the whole window
   const extrema = [];
   for (let i = 1; i < samples.length - 1; i++) {
-    const a = samples[i-1].h, b = samples[i].h, c2 = samples[i+1].h;
-    if (b > a && b > c2) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
-    else if (b < a && b < c2) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
+    const a = samples[i-1].h, b = samples[i].h, c = samples[i+1].h;
+    if (b > a && b > c) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
+    else if (b < a && b < c) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
   }
-  return {current: tideHeight(now), extrema: extrema.filter(e => e.ms >= now).slice(0, 4)};
+  // group extrema by calendar day (Perth time)
+  const dayKey = ms => new Date(ms).toLocaleDateString('en-AU',{timeZone:'Australia/Perth'});
+  const byDay = new Map();
+  for (let d = 0; d < days; d++) {
+    const dms = start + d * 24 * 3600000;
+    byDay.set(dayKey(dms), {ms: dms, tides: []});
+  }
+  for (const e of extrema) {
+    const k = dayKey(e.ms);
+    if (byDay.has(k)) byDay.get(k).tides.push(e);
+  }
+  return [...byDay.values()];
 }
 
 function renderTides(loc) {
