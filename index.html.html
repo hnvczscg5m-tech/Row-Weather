@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Row Weather · Perth & Sydney</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#08121f;--deep:#0b1a2e;--panel:#0d2040;--panel2:#0f2545;
+    --accent:#00b4d8;--accent2:#0077b6;--green:#2ec4b6;--red:#e63946;
+    --orange:#f77f00;--yellow:#ffd166;--text:#deeaf8;--muted:#6b8fb5;
+    --border:rgba(0,180,216,0.13);--tide:#48cae4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--navy);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;
+    background-image:radial-gradient(ellipse at 15% 0%,rgba(0,119,182,.2) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 100%,rgba(0,180,216,.08) 0%,transparent 45%);}
+
+  header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--border);background:rgba(8,18,31,.9);
+    backdrop-filter:blur(12px);position:sticky;top:0;z-index:200;gap:10px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;
+    letter-spacing:2px;color:var(--accent);text-transform:uppercase}
+  .logo-sub{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:1px}
+  .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  #clock{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px}
+  .btn{background:var(--accent2);color:#fff;border:none;padding:7px 14px;border-radius:4px;
+    font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;
+    text-transform:uppercase;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-block}
+  .btn:hover{background:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:wait}
+  .btn-outline{background:transparent;border:1px solid var(--accent2);color:var(--accent)}
+
+  .main{max-width:1400px;margin:0 auto;padding:16px 14px 40px}
+
+  .location-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;
+    letter-spacing:1.5px;text-transform:uppercase;padding:9px 18px;
+    border:1px solid var(--border);background:var(--panel);color:var(--muted);
+    border-radius:4px;cursor:pointer;transition:all .2s}
+  .tab:hover{border-color:var(--accent2);color:var(--accent)}
+  .tab.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+
+  /* View switch (Live / Extended) */
+  .view-tabs{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid var(--border)}
+  .view-tab{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;
+    letter-spacing:1.5px;text-transform:uppercase;padding:11px 20px;background:none;border:none;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s}
+  .view-tab:hover{color:var(--accent)}
+  .view-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+  .view-panel{display:none}
+  .view-panel.active{display:block;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .status-banner{display:flex;align-items:center;gap:10px;padding:13px 18px;
+    border-radius:6px;margin-bottom:14px;font-family:'Barlow Condensed',sans-serif;
+    font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .4s}
+  .status-banner.safe{background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.4);color:var(--green)}
+  .status-banner.caution{background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.35);color:var(--yellow)}
+  .status-banner.danger{background:rgba(230,57,70,.13);border:1px solid rgba(230,57,70,.5);color:var(--red)}
+  .status-banner.loading{background:rgba(107,143,181,.08);border:1px solid var(--border);color:var(--muted)}
+  .status-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+  .status-banner.safe .status-dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .status-banner.caution .status-dot{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+  .status-banner.danger .status-dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1s infinite}
+  .status-banner.loading .status-dot{background:var(--muted)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .lightning-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 16px;border-radius:6px;margin-bottom:14px;flex-wrap:wrap;
+    background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.2)}
+  .lightning-bar-left{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+  .lightning-badge{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;
+    text-transform:uppercase;padding:4px 10px;border-radius:3px;
+    background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid rgba(255,209,102,.3)}
+  .lightning-links{display:flex;gap:8px;flex-wrap:wrap}
+
+  .range-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+    letter-spacing:1px;padding:5px 12px;border:1px solid var(--border);
+    background:var(--panel);color:var(--muted);border-radius:4px;cursor:pointer;transition:all .2s}
+  .range-btn:hover{border-color:var(--accent2);color:var(--accent)}
+  .range-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+
+  .obs-widget{background:var(--panel);border:1px solid rgba(46,196,182,.25);border-radius:8px;padding:16px;margin-bottom:14px}
+  .obs-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .obs-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:8px}
+  .obs-live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.5s infinite}
+  .obs-time{font-size:11px;color:var(--muted)}
+  .obs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .obs-cell{background:var(--panel2);border:1px solid rgba(46,196,182,.12);border-radius:6px;padding:11px 13px}
+  .obs-cell-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .obs-cell-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--text);margin-top:3px}
+  .obs-cell-val .u{font-size:12px;font-weight:300;color:var(--muted)}
+  .obs-compare{font-size:11px;margin-top:14px;padding:10px 12px;background:rgba(0,180,216,.05);border-radius:5px;color:var(--muted);line-height:1.6}
+  .obs-pending{padding:14px 16px;background:rgba(46,196,182,.05);border-radius:6px;border:1px dashed rgba(46,196,182,.25);font-size:12px;color:var(--muted);line-height:1.7}
+  .obs-pending code{background:#0d2040;padding:2px 6px;border-radius:3px;color:var(--tide);font-size:11px}
+
+  .section-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--muted);margin:18px 0 10px;
+    display:flex;align-items:center;gap:10px}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+  .risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:14px}
+  .risk-item{background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    padding:11px 13px;display:flex;align-items:center;gap:10px}
+  .risk-icon{font-size:20px;flex-shrink:0}
+  .risk-info{flex:1;min-width:0}
+  .risk-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--muted)}
+  .risk-value{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .risk-value.ok{color:var(--green)}
+  .risk-value.warn{color:var(--yellow)}
+  .risk-value.danger{color:var(--red)}
+
+  .grid-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:12px}
+  .metric-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:14px;position:relative;overflow:hidden;transition:border-color .3s}
+  .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:var(--accent2);opacity:.5}
+  .metric-card.warn::before{background:var(--yellow)}
+  .metric-card.danger::before{background:var(--red)}
+  .metric-card.ok::before{background:var(--green)}
+  .metric-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .metric-value{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:700;line-height:1;color:var(--text)}
+  .metric-value .unit{font-size:14px;font-weight:300;color:var(--muted);margin-left:2px}
+  .metric-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .metric-icon{position:absolute;top:12px;right:12px;font-size:20px;opacity:.3}
+
+  .wind-compass{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .compass-ring{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;position:relative;flex-shrink:0}
+  .compass-arrow{position:absolute;top:50%;left:50%;width:2px;height:14px;
+    margin-left:-1px;margin-top:-12px;background:var(--accent);
+    transform-origin:bottom center;border-radius:2px 2px 0 0;transition:transform .8s ease}
+
+  .bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin-top:6px}
+  .bar-fill{height:100%;border-radius:3px;transition:width .8s,background .4s}
+  .bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px}
+
+  .tide-widget{background:var(--panel);border:1px solid rgba(72,202,228,.2);border-radius:8px;padding:16px;margin-bottom:14px}
+  .tide-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .tide-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--tide)}
+  .tide-note{font-size:11px;color:var(--muted)}
+  .tide-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  .tide-card{background:var(--panel2);border:1px solid rgba(72,202,228,.15);border-radius:6px;padding:12px 14px;text-align:center;min-width:90px;flex-shrink:0}
+  .tide-card.next-tide{border-color:var(--tide);background:rgba(72,202,228,.08)}
+  .tide-type{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .tide-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--tide);margin:4px 0}
+  .tide-time{font-size:11px;color:var(--muted)}
+  .tide-freshwater{padding:14px 16px;background:rgba(72,202,228,.05);border-radius:6px;
+    border:1px dashed rgba(72,202,228,.2);font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px}
+
+  .wind-graph-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 8px 8px;margin-bottom:4px}
+  .wind-graph-legend{display:flex;gap:18px;flex-wrap:wrap;padding:0 8px 10px;font-size:11px;color:var(--muted)}
+  .wg-leg{display:flex;align-items:center;gap:6px}
+  .wg-swatch{width:14px;height:3px;border-radius:2px;display:inline-block}
+  .wind-graph-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  #wind-canvas{display:block;height:210px}
+
+  .hourly-scroll{overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  .hourly-row{display:flex;gap:7px;min-width:max-content}
+  .hourly-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    padding:11px 13px;text-align:center;min-width:76px;transition:border-color .2s}
+  .hourly-card:hover{border-color:var(--accent2)}
+  .hourly-card.hl{border-color:var(--accent2);background:rgba(0,119,182,.18)}
+  .hourly-time{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px}
+  .hourly-icon{font-size:18px;margin:5px 0}
+  .hourly-temp{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text)}
+  .hourly-wind{font-size:10px;color:var(--muted);margin-top:3px}
+  .hourly-rain{font-size:10px;color:var(--accent);margin-top:1px}
+
+  .daily-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+  .daily-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 10px;text-align:center;transition:border-color .2s}
+  .daily-card:hover{border-color:var(--accent2)}
+  .daily-card.today{border-color:var(--accent2)}
+  .daily-day{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .daily-icon{font-size:26px;margin:6px 0}
+  .daily-temps{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700}
+  .daily-lo{color:var(--muted);font-weight:300}
+  .daily-detail{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.7}
+  .rain-bar{height:3px;background:rgba(0,180,216,.1);border-radius:2px;margin-top:7px;overflow:hidden}
+  .rain-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .8s}
+
+  /* Extended outlook */
+  .ext-warn{background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.28);color:var(--yellow);
+    border-radius:6px;padding:12px 15px;font-size:12px;line-height:1.6;margin-bottom:16px}
+  .ext-chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 8px 8px;margin-bottom:14px}
+  .ext-chart-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--muted);padding:0 8px 8px;display:flex;align-items:center;gap:8px}
+  .ext-chart-title .leg{margin-left:auto;display:flex;gap:14px;font-size:10px}
+  .ext-chart-title .leg span{display:flex;align-items:center;gap:5px}
+  .ext-chart-title .sw{width:12px;height:3px;border-radius:2px;display:inline-block}
+  .ext-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  .ext-canvas{display:block;height:180px}
+  .ext-tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;
+    scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
+  table.ext{width:100%;border-collapse:collapse;font-size:12px;background:var(--panel);min-width:640px}
+  table.ext th,table.ext td{padding:8px 11px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+  table.ext th{background:var(--panel2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;letter-spacing:1px;text-transform:uppercase;font-size:10px;position:sticky;top:0}
+  table.ext td:first-child,table.ext th:first-child{text-align:left;font-weight:600}
+  table.ext tr:last-child td{border-bottom:none}
+  table.ext td.w-ok{color:var(--green)}
+  table.ext td.w-warn{color:var(--yellow)}
+  table.ext td.w-danger{color:var(--red)}
+  table.ext tbody tr:hover{background:rgba(0,180,216,.05)}
+
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--muted);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-msg{background:rgba(230,57,70,.09);border:1px solid rgba(230,57,70,.3);
+    border-radius:6px;padding:14px;color:var(--red);font-size:13px;margin-bottom:14px}
+
+  footer{text-align:center;padding:18px;font-size:10px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--border);margin-top:16px}
+  @media(max-width:600px){.grid-top{grid-template-columns:repeat(2,1fr)}.logo-text{font-size:16px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span style="font-size:24px">🚣</span>
+    <div>
+      <div class="logo-text">Row Weather</div>
+      <div class="logo-sub">IGSSA · Perth &amp; Sydney</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="clock"></span>
+    <button class="btn" id="refresh-btn" onclick="loadWeather()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="location-tabs">
+    <div class="tab active" onclick="selectLocation(0)">🌊 Freshwater Bay</div>
+    <div class="tab" onclick="selectLocation(1)">🏆 Champion Lakes</div>
+    <div class="tab" onclick="selectLocation(2)">🦘 Sydney SIRC</div>
+  </div>
+
+  <div class="view-tabs">
+    <button class="view-tab active" id="vt-live" onclick="selectView('live')">⛅ Live &amp; 7-Day</button>
+    <button class="view-tab" id="vt-ext" onclick="selectView('ext')">📅 Extended Outlook (8–16 Day)</button>
+  </div>
+
+  <div id="error-box" style="display:none" class="error-msg"></div>
+
+  <!-- ════════ LIVE / 7-DAY VIEW ════════ -->
+  <div class="view-panel active" id="panel-live">
+
+    <div class="status-banner loading" id="status-banner">
+      <div class="status-dot"></div>
+      <span id="status-text"><span class="spinner"></span> Loading weather data…</span>
+    </div>
+
+    <div class="lightning-bar">
+      <div class="lightning-bar-left">
+        ⚡
+        <span>Real-time lightning maps — tap to check live strikes near your venue</span>
+        <span class="lightning-badge">Live Maps</span>
+      </div>
+      <div class="lightning-links">
+        <a class="btn btn-outline" id="blitz-link" href="#" target="_blank">⚡ Blitzortung</a>
+        <a class="btn btn-outline" id="bom-link" href="#" target="_blank">📡 BOM Radar</a>
+      </div>
+    </div>
+
+    <div class="risk-grid">
+      <div class="risk-item"><span class="risk-icon">💨</span><div class="risk-info"><div class="risk-name">Wind Speed</div><div class="risk-value" id="r-wind">—</div></div></div>
+      <div class="risk-item"><span class="risk-icon">🌬️</span><div class="risk-info"><div class="risk-name">Gusts</div><div class="risk-value" id="r-gust">—</div></div></div>
+      <div class="risk-item"><span class="risk-icon">⛈️</span><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div></div></div>
+      <div class="risk-item"><span class="risk-icon">🌧️</span><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div></div></div>
+      <div class="risk-item"><span class="risk-icon">🌞</span><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div></div></div>
+      <div class="risk-item"><span class="risk-icon">🌡️</span><div class="risk-info"><div class="risk-name">Heat Risk</div><div class="risk-value" id="r-heat">—</div></div></div>
+    </div>
+
+    <div id="obs-section"></div>
+
+    <div id="tide-section"></div>
+
+    <div class="section-title">Current Conditions</div>
+    <div class="grid-top">
+      <div class="metric-card" id="card-temp">
+        <div class="metric-icon">🌡️</div>
+        <div class="metric-label">Temperature</div>
+        <div class="metric-value" id="cur-temp">—<span class="unit">°C</span></div>
+        <div class="metric-sub" id="cur-feels">Feels like —</div>
+      </div>
+      <div class="metric-card" id="card-wind">
+        <div class="metric-icon">💨</div>
+        <div class="metric-label">Wind Speed</div>
+        <div class="metric-value" id="cur-wind">—<span class="unit">km/h</span></div>
+        <div class="wind-compass">
+          <div class="compass-ring"><div class="compass-arrow" id="wind-arrow"></div></div>
+          <span id="cur-wdir" class="metric-sub">—</span>
+        </div>
+      </div>
+      <div class="metric-card" id="card-gust">
+        <div class="metric-icon">🌬️</div>
+        <div class="metric-label">Wind Gusts</div>
+        <div class="metric-value" id="cur-gust">—<span class="unit">km/h</span></div>
+        <div class="metric-sub" id="gust-sub">—</div>
+      </div>
+      <div class="metric-card" id="card-humid">
+        <div class="metric-icon">💧</div>
+        <div class="metric-label">Humidity</div>
+        <div class="metric-value" id="cur-humid">—<span class="unit">%</span></div>
+        <div class="metric-sub" id="humid-sub">—</div>
+      </div>
+      <div class="metric-card" id="card-rain">
+        <div class="metric-icon">🌧️</div>
+        <div class="metric-label">Rain (1h)</div>
+        <div class="metric-value" id="cur-rain">—<span class="unit">mm</span></div>
+        <div class="metric-sub" id="rain-sub">—</div>
+      </div>
+      <div class="metric-card" id="card-uv">
+        <div class="metric-icon">🌞</div>
+        <div class="metric-label">UV Index</div>
+        <div class="metric-value" id="cur-uv" style="font-size:22px">—</div>
+        <div class="bar-track"><div class="bar-fill" id="uv-bar" style="width:0%"></div></div>
+        <div class="bar-label"><span>Low</span><span>Extreme</span></div>
+      </div>
+      <div class="metric-card" id="card-cape">
+        <div class="metric-icon">⚡</div>
+        <div class="metric-label">Lightning Risk (CAPE)</div>
+        <div class="metric-value" id="cur-cape" style="font-size:20px">—</div>
+        <div class="bar-track"><div class="bar-fill" id="cape-bar" style="width:0%"></div></div>
+        <div class="bar-label"><span>None</span><span>Extreme</span></div>
+      </div>
+    </div>
+
+    <div class="section-title" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:10px;flex:0">Wind Tracker</span>
+      <span style="flex:0;display:flex;gap:6px">
+        <button class="range-btn active" id="range-24" onclick="setWindRange(24)">24 H</button>
+        <button class="range-btn" id="range-168" onclick="setWindRange(168)">7 DAY</button>
+      </span>
+    </div>
+    <div class="wind-graph-wrap">
+      <div class="wind-graph-legend">
+        <span class="wg-leg"><span class="wg-swatch" style="background:var(--accent)"></span>Wind speed</span>
+        <span class="wg-leg"><span class="wg-swatch" style="background:var(--orange)"></span>Gusts</span>
+        <span class="wg-leg"><span style="color:var(--accent)">↑</span> Arrow = direction wind blows toward</span>
+      </div>
+      <div class="wind-graph-scroll">
+        <canvas id="wind-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title">Next 12 Hours</div>
+    <div class="hourly-scroll">
+      <div class="hourly-row" id="hourly-row"></div>
+    </div>
+
+    <div class="section-title">7-Day Outlook</div>
+    <div class="daily-grid" id="daily-grid"></div>
+
+    <div style="margin-top:18px;padding:12px 15px;background:rgba(0,180,216,.04);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);line-height:1.8">
+      ⚡ <strong style="color:var(--text)">Lightning / CAPE:</strong> CAPE &gt;1000 J/kg = clear the water immediately. Use Blitzortung button for live strike maps. &nbsp;|&nbsp;
+      🌊 <strong style="color:var(--text)">Tides:</strong> Harmonic predictions based on Fremantle gauge constituents (~4 km from Freshwater Bay). SIRC &amp; Champion Lakes are freshwater — tides not applicable. &nbsp;|&nbsp;
+      💨 <strong style="color:var(--text)">Wind:</strong> Forecast from Open-Meteo (BOM ACCESS model). Live observations from nearest BOM station (Swanbourne / Perth Airport / Penrith Lakes). &nbsp;|&nbsp;
+      Data: <a href="https://open-meteo.com" target="_blank" style="color:var(--accent)">Open-Meteo</a> (BOM model) · Auto-refreshes every 10 min
+    </div>
+  </div>
+
+  <!-- ════════ EXTENDED OUTLOOK VIEW ════════ -->
+  <div class="view-panel" id="panel-ext">
+
+    <div class="ext-warn">⚠️ <strong>Extended outlook (days 8–16).</strong> The forecast model extends to 16 days, so this shows real days 8–16 pulled from the same Open-Meteo call. Confidence drops the further out you look — treat the back end as a trend, not a precise forecast. Wind &amp; rain matter most for rowing planning.</div>
+
+    <div id="ext-status" class="status-banner loading">
+      <div class="status-dot"></div>
+      <span><span class="spinner"></span> Loading extended outlook…</span>
+    </div>
+
+    <div class="section-title">Days 8–16 · <span id="ext-loc-name" style="color:var(--accent)">—</span></div>
+    <div class="ext-tablewrap">
+      <table class="ext" id="ext-table"></table>
+    </div>
+
+    <div class="ext-chart-wrap">
+      <div class="ext-chart-title">Max Wind &amp; Gusts (km/h)
+        <span class="leg">
+          <span><span class="sw" style="background:var(--accent)"></span>Wind</span>
+          <span><span class="sw" style="background:var(--orange)"></span>Gust</span>
+        </span>
+      </div>
+      <div class="ext-scroll"><canvas id="ext-wind-canvas" class="ext-canvas"></canvas></div>
+    </div>
+
+    <div class="ext-chart-wrap">
+      <div class="ext-chart-title">Temperature Range (°C)
+        <span class="leg">
+          <span><span class="sw" style="background:var(--red)"></span>Max</span>
+          <span><span class="sw" style="background:var(--tide)"></span>Min</span>
+        </span>
+      </div>
+      <div class="ext-scroll"><canvas id="ext-temp-canvas" class="ext-canvas"></canvas></div>
+    </div>
+
+    <div class="ext-chart-wrap">
+      <div class="ext-chart-title">Rainfall (mm) &amp; Chance (%)
+        <span class="leg">
+          <span><span class="sw" style="background:var(--accent)"></span>Rain mm</span>
+          <span><span class="sw" style="background:var(--yellow)"></span>Chance %</span>
+        </span>
+      </div>
+      <div class="ext-scroll"><canvas id="ext-rain-canvas" class="ext-canvas"></canvas></div>
+    </div>
+
+    <div style="margin-top:6px;padding:12px 15px;background:rgba(0,180,216,.04);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);line-height:1.8">
+      📅 <strong style="color:var(--text)">Planning use:</strong> Best for picking regatta &amp; training days a week or two out. Green = rowable wind (&lt;20 km/h max), amber = caution (20–30), red = likely suspension (&gt;30). &nbsp;|&nbsp;
+      Same Open-Meteo (BOM ACCESS) 16-day call as the live view.
+    </div>
+  </div>
+
+</div>
+
+<footer>Row Weather · IGSSA Rowing · Perth &amp; Sydney · Open-Meteo CC BY 4.0</footer>
+
+<script>
+// ── LOCATIONS ──────────────────────────────────────────────────────────────
+const LOCATIONS = [
+  {
+    name: "Freshwater Bay, Mosman Park",
+    lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
+    blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.99;x=115.77;z=9;d=2;dl=2;dc=0;",
+    bom:  "https://weather.bom.gov.au/map/wind?lat=-31.99&lon=115.77&zoom=9",
+    obsStation: { name: "Swanbourne", dist: "~4 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" }
+  },
+  {
+    name: "Champion Lakes, Armadale",
+    lat: -32.1570, lon: 116.0010, tz: "Australia/Perth", tidal: false,
+    blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.16;x=116.00;z=9;d=2;dl=2;dc=0;",
+    bom:  "https://weather.bom.gov.au/map/wind?lat=-32.16&lon=116.00&zoom=9",
+    obsStation: { name: "Perth Airport", dist: "~14 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.94610.json" }
+  },
+  {
+    name: "Sydney International Regatta Centre, Penrith",
+    lat: -33.7580, lon: 150.6730, tz: "Australia/Sydney", tidal: false,
+    blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-33.76;x=150.67;z=9;d=2;dl=2;dc=0;",
+    bom:  "https://weather.bom.gov.au/map/wind?lat=-33.76&lon=150.67&zoom=9",
+    obsStation: { name: "Penrith Lakes AWS", dist: "~2 km", json: "http://www.bom.gov.au/fwo/IDN60801/IDN60801.94759.json" }
+  }
+];
+
+// BOM blocks cross-origin browser requests, so a CORS proxy is needed when
+// hosting as a static site. Leave "" to show setup instructions.
+const CORS_PROXY = ""; // e.g. "https://corsproxy.io/?" or "/.netlify/functions/bom?url="
+
+let currentLoc = 0;
+let currentView = 'live';
+let cache = [null, null, null];
+
+// ── WMO HELPERS ───────────────────────────────────────────────────────────
+const WMO_ICON = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',
+  61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',
+  95:'⛈️',96:'⛈️',99:'⛈️'};
+const WMO_DESC = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+  45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
+  80:'Light showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',
+  96:'Thunderstorm+hail',99:'Severe thunderstorm'};
+const wmoIcon = c => WMO_ICON[c] || '🌡️';
+const wmoDesc = c => WMO_DESC[c] || 'Unknown';
+const deg2comp = d => ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16];
+
+function capeRisk(v) {
+  v = v || 0;
+  if (v < 300)  return {label:'Low',       cls:'ok',     pct: Math.min(v/300*25, 25)};
+  if (v < 1000) return {label:'Moderate',  cls:'warn',   pct: 25+(v-300)/700*35};
+  if (v < 2500) return {label:'HIGH ⚡',   cls:'danger', pct: 60+(v-1000)/1500*30};
+  return              {label:'EXTREME ⚡⚡',cls:'danger', pct: 95};
+}
+
+function uvInfo(u) {
+  if (u === null || u === undefined) return {label:'—', cls:'', pct:0, col:'var(--green)'};
+  if (u <= 2)  return {label:`${u} — Low`,       cls:'ok',     pct:u/11*100, col:'#2ec4b6'};
+  if (u <= 5)  return {label:`${u} — Moderate`,  cls:'ok',     pct:u/11*100, col:'#ffd166'};
+  if (u <= 7)  return {label:`${u} — High`,       cls:'warn',   pct:u/11*100, col:'#f77f00'};
+  if (u <= 10) return {label:`${u} — Very High`,  cls:'danger', pct:u/11*100, col:'#e63946'};
+  return             {label:`${u} — Extreme`,    cls:'danger', pct:100,       col:'#c1121f'};
+}
+const windCls = w => w >= 30 ? 'danger' : w >= 20 ? 'warn' : 'ok';
+
+// ── TIDAL HARMONICS (Fremantle) ───────────────────────────────────────────
+const HARMONICS = [
+  {amp:0.250, phase:200.0, period:12.4206},
+  {amp:0.100, phase:235.0, period:12.0000},
+  {amp:0.052, phase:185.0, period:12.6584},
+  {amp:0.028, phase:240.0, period:11.9673},
+  {amp:0.140, phase:110.0, period:23.9345},
+  {amp:0.100, phase: 95.0, period:25.8193},
+  {amp:0.045, phase:108.0, period:24.0659},
+  {amp:0.018, phase: 80.0, period:26.8684},
+  {amp:0.010, phase: 50.0, period:327.860},
+];
+const MSL = 0.78;
+
+function tideHeight(ms) {
+  const t = ms / 3600000;
+  let h = MSL;
+  for (const c of HARMONICS) h += c.amp * Math.cos(2*Math.PI*t/c.period - c.phase*Math.PI/180);
+  return Math.round(h * 100) / 100;
+}
+
+function getTides() {
+  const now = Date.now();
+  const samples = [];
+  for (let dt = -24*60; dt <= 24*60; dt += 5) {
+    const ms = now + dt * 60000;
+    samples.push({ms, h: tideHeight(ms)});
+  }
+  const extrema = [];
+  for (let i = 1; i < samples.length - 1; i++) {
+    const a = samples[i-1].h, b = samples[i].h, c2 = samples[i+1].h;
+    if (b > a && b > c2) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
+    else if (b < a && b < c2) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
+  }
+  return {current: tideHeight(now), extrema: extrema.filter(e => e.ms >= now).slice(0, 4)};
+}
+
+function renderTides(loc) {
+  const sec = document.getElementById('tide-section');
+  if (!loc.tidal) {
+    sec.innerHTML = `<div class="tide-freshwater">🌊 <strong style="color:var(--text)">Tidal data:</strong> ${loc.name} is a freshwater / inland venue — tides are not applicable. River flow and lake levels are monitored by local authorities for competition planning.</div>`;
+    return;
+  }
+  const td = getTides();
+  const fmt = ms => new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});
+  const cards = td.extrema.map((e,i) => `
+    <div class="tide-card${i===0?' next-tide':''}">
+      <div class="tide-type">${e.type==='HW'?'▲ High':'▼ Low'}</div>
+      <div class="tide-val">${e.h.toFixed(2)}<span style="font-size:11px;color:var(--muted)"> m</span></div>
+      <div class="tide-time">${fmt(e.ms)}</div>
+    </div>`).join('');
+  sec.innerHTML = `
+    <div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
+    <div class="tide-widget">
+      <div class="tide-header">
+        <div class="tide-title">🌊 Fremantle gauge — ~4 km from venue</div>
+        <div class="tide-note">Now: <strong style="color:var(--tide)">${td.current.toFixed(2)} m</strong> ACD</div>
+      </div>
+      <div class="tide-row">${cards}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:10px">Harmonic prediction above Chart Datum (ACD) · For crew launches &amp; dock access planning</div>
+    </div>`;
+}
+
+// ── FETCH (16-day) ──────────────────────────────────────────────────────────
+async function fetchWeather(idx) {
+  const loc = LOCATIONS[idx];
+  const params = new URLSearchParams({
+    latitude: loc.lat, longitude: loc.lon, timezone: loc.tz,
+    current: ['temperature_2m','apparent_temperature','relative_humidity_2m',
+      'wind_speed_10m','wind_gusts_10m','wind_direction_10m',
+      'precipitation','rain','cape','weathercode'].join(','),
+    hourly: ['temperature_2m','relative_humidity_2m','precipitation_probability',
+      'precipitation','wind_speed_10m','wind_gusts_10m','wind_direction_10m',
+      'cape','weathercode','apparent_temperature','uv_index'].join(','),
+    daily: ['temperature_2m_max','temperature_2m_min','precipitation_sum',
+      'precipitation_probability_max','wind_speed_10m_max','wind_gusts_10m_max',
+      'wind_direction_10m_dominant','weathercode','cape_max','uv_index_max'].join(','),
+    forecast_days: 16, wind_speed_unit: 'kmh'
+  });
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
+// ── WIND TRACKER GRAPH (WillyWeather-style) ───────────────────────────────
+let windRange = 24;
+let lastHourly = null, lastHIdx = 0;
+
+function setWindRange(hours) {
+  windRange = hours;
+  document.getElementById('range-24').classList.toggle('active', hours === 24);
+  document.getElementById('range-168').classList.toggle('active', hours === 168);
+  if (lastHourly) renderWindGraph(lastHourly, lastHIdx);
+}
+
+function renderWindGraph(h, hIdx) {
+  lastHourly = h; lastHIdx = hIdx;
+  const canvas = document.getElementById('wind-canvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+
+  const is7day = windRange === 168;
+  const start = hIdx;
+  const end = Math.min(hIdx + windRange, h.time.length);
+  const n = end - start;
+  if (n < 2) return;
+
+  const colW = is7day ? 14 : 46;
+  const padL = 38, padR = 16, padT = 34, padB = is7day ? 40 : 46;
+  const cssW = padL + padR + (n - 1) * colW;
+  const plotH = 130;
+  const cssH = padT + plotH + padB;
+
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const spd = [], gst = [], dir = [], times = [];
+  for (let i = start; i < end; i++) {
+    spd.push(h.wind_speed_10m[i]);
+    gst.push(h.wind_gusts_10m[i]);
+    dir.push(h.wind_direction_10m[i]);
+    times.push(new Date(h.time[i]));
+  }
+
+  const maxVal = Math.max(40, Math.ceil(Math.max(...gst) / 10) * 10);
+  const x = i => padL + i * colW;
+  const y = v => padT + plotH - (v / maxVal) * plotH;
+
+  if (is7day) {
+    let lastDay = -1;
+    for (let i = 0; i < n; i++) {
+      const d = times[i].getDay();
+      if (d !== lastDay) {
+        lastDay = d;
+        const cx = x(i);
+        ctx.strokeStyle = 'rgba(0,180,216,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx, padT - 4); ctx.lineTo(cx, padT + plotH); ctx.stroke();
+        ctx.fillStyle = (i === 0) ? '#00b4d8' : '#8fb0d0';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = '700 11px "Barlow Condensed", sans-serif';
+        ctx.fillText(i === 0 ? 'TODAY' : times[i].toLocaleDateString('en-AU',{weekday:'short'}).toUpperCase(), cx + 3, padT + plotH + 6);
+      }
+    }
+  }
+
+  ctx.font = '10px Barlow, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const steps = 4;
+  for (let s = 0; s <= steps; s++) {
+    const val = maxVal / steps * s;
+    const yy = y(val);
+    ctx.strokeStyle = 'rgba(0,180,216,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cssW - padR, yy); ctx.stroke();
+    ctx.fillStyle = '#6b8fb5';
+    ctx.fillText(Math.round(val), padL - 6, yy);
+  }
+
+  if (30 <= maxVal) {
+    const yT = y(30);
+    ctx.strokeStyle = 'rgba(230,57,70,0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(padL, yT); ctx.lineTo(cssW - padR, yT); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(230,57,70,0.8)';
+    ctx.textAlign = 'left';
+    ctx.fillText('30 — suspend', padL + 4, yT - 7);
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(gst[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(x(i), y(gst[i]));
+  ctx.strokeStyle = '#f77f00';
+  ctx.lineWidth = is7day ? 1 : 1.5;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(spd[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(x(i), y(spd[i]));
+  ctx.lineTo(x(n - 1), padT + plotH);
+  ctx.lineTo(x(0), padT + plotH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+  grad.addColorStop(0, 'rgba(0,180,216,0.35)');
+  grad.addColorStop(1, 'rgba(0,180,216,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(spd[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(x(i), y(spd[i]));
+  ctx.strokeStyle = '#00b4d8';
+  ctx.lineWidth = is7day ? 1.8 : 2.5;
+  ctx.stroke();
+
+  if (!is7day) {
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath();
+      ctx.arc(x(i), y(spd[i]), 2.5, 0, 2 * Math.PI);
+      ctx.fillStyle = '#08121f';
+      ctx.fill();
+      ctx.strokeStyle = '#00b4d8';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  const arrowStep = Math.max(1, Math.round(30 / colW));
+  const arrowY = 16;
+  for (let i = 0; i < n; i++) {
+    if (i % arrowStep !== 0) continue;
+    const cx = x(i), cy = arrowY;
+    const ang = (dir[i] + 180) * Math.PI / 180;
+    const len = 7;
+    const dx = Math.sin(ang) * len;
+    const dy = -Math.cos(ang) * len;
+    const sv = spd[i];
+    const col = sv >= 30 ? '#e63946' : sv >= 20 ? '#ffd166' : '#00b4d8';
+    ctx.strokeStyle = col;
+    ctx.fillStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - dx, cy - dy);
+    ctx.lineTo(cx + dx, cy + dy);
+    ctx.stroke();
+    const ha = 2.6;
+    const bx = cx + dx, by = cy + dy;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx - Math.sin(ang - 0.5) * ha * 2, by + Math.cos(ang - 0.5) * ha * 2);
+    ctx.lineTo(bx - Math.sin(ang + 0.5) * ha * 2, by + Math.cos(ang + 0.5) * ha * 2);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  if (!is7day) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < n; i++) {
+      const cx = x(i);
+      ctx.fillStyle = (i === 0) ? '#00b4d8' : '#6b8fb5';
+      ctx.font = (i === 0 ? '700 ' : '') + '10px "Barlow Condensed", sans-serif';
+      ctx.fillText(i === 0 ? 'NOW' : (times[i].getHours() + 'h'), cx, padT + plotH + 8);
+      ctx.fillStyle = '#5a7da0';
+      ctx.font = '9px "Barlow Condensed", sans-serif';
+      ctx.fillText(deg2comp(dir[i]), cx, padT + plotH + 22);
+    }
+  }
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#6b8fb5';
+  ctx.font = '10px Barlow, sans-serif';
+  ctx.fillText('km/h', 4, padT - 14);
+}
+
+// ── BOM LIVE OBSERVATIONS ─────────────────────────────────────────────────
+async function renderObservations(loc) {
+  const sec = document.getElementById('obs-section');
+  const stn = loc.obsStation;
+  if (!stn) { sec.innerHTML = ''; return; }
+
+  if (!CORS_PROXY) {
+    sec.innerHTML = `
+      <div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
+      <div class="obs-widget">
+        <div class="obs-pending">
+          📡 <strong style="color:var(--text)">Live BOM station readings</strong> for <strong>${stn.name}</strong> are ready to switch on.
+          BOM blocks direct browser access, so this needs a one-line CORS proxy when hosted.
+          On Netlify, set <code>CORS_PROXY</code> near the top of the script to <code>https://corsproxy.io/?</code>
+          (quick test) or your own Netlify Function for production.
+          Until then, the forecast wind above is from Open-Meteo (BOM ACCESS model).
+          <br><br>
+          Station feed: <code style="word-break:break-all">${stn.json.replace('http://','')}</code>
+        </div>
+      </div>`;
+    return;
+  }
+
+  sec.innerHTML = `
+    <div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
+    <div class="obs-widget"><div class="obs-pending"><span class="spinner"></span> Fetching latest reading from ${stn.name}…</div></div>`;
+
+  try {
+    const url = CORS_PROXY + encodeURIComponent(stn.json);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const obs = data.observations.data[0];
+
+    const spd = obs.wind_spd_kmh;
+    const gst = obs.gust_kmh;
+    const dirTxt = obs.wind_dir;
+    const temp = obs.air_temp;
+    const hum = obs.rel_hum;
+    const when = obs.local_date_time;
+
+    let compareHtml = '';
+    if (lastHourly && lastHIdx != null) {
+      const fSpd = Math.round(lastHourly.wind_speed_10m[lastHIdx]);
+      const diff = Math.round(spd) - fSpd;
+      const sign = diff > 0 ? '+' : '';
+      compareHtml = `<div class="obs-compare">📊 <strong style="color:var(--text)">Observed vs forecast:</strong>
+        live ${Math.round(spd)} km/h vs forecast ${fSpd} km/h (${sign}${diff} km/h).
+        ${Math.abs(diff) >= 8 ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
+    }
+
+    sec.innerHTML = `
+      <div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
+      <div class="obs-widget">
+        <div class="obs-head">
+          <div class="obs-title"><span class="obs-live-dot"></span>Live — ${stn.name}</div>
+          <div class="obs-time">Recorded ${when} · BOM</div>
+        </div>
+        <div class="obs-grid">
+          <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${Math.round(spd)}<span class="u"> km/h</span></div></div>
+          <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${Math.round(gst)}<span class="u"> km/h</span></div></div>
+          <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirTxt}</div></div>
+          <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp}<span class="u"> °C</span></div></div>
+          <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${hum}<span class="u"> %</span></div></div>
+        </div>
+        ${compareHtml}
+      </div>`;
+  } catch (err) {
+    sec.innerHTML = `
+      <div class="section-title">Live Observations · ${stn.name}</div>
+      <div class="obs-widget"><div class="obs-pending">⚠️ Couldn't reach the ${stn.name} feed (${err.message}).
+      The proxy may be rate-limited or the station briefly offline. Forecast wind above is unaffected.</div></div>`;
+  }
+}
+
+// ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
+function renderExtended(data, loc) {
+  document.getElementById('ext-loc-name').textContent = loc.name;
+  const dd = data.daily;
+  const total = dd.time.length;
+  const startIdx = 7; // day 8 onward (0-based index 7)
+  document.getElementById('ext-status').className = 'status-banner safe';
+  document.getElementById('ext-status').innerHTML =
+    `<div class="status-dot"></div><span>✅ Extended outlook loaded · ${total - startIdx} day window (days 8–${total}) · ${loc.name}</span>`;
+
+  // Build row arrays
+  const rows = [];
+  for (let i = startIdx; i < total; i++) {
+    rows.push({
+      date: dd.time[i],
+      code: dd.weathercode[i],
+      mx: dd.temperature_2m_max[i],
+      mn: dd.temperature_2m_min[i],
+      rain: dd.precipitation_sum[i] ?? 0,
+      pc: dd.precipitation_probability_max[i] ?? 0,
+      wind: Math.round(dd.wind_speed_10m_max[i]),
+      gust: Math.round(dd.wind_gusts_10m_max[i]),
+      dir: dd.wind_direction_10m_dominant[i],
+      uv: dd.uv_index_max ? dd.uv_index_max[i] : null,
+      cape: dd.cape_max ? dd.cape_max[i] : 0
+    });
+  }
+
+  // Table
+  const head = ['Date','Day','Sky','Max °C','Min °C','Rain mm','Rain %','Wind km/h','Gust km/h','Dir','UV','Storm'];
+  let html = '<thead><tr>' + head.map(x=>`<th>${x}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    const dt = new Date(r.date + 'T12:00:00');
+    const day = dt.toLocaleDateString('en-AU',{weekday:'short'});
+    const dateLbl = dt.toLocaleDateString('en-AU',{day:'2-digit',month:'short'});
+    const uvI = uvInfo(r.uv !== null ? Math.round(r.uv) : null);
+    const cI = capeRisk(r.cape);
+    html += `<tr>
+      <td>${dateLbl}</td>
+      <td>${day}</td>
+      <td style="font-size:15px">${wmoIcon(r.code)}</td>
+      <td>${Math.round(r.mx)}</td>
+      <td style="color:var(--muted)">${Math.round(r.mn)}</td>
+      <td>${r.rain.toFixed(1)}</td>
+      <td>${r.pc}</td>
+      <td class="w-${windCls(r.wind)}">${r.wind}</td>
+      <td class="w-${windCls(r.gust>=40?40:r.gust>=30?25:0)}">${r.gust}</td>
+      <td>${deg2comp(r.dir)}</td>
+      <td class="w-${uvI.cls||'ok'}">${r.uv!==null?Math.round(r.uv):'—'}</td>
+      <td class="w-${cI.cls}">${cI.label}</td>
+    </tr>`;
+  });
+  document.getElementById('ext-table').innerHTML = html + '</tbody>';
+
+  // Charts
+  const labels = rows.map(r => new Date(r.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric'}));
+  drawExtWind('ext-wind-canvas', labels, rows.map(r=>r.wind), rows.map(r=>r.gust));
+  drawExtTemp('ext-temp-canvas', labels, rows.map(r=>r.mx), rows.map(r=>r.mn));
+  drawExtRain('ext-rain-canvas', labels, rows.map(r=>r.rain), rows.map(r=>r.pc));
+}
+
+function extCanvasSetup(id, n) {
+  const canvas = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  const colW = 64, padL = 40, padR = 16, padT = 18, padB = 34;
+  const cssW = Math.max(canvas.parentElement.clientWidth, padL + padR + (n - 1) * colW);
+  const plotH = 110, cssH = padT + plotH + padB;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+  const innerW = cssW - padL - padR;
+  const x = i => n === 1 ? padL + innerW/2 : padL + (i/(n-1))*innerW;
+  return {ctx, cssW, cssH, padL, padR, padT, padB, plotH, x};
+}
+
+function extGrid(ctx, S, maxVal, unit) {
+  ctx.font = '10px Barlow, sans-serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const steps = 4;
+  for (let s = 0; s <= steps; s++) {
+    const val = maxVal/steps*s;
+    const yy = S.padT + S.plotH - (val/maxVal)*S.plotH;
+    ctx.strokeStyle = 'rgba(0,180,216,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(S.padL, yy); ctx.lineTo(S.cssW - S.padR, yy); ctx.stroke();
+    ctx.fillStyle = '#6b8fb5';
+    ctx.fillText(Math.round(val), S.padL - 6, yy);
+  }
+}
+function extLabels(ctx, S, labels) {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#6b8fb5'; ctx.font = '10px "Barlow Condensed", sans-serif';
+  labels.forEach((l,i)=> ctx.fillText(l.toUpperCase(), S.x(i), S.padT + S.plotH + 8));
+}
+
+function drawExtWind(id, labels, wind, gust) {
+  const n = labels.length, S = extCanvasSetup(id, n);
+  const {ctx} = S;
+  const maxVal = Math.max(40, Math.ceil(Math.max(...gust)/10)*10);
+  const y = v => S.padT + S.plotH - (v/maxVal)*S.plotH;
+  extGrid(ctx, S, maxVal);
+  // suspend threshold
+  if (30 <= maxVal) {
+    const yT = y(30);
+    ctx.strokeStyle = 'rgba(230,57,70,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(S.padL, yT); ctx.lineTo(S.cssW-S.padR, yT); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(230,57,70,0.8)'; ctx.textAlign='left';
+    ctx.fillText('30 — suspend', S.padL+4, yT-7);
+  }
+  // bars: wind + gust
+  const bw = Math.min(22, (S.cssW-S.padL-S.padR)/n*0.5);
+  for (let i=0;i<n;i++){
+    const cx = S.x(i);
+    // gust (back, orange)
+    ctx.fillStyle = 'rgba(247,127,0,0.55)';
+    ctx.fillRect(cx-bw/2, y(gust[i]), bw, S.padT+S.plotH - y(gust[i]));
+    // wind (front, teal) — colour by risk
+    const w = wind[i];
+    ctx.fillStyle = w>=30?'#e63946':w>=20?'#ffd166':'#00b4d8';
+    ctx.fillRect(cx-bw/2+bw*0.18, y(w), bw*0.64, S.padT+S.plotH - y(w));
+    ctx.fillStyle='#deeaf8'; ctx.font='700 10px "Barlow Condensed",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(w, cx, y(w)-2);
+  }
+  extLabels(ctx, S, labels);
+}
+
+function drawExtTemp(id, labels, mx, mn) {
+  const n = labels.length, S = extCanvasSetup(id, n);
+  const {ctx} = S;
+  const lo = Math.floor(Math.min(...mn)/5)*5;
+  const hi = Math.ceil(Math.max(...mx)/5)*5;
+  const range = Math.max(1, hi-lo);
+  const y = v => S.padT + S.plotH - ((v-lo)/range)*S.plotH;
+  // grid in temp scale
+  ctx.font='10px Barlow,sans-serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let s=0;s<=4;s++){
+    const val = lo + range/4*s; const yy = y(val);
+    ctx.strokeStyle='rgba(0,180,216,0.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(S.padL,yy); ctx.lineTo(S.cssW-S.padR,yy); ctx.stroke();
+    ctx.fillStyle='#6b8fb5'; ctx.fillText(Math.round(val), S.padL-6, yy);
+  }
+  const line = (arr,col)=>{
+    ctx.beginPath(); ctx.moveTo(S.x(0), y(arr[0]));
+    for(let i=1;i<n;i++) ctx.lineTo(S.x(i), y(arr[i]));
+    ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.stroke();
+    for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(S.x(i),y(arr[i]),3,0,2*Math.PI);
+      ctx.fillStyle='#08121f';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();}
+  };
+  line(mx,'#e63946'); line(mn,'#48cae4');
+  // value labels for max
+  ctx.fillStyle='#deeaf8'; ctx.font='700 10px "Barlow Condensed",sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  for(let i=0;i<n;i++) ctx.fillText(Math.round(mx[i])+'°', S.x(i), y(mx[i])-6);
+  extLabels(ctx, S, labels);
+}
+
+function drawExtRain(id, labels, rain, pc) {
+  const n = labels.length, S = extCanvasSetup(id, n);
+  const {ctx} = S;
+  const maxRain = Math.max(5, Math.ceil(Math.max(...rain)/5)*5);
+  const y = v => S.padT + S.plotH - (v/maxRain)*S.plotH;
+  extGrid(ctx, S, maxRain);
+  // rain bars
+  const bw = Math.min(26, (S.cssW-S.padL-S.padR)/n*0.55);
+  for(let i=0;i<n;i++){
+    const cx=S.x(i);
+    ctx.fillStyle='rgba(0,180,216,0.7)';
+    ctx.fillRect(cx-bw/2, y(rain[i]), bw, S.padT+S.plotH-y(rain[i]));
+    if(rain[i]>0.05){ctx.fillStyle='#deeaf8';ctx.font='700 10px "Barlow Condensed",sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(rain[i].toFixed(1),cx,y(rain[i])-2);}
+  }
+  // chance % line (0-100 mapped onto same plot height)
+  const yp = v => S.padT + S.plotH - (v/100)*S.plotH;
+  ctx.beginPath(); ctx.moveTo(S.x(0), yp(pc[0]));
+  for(let i=1;i<n;i++) ctx.lineTo(S.x(i), yp(pc[i]));
+  ctx.strokeStyle='#ffd166'; ctx.lineWidth=2; ctx.stroke();
+  for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(S.x(i),yp(pc[i]),2.5,0,2*Math.PI);
+    ctx.fillStyle='#ffd166';ctx.fill();}
+  extLabels(ctx, S, labels);
+}
+
+// ── RENDER LIVE ───────────────────────────────────────────────────────────
+function render(data, loc) {
+  const c = data.current;
+  const temp  = Math.round(c.temperature_2m);
+  const feels = Math.round(c.apparent_temperature);
+  const wind  = Math.round(c.wind_speed_10m);
+  const gust  = Math.round(c.wind_gusts_10m);
+  const wdir  = c.wind_direction_10m;
+  const humid = Math.round(c.relative_humidity_2m);
+  const rain  = c.rain ?? c.precipitation ?? 0;
+  const cape  = c.cape ?? 0;
+  const code  = c.weathercode;
+
+  const now = new Date();
+  const h = data.hourly;
+  const hourStr = now.toISOString().slice(0,13);
+  let hIdx = h.time.findIndex(t => t.startsWith(hourStr));
+  if (hIdx < 0) hIdx = 0;
+
+  const uvRaw = h.uv_index ? h.uv_index[hIdx] : null;
+  const uv = uvRaw !== null && uvRaw !== undefined ? Math.round(uvRaw) : null;
+  const uvI = uvInfo(uv);
+
+  const pp = h.precipitation_probability;
+  const maxPP = pp ? Math.max(...pp.slice(hIdx, hIdx+6)) : 0;
+
+  const isStorm = [95,96,99].includes(code) || cape > 1000;
+  const highWind = wind >= 30 || gust >= 40;
+  const banner = document.getElementById('status-banner');
+  const st = document.getElementById('status-text');
+  if (isStorm || highWind) {
+    banner.className = 'status-banner danger';
+    const r = [];
+    if (isStorm) r.push('⚡ Thunderstorm / lightning risk');
+    if (highWind) r.push(`💨 Wind ${wind} km/h gusts ${gust}`);
+    st.textContent = `🚨 SUSPEND ROWING — ${r.join(' · ')} — ${loc.name}`;
+  } else if (wind >= 20 || cape > 300 || gust >= 30 || uv >= 8) {
+    banner.className = 'status-banner caution';
+    const r = [];
+    if (wind >= 20) r.push(`Wind ${wind} km/h`);
+    if (gust >= 30) r.push(`Gusts ${gust} km/h`);
+    if (uv >= 8)   r.push(`UV ${uv}`);
+    if (cape > 300) r.push('Storm risk');
+    st.textContent = `⚠️ CAUTION — ${r.join(' · ')} — ${loc.name}`;
+  } else {
+    banner.className = 'status-banner safe';
+    st.textContent = `✅ CONDITIONS GOOD — ${wmoDesc(code)}, Wind ${wind} km/h, UV ${uv ?? '—'} — ${loc.name}`;
+  }
+
+  document.getElementById('blitz-link').href = loc.blitz;
+  document.getElementById('bom-link').href   = loc.bom;
+
+  const setR = (id, val, cls) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'risk-value ' + cls;
+  };
+
+  document.getElementById('cur-temp').innerHTML = `${temp}<span class="unit">°C</span>`;
+  document.getElementById('cur-feels').textContent = `Feels like ${feels}°C`;
+  document.getElementById('card-temp').className = 'metric-card ' + (temp>35?'danger':temp>28?'warn':'ok');
+
+  document.getElementById('cur-wind').innerHTML = `${wind}<span class="unit">km/h</span>`;
+  document.getElementById('cur-wdir').textContent = `From ${deg2comp(wdir)} (${wdir}°)`;
+  document.getElementById('wind-arrow').style.transform = `rotate(${wdir}deg)`;
+  document.getElementById('card-wind').className = 'metric-card ' + (wind>=30?'danger':wind>=20?'warn':'ok');
+
+  document.getElementById('cur-gust').innerHTML = `${gust}<span class="unit">km/h</span>`;
+  document.getElementById('gust-sub').textContent = gust>=40?'⚠ Above suspension threshold':gust>=30?'Approaching limit':'Within safe limits';
+  document.getElementById('card-gust').className = 'metric-card ' + (gust>=40?'danger':gust>=30?'warn':'ok');
+
+  document.getElementById('cur-humid').innerHTML = `${humid}<span class="unit">%</span>`;
+  document.getElementById('humid-sub').textContent = humid>80?'Very humid':humid>60?'Moderate':'Comfortable';
+
+  document.getElementById('cur-rain').innerHTML = `${rain.toFixed(1)}<span class="unit">mm</span>`;
+  document.getElementById('rain-sub').textContent = `Next 6h chance: ${maxPP}%`;
+  document.getElementById('card-rain').className = 'metric-card ' + (rain>5?'danger':rain>1?'warn':'');
+
+  document.getElementById('cur-uv').textContent = uv !== null ? uvI.label : 'No data';
+  const uvBar = document.getElementById('uv-bar');
+  uvBar.style.width = uvI.pct + '%';
+  uvBar.style.background = uvI.col;
+  document.getElementById('card-uv').className = 'metric-card ' + uvI.cls;
+
+  const cI = capeRisk(cape);
+  document.getElementById('cur-cape').textContent = `${cape} J/kg — ${cI.label}`;
+  const capeBar = document.getElementById('cape-bar');
+  capeBar.style.width = cI.pct + '%';
+  capeBar.style.background = cI.cls==='ok'?'var(--green)':cI.cls==='warn'?'var(--yellow)':'var(--red)';
+  document.getElementById('card-cape').className = 'metric-card ' + cI.cls;
+
+  setR('r-wind',  `${wind} km/h`,  wind>=30?'danger':wind>=20?'warn':'ok');
+  setR('r-gust',  `${gust} km/h`,  gust>=40?'danger':gust>=30?'warn':'ok');
+  setR('r-storm', cI.label,        cI.cls);
+  setR('r-rain',  `${maxPP}%`,     maxPP>70?'danger':maxPP>40?'warn':'ok');
+  setR('r-uv',    uv!==null?uvI.label:'—', uvI.cls);
+  setR('r-heat',  temp>35?'High ⚠':temp>28?'Moderate':'Low', temp>35?'danger':temp>28?'warn':'ok');
+
+  renderTides(loc);
+  renderWindGraph(h, hIdx);
+  renderObservations(loc);
+
+  const row = document.getElementById('hourly-row');
+  row.innerHTML = '';
+  for (let i = hIdx; i < Math.min(hIdx+13, h.time.length); i++) {
+    const t = new Date(h.time[i]);
+    const isNow = i === hIdx;
+    const hh = t.getHours().toString().padStart(2,'0') + ':00';
+    const d = document.createElement('div');
+    d.className = 'hourly-card' + (isNow?' hl':'');
+    d.innerHTML = `
+      <div class="hourly-time">${isNow?'NOW':hh}</div>
+      <div class="hourly-icon">${wmoIcon(h.weathercode[i])}</div>
+      <div class="hourly-temp">${Math.round(h.temperature_2m[i])}°</div>
+      <div class="hourly-wind">💨 ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
+      <div class="hourly-rain">🌧 ${h.precipitation_probability[i]??0}%</div>`;
+    row.appendChild(d);
+  }
+
+  const dg = document.getElementById('daily-grid');
+  dg.innerHTML = '';
+  const dd = data.daily;
+  const todayStr = now.toISOString().slice(0,10);
+  // Live 7-day view: show first 7 days only
+  for (let i = 0; i < Math.min(7, dd.time.length); i++) {
+    const dt = new Date(dd.time[i] + 'T12:00:00');
+    const label = i===0?'Today':dt.toLocaleDateString('en-AU',{weekday:'short'});
+    const rp = dd.precipitation_probability_max[i] ?? 0;
+    const uvD = dd.uv_index_max ? dd.uv_index_max[i] : null;
+    const uvDI = uvInfo(uvD!==null?Math.round(uvD):null);
+    const cDI = capeRisk(dd.cape_max ? dd.cape_max[i] : 0);
+    const card = document.createElement('div');
+    card.className = 'daily-card' + (dd.time[i]===todayStr?' today':'');
+    card.innerHTML = `
+      <div class="daily-day">${label}</div>
+      <div class="daily-icon">${wmoIcon(dd.weathercode[i])}</div>
+      <div class="daily-temps">${Math.round(dd.temperature_2m_max[i])}°<span class="daily-lo"> / ${Math.round(dd.temperature_2m_min[i])}°</span></div>
+      <div class="daily-detail">
+        💨 ${Math.round(dd.wind_speed_10m_max[i])} km/h<br>
+        🌧 ${rp}%<br>
+        🌞 UV ${uvD!==null?uvDI.label:'—'}<br>
+        ⚡ ${cDI.label}
+      </div>
+      <div class="rain-bar"><div class="rain-fill" style="width:${rp}%"></div></div>`;
+    dg.appendChild(card);
+  }
+
+  // Extended outlook from same dataset
+  renderExtended(data, loc);
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────
+function selectLocation(idx) {
+  currentLoc = idx;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  if (cache[idx]) {
+    render(cache[idx], LOCATIONS[idx]);
+  } else {
+    loadWeather();
+  }
+}
+
+function selectView(view) {
+  currentView = view;
+  document.getElementById('vt-live').classList.toggle('active', view==='live');
+  document.getElementById('vt-ext').classList.toggle('active', view==='ext');
+  document.getElementById('panel-live').classList.toggle('active', view==='live');
+  document.getElementById('panel-ext').classList.toggle('active', view==='ext');
+  // Charts need a redraw when their panel becomes visible (canvas sized to 0 while hidden)
+  if (cache[currentLoc]) {
+    if (view==='live') renderWindGraph(lastHourly, lastHIdx);
+    else renderExtended(cache[currentLoc], LOCATIONS[currentLoc]);
+  }
+}
+
+async function loadWeather() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = '↻ Loading…';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('status-banner').className = 'status-banner loading';
+  document.getElementById('status-text').innerHTML = '<span class="spinner"></span> Loading weather data…';
+  document.getElementById('ext-status').className = 'status-banner loading';
+  document.getElementById('ext-status').innerHTML = '<div class="status-dot"></div><span><span class="spinner"></span> Loading extended outlook…</span>';
+  try {
+    const data = await fetchWeather(currentLoc);
+    cache[currentLoc] = data;
+    render(data, LOCATIONS[currentLoc]);
+  } catch(err) {
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-box').textContent = `Could not load weather data: ${err.message}. Check your internet connection and try refreshing.`;
+    document.getElementById('status-banner').className = 'status-banner loading';
+    document.getElementById('status-text').textContent = 'Data unavailable — tap Refresh to retry';
+    document.getElementById('ext-status').className = 'status-banner loading';
+    document.getElementById('ext-status').innerHTML = '<div class="status-dot"></div><span>Data unavailable — tap Refresh to retry</span>';
+  }
+  btn.disabled = false;
+  btn.textContent = '↻ Refresh';
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const loc = LOCATIONS[currentLoc];
+  document.getElementById('clock').textContent =
+    new Date().toLocaleString('en-AU',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'short',timeZone:loc.tz});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Redraw charts on resize (extended charts are width-responsive)
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (!cache[currentLoc]) return;
+    if (currentView === 'live') renderWindGraph(lastHourly, lastHIdx);
+    else renderExtended(cache[currentLoc], LOCATIONS[currentLoc]);
+  }, 150);
+});
+
+// ── AUTO-REFRESH every 10 min ─────────────────────────────────────────────
+setInterval(() => { cache = [null,null,null]; loadWeather(); }, 600000);
+
+// ── BOOT ──────────────────────────────────────────────────────────────────
+loadWeather();
+</script>
+</body>
+</html>
