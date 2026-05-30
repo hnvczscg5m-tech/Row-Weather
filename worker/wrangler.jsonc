@@ -1,0 +1,5 @@
+{
+  "name": "row-weather-bom-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-05-30"
+}
