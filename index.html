@@ -509,7 +509,7 @@ const CORS_PROXY = "https://bom-proxy.jerramgibson.workers.dev/?url=";
 
 let currentLoc = 0;
 let currentView = 'live';
-let cache = [null, null, null];
+let cache = Array(LOCATIONS.length).fill(null);
 
 // ── WMO HELPERS ───────────────────────────────────────────────────────────
 const WMO_ICON = {0:' ',1:' ',2:' ',3:' ',45:' ',48:' ',51:' ',53:' ',55:' ',
