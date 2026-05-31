@@ -258,27 +258,28 @@
 <body>
 
 <header>
-<div class="logo photo-style-logo">
-<svg class="logo-mark" viewBox="0 0 220 96" width="148" height="64" aria-label="Weatherow rower logo">
-<g fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-<path d="M58 28c-7-3-14-2-18 3-4 6-3 15 4 19"/>
-<path d="M47 27c2-12 19-18 30-8 5 4 10 6 18 5"/>
-<path d="M51 43c19 13 43 23 78 29"/>
-<path d="M34 73c13-9 28-18 43-31"/>
-<path d="M78 51l24 32 31-4"/>
-<path d="M102 83l35-33"/>
-<path d="M128 72l42-8"/>
-</g>
-<path d="M8 78c36-8 66-5 98 0 34 5 65 7 104-4-28 18-70 18-108 12-33-5-61-9-94-8z"
-fill="#00b4d8"/>
-</svg>
-
-<span class="logo-divider"></span>
-
-<span class="wordmark photo-wordmark">
-<span class="wm-white">weather</span><span class="wm-blue">ow</span>
-</span>
-</div>
+ <div class="logo">
+ <svg class="logo-mark" viewBox="0 0 120 64" width="58" height="31" aria-label="Rower">
+ <!-- rower -->
+ <g fill="#fff">
+ <circle cx="46" cy="14" r="6"/>
+ <path d="M30 40 L46 22 L58 30 L52 38 L44 33 L36 44 Z"/>
+ <rect x="30" y="38" width="9" height="5" rx="2.5" transform="rotate(28 34 40)"/>
+ </g>
+ <!-- oar -->
+ <path d="M8 30 L96 50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+ <path d="M92 46 L104 47 L100 55 L90 53 Z" fill="#fff"/>
+ <!-- water lines -->
+ <path d="M4 56 q14 -7 28 0 t28 0 t28 0 t28 0" stroke="#0077b6" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+ <path d="M4 62 q14 -6 28 0 t28 0 t28 0 t28 0" stroke="#00b4d8" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+ </svg>
+ <span class="logo-divider"></span>
+ <span class="wordmark"><span class="wm-white">weather</span><span class="wm-blue">ow</span></span>
+ </div>
+ <div class="header-right">
+ <span id="clock"></span>
+ <button class="btn" id="refresh-btn" onclick="loadWeather()">↻ Refresh</button>
+ </div>
 </header>
 
 <div class="main">
