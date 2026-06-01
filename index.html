@@ -1494,7 +1494,7 @@ window.addEventListener('resize', () => {
 });
 
 // ── AUTO-REFRESH every 10 min ─────────────────────────────────────────────
-setInterval(() => { cache = [null,null,null]; loadWeather(); }, 600000);
+setInterval(() => { cache = Array(LOCATIONS.length).fill(null); loadWeather(); }, 600000);
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 loadWeather();
