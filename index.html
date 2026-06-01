@@ -243,6 +243,79 @@
 
  footer{text-align:center;padding:18px;font-size:10px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--border);margin-top:16px}
  @media(max-width:600px){.grid-top{grid-template-columns:repeat(2,1fr)}.logo-img{height:34px}}
+ .compact-hero{
+margin:10px 16px 18px;
+padding:14px 18px;
+min-height:92px;
+display:grid;
+grid-template-columns:minmax(0,1fr) auto;
+align-items:center;
+gap:14px;
+background:radial-gradient(circle at top left,rgba(0,180,216,.10),transparent 40%),rgba(3,12,24,.95);
+border:2px solid rgba(255,255,255,.88);
+border-radius:18px;
+box-shadow:0 0 14px rgba(72,202,228,.12),0 8px 24px rgba(0,0,0,.35);
+}
+
+.hero-logo{
+width:min(100%,520px);
+max-height:84px;
+object-fit:contain;
+display:block;
+}
+
+.hero-actions{
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:8px;
+flex-shrink:0;
+}
+
+.hero-time{
+font-family:"Barlow Condensed",sans-serif;
+font-size:clamp(14px,2vw,22px);
+color:var(--muted);
+letter-spacing:.10em;
+white-space:nowrap;
+}
+
+.hero-refresh{
+padding:10px 22px;
+border-radius:8px;
+border:1px solid rgba(72,202,228,.5);
+background:linear-gradient(180deg,#17c8ea 0%,#0097c8 100%);
+color:#fff;
+font-family:"Barlow Condensed",sans-serif;
+font-size:18px;
+font-weight:600;
+letter-spacing:.16em;
+text-transform:uppercase;
+cursor:pointer;
+box-shadow:0 0 14px rgba(0,180,216,.25);
+}
+
+@media (max-width:600px){
+.compact-hero{
+margin:8px 12px 14px;
+padding:12px;
+min-height:78px;
+gap:10px;
+}
+
+.hero-logo{
+max-height:62px;
+}
+
+.hero-time{
+font-size:14px;
+}
+
+.hero-refresh{
+padding:8px 14px;
+font-size:15px;
+}
+}
 </style>
 </head>
 <body>
