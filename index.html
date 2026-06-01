@@ -514,6 +514,16 @@ obsStation: { name: "Canberra Airport", dist: "~7 km", json: "https://www.bom.go
 // hosting as a static site. Leave "" to show setup instructions.
 const CORS_PROXY = "https://bom-proxy.jerramgibson.workers.dev/?url=";
 
+ function bomObsUrl(rawUrl) {
+if (!rawUrl) return null;
+
+// If it is already proxied, use it as-is.
+if (rawUrl.startsWith(CORS_PROXY)) return rawUrl;
+
+// Otherwise pass the BOM URL through the proxy.
+return CORS_PROXY + encodeURIComponent(rawUrl);
+}
+
 let currentLoc = 0;
 let currentView = 'live';
 let cache = Array(LOCATIONS.length).fill(null);
