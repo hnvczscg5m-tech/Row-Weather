@@ -40,6 +40,8 @@
  border-radius:4px;cursor:pointer;transition:all .2s}
  .tab:hover{border-color:var(--accent2);color:var(--accent)}
  .tab.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+ .tab{display:flex;align-items:center;gap:8px}
+.tab-icon{width:22px;height:22px;border-radius:5px;flex-shrink:0;object-fit:contain}
 
  /* View switch (Live / Extended) */
  .view-tabs{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid var(--border)}
@@ -257,14 +259,14 @@
 <div class="main">
 
 <div class="location-tabs">
-<div class="tab active" onclick="selectLocation(0)">Freshwater Bay</div>
-<div class="tab" onclick="selectLocation(1)">Champion Lakes</div>
-<div class="tab" onclick="selectLocation(2)">Sydney SIRC</div>
-<div class="tab" onclick="selectLocation(3)">Lake Nagambie</div>
-<div class="tab" onclick="selectLocation(4)">Lake Barrington</div>
-<div class="tab" onclick="selectLocation(5)">Wyaralong Dam</div>
-<div class="tab" onclick="selectLocation(6)">West Lakes</div>
-<div class="tab" onclick="selectLocation(7)">Lake Burley Griffin</div>
+<div class="tab active" onclick="selectLocation(0)"><img class="tab-icon" src="icons/freshwater_bay.png" alt="">Freshwater Bay</div>
+<div class="tab" onclick="selectLocation(1)"><img class="tab-icon" src="icons/champion_lakes.png" alt="">Champion Lakes</div>
+<div class="tab" onclick="selectLocation(2)"><img class="tab-icon" src="icons/sydney_sirc.png" alt="">Sydney SIRC</div>
+<div class="tab" onclick="selectLocation(3)"><img class="tab-icon" src="icons/lake_nagambie.png" alt="">Lake Nagambie</div>
+<div class="tab" onclick="selectLocation(4)"><img class="tab-icon" src="icons/lake_barrington.png" alt="">Lake Barrington</div>
+<div class="tab" onclick="selectLocation(5)"><img class="tab-icon" src="icons/wyaralong_dam.png" alt="">Wyaralong Dam</div>
+<div class="tab" onclick="selectLocation(6)"><img class="tab-icon" src="icons/west_lakes.png" alt="">West Lakes</div>
+<div class="tab" onclick="selectLocation(7)"><img class="tab-icon" src="icons/lake_burley_griffin.png" alt="">Lake Burley Griffin</div>
 </div>
 
  <div class="view-tabs">
