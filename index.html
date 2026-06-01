@@ -1041,8 +1041,8 @@ async function renderObservations(loc) {
  <div class="obs-widget"><div class="obs-pending"><span class="spinner"></span> Fetching latest reading from ${stn.name}…</div></div>`;
 
  try {
- const url = CORS_PROXY + encodeURIComponent(stn.json);
- const res = await fetch(url);
+const obsUrl = bomObsUrl(loc.obsStation.json);
+const res = await fetch(obsUrl);
  if (!res.ok) throw new Error('HTTP ' + res.status);
  const data = await res.json();
  const obs = data.observations.data[0];
