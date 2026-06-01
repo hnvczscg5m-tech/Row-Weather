@@ -11,6 +11,9 @@
  --accent:#00b4d8;--accent2:#0077b6;--green:#2ec4b6;--red:#e63946;
  --orange:#f77f00;--yellow:#ffd166;--text:#deeaf8;--muted:#6b8fb5;
  --border:rgba(0,180,216,0.13);--tide:#48cae4;
+ /* weather condition palette */
+ --wx-clear:#ffd166;--wx-clear2:#f77f00;--wx-cloud:#9fb8d4;--wx-cloud-dk:#6b8fb5;
+ --wx-rain:#48cae4;--wx-storm:#e63946;--wx-storm-bolt:#ffd166;--wx-fog:#8fa9c4;--wx-snow:#dbeafe;
  }
  *{box-sizing:border-box;margin:0;padding:0}
  body{background:var(--navy);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;
@@ -66,6 +69,7 @@
  .status-banner.caution .status-dot{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
  .status-banner.danger .status-dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1s infinite}
  .status-banner.loading .status-dot{background:var(--muted)}
+ .status-banner .wx-ico{font-size:20px;flex-shrink:0}
  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
  .lightning-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -93,6 +97,7 @@
  .obs-cell-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
  .obs-cell-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--text);margin-top:3px}
  .obs-cell-val .u{font-size:12px;font-weight:300;color:var(--muted)}
+ .obs-cell-val .hourly-windarrow{font-size:1em}
  .obs-compare{font-size:11px;margin-top:14px;padding:10px 12px;background:rgba(0,180,216,.05);border-radius:5px;color:var(--muted);line-height:1.6}
  .obs-pending{padding:14px 16px;background:rgba(46,196,182,.05);border-radius:6px;border:1px dashed rgba(46,196,182,.25);font-size:12px;color:var(--muted);line-height:1.7}
  .obs-pending code{background:#0d2040;padding:2px 6px;border-radius:3px;color:var(--tide);font-size:11px}
@@ -105,7 +110,7 @@
  .risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:14px}
  .risk-item{background:var(--panel);border:1px solid var(--border);border-radius:6px;
  padding:11px 13px;display:flex;align-items:center;gap:10px}
- .risk-icon{font-size:20px;flex-shrink:0}
+ .risk-icon{font-size:20px;flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center}
  .risk-info{flex:1;min-width:0}
  .risk-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
  text-transform:uppercase;color:var(--muted)}
@@ -128,13 +133,21 @@
  .metric-value{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:700;line-height:1;color:var(--text)}
  .metric-value .unit{font-size:14px;font-weight:300;color:var(--muted);margin-left:2px}
  .metric-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
- .metric-icon{position:absolute;top:12px;right:12px;font-size:20px;opacity:.3}
+ .metric-icon{position:absolute;top:12px;right:12px;font-size:20px;opacity:.45}
 
  .wind-compass{display:flex;align-items:center;gap:8px;margin-top:6px}
- .compass-ring{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;position:relative;flex-shrink:0}
+ .compass-ring{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;position:relative;flex-shrink:0;
+ background:radial-gradient(circle at 50% 50%,rgba(0,180,216,.06),transparent 70%)}
  .compass-arrow{position:absolute;top:50%;left:50%;width:2px;height:14px;
  margin-left:-1px;margin-top:-12px;background:var(--accent);
- transform-origin:bottom center;border-radius:2px 2px 0 0;transition:transform .8s ease}
+ transform-origin:bottom center;border-radius:2px 2px 0 0;
+ transition:transform 1.1s cubic-bezier(.22,1,.36,1),background .4s}
+ .compass-arrow::after{content:'';position:absolute;top:-4px;left:50%;margin-left:-4px;
+ border-left:4px solid transparent;border-right:4px solid transparent;
+ border-bottom:6px solid currentColor;color:inherit;
+ width:0;height:0;background:none}
+ .compass-arrow{color:var(--accent)}
+ .compass-arrow.gust-active{animation:pulse 1.2s ease-in-out infinite}
 
  .bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin-top:6px}
  .bar-fill{height:100%;border-radius:3px;transition:width .8s,background .4s}
@@ -191,9 +204,9 @@
  .hourly-card:hover{border-color:var(--accent2)}
  .hourly-card.hl{border-color:var(--accent2);background:rgba(0,119,182,.18)}
  .hourly-time{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:1px}
- .hourly-icon{font-size:18px;margin:5px 0}
+ .hourly-icon{font-size:20px;margin:5px 0;display:flex;justify-content:center}
  .hourly-temp{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text)}
- .hourly-wind{font-size:10px;color:var(--muted);margin-top:3px}
+ .hourly-wind{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;justify-content:center;gap:3px}
  .hourly-rain{font-size:10px;color:var(--accent);margin-top:1px}
 
  .daily-grid{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
@@ -204,7 +217,7 @@
  .daily-card:hover{border-color:var(--accent2)}
  .daily-card.today{border-color:var(--accent2)}
  .daily-day{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
- .daily-icon{font-size:26px;margin:6px 0}
+ .daily-icon{font-size:28px;margin:6px 0;display:flex;justify-content:center}
  .daily-temps{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700}
  .daily-lo{color:var(--muted);font-weight:300}
  .daily-detail{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.7}
@@ -234,6 +247,7 @@
  table.ext td.w-warn{color:var(--yellow)}
  table.ext td.w-danger{color:var(--red)}
  table.ext tbody tr:hover{background:rgba(0,180,216,.05)}
+ table.ext td .wx-ico{font-size:16px}
 
  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--muted);
  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
@@ -320,6 +334,28 @@ padding:8px 14px;
 font-size:15px;
 }
 }
+
+/* ===== Weather condition icon system (NEW) ===== */
+.wx-ico{display:inline-flex;align-items:center;justify-content:center;
+ width:1em;height:1em;vertical-align:-0.18em;line-height:0}
+.wx-ico svg{width:100%;height:100%;display:block;overflow:visible}
+@keyframes wx-spin{to{transform:rotate(360deg)}}
+@keyframes wx-drift{0%{transform:translateX(0)}50%{transform:translateX(1.5px)}100%{transform:translateX(0)}}
+@keyframes wx-drop{0%{transform:translateY(-2px);opacity:0}30%{opacity:1}100%{transform:translateY(4px);opacity:0}}
+@keyframes wx-flash{0%,90%,100%{opacity:.25}93%,98%{opacity:1}}
+.wx-sun-rays{transform-origin:12px 12px;animation:wx-spin 22s linear infinite}
+.wx-sun-rays-sm{transform-origin:8px 8px;animation:wx-spin 22s linear infinite}
+.wx-cloud-body{animation:wx-drift 4.5s ease-in-out infinite}
+.wx-rain-drop{animation:wx-drop 1.2s ease-in infinite}
+.wx-rain-drop:nth-child(2){animation-delay:.4s}
+.wx-rain-drop:nth-child(3){animation-delay:.8s}
+.wx-bolt{transform-origin:center;animation:wx-flash 2.6s ease-in-out infinite}
+.hourly-windarrow{display:inline-flex;width:1.05em;height:1.05em;vertical-align:-2px}
+.hourly-windarrow svg{width:100%;height:100%;transition:transform .8s ease}
+@media (prefers-reduced-motion:reduce){
+ .wx-sun-rays,.wx-sun-rays-sm,.wx-cloud-body,.wx-rain-drop,.wx-bolt,
+ .compass-arrow,.compass-arrow.gust-active,.hourly-windarrow svg{animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -384,12 +420,12 @@ font-size:15px;
  </div>
 
  <div class="risk-grid">
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">Wind Speed</div><div class="risk-value" id="r-wind">—</div></div></div>
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">Gusts</div><div class="risk-value" id="r-gust">—</div></div></div>
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div></div></div>
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div></div></div>
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div></div></div>
- <div class="risk-item"><span class="risk-icon"> </span><div class="risk-info"><div class="risk-name">Heat Risk</div><div class="risk-value" id="r-heat">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-wind"></span><div class="risk-info"><div class="risk-name">Wind Speed</div><div class="risk-value" id="r-wind">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-gust"></span><div class="risk-info"><div class="risk-name">Gusts</div><div class="risk-value" id="r-gust">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-storm"></span><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-rain"></span><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-uv"></span><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div></div></div>
+ <div class="risk-item"><span class="risk-icon" id="ri-heat"></span><div class="risk-info"><div class="risk-name">Heat Risk</div><div class="risk-value" id="r-heat">—</div></div></div>
  </div>
 
  <div id="obs-section"></div>
@@ -399,13 +435,13 @@ font-size:15px;
  <div class="section-title">Current Conditions</div>
  <div class="grid-top">
  <div class="metric-card" id="card-temp">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-temp"></div>
  <div class="metric-label">Temperature</div>
  <div class="metric-value" id="cur-temp">—<span class="unit">°C</span></div>
  <div class="metric-sub" id="cur-feels">Feels like —</div>
  </div>
  <div class="metric-card" id="card-wind">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-wind"></div>
  <div class="metric-label">Wind Speed</div>
  <div class="metric-value" id="cur-wind">—<span class="unit">km/h</span></div>
  <div class="wind-compass">
@@ -414,32 +450,32 @@ font-size:15px;
  </div>
  </div>
  <div class="metric-card" id="card-gust">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-gust"></div>
  <div class="metric-label">Wind Gusts</div>
  <div class="metric-value" id="cur-gust">—<span class="unit">km/h</span></div>
  <div class="metric-sub" id="gust-sub">—</div>
  </div>
  <div class="metric-card" id="card-humid">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-humid"></div>
  <div class="metric-label">Humidity</div>
  <div class="metric-value" id="cur-humid">—<span class="unit">%</span></div>
  <div class="metric-sub" id="humid-sub">—</div>
  </div>
  <div class="metric-card" id="card-rain">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-rain"></div>
  <div class="metric-label">Rain (1h)</div>
  <div class="metric-value" id="cur-rain">—<span class="unit">mm</span></div>
  <div class="metric-sub" id="rain-sub">—</div>
  </div>
  <div class="metric-card" id="card-uv">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-uv"></div>
  <div class="metric-label">UV Index</div>
  <div class="metric-value" id="cur-uv" style="font-size:22px">—</div>
  <div class="bar-track"><div class="bar-fill" id="uv-bar" style="width:0%"></div></div>
  <div class="bar-label"><span>Low</span><span>Extreme</span></div>
  </div>
  <div class="metric-card" id="card-cape">
- <div class="metric-icon"> </div>
+ <div class="metric-icon" id="mi-cape"></div>
  <div class="metric-label">Lightning Risk (CAPE)</div>
  <div class="metric-value" id="cur-cape" style="font-size:20px">—</div>
  <div class="bar-track"><div class="bar-fill" id="cape-bar" style="width:0%"></div></div>
@@ -615,18 +651,47 @@ let currentLoc = 0;
 let currentView = 'live';
 let cache = Array(LOCATIONS.length).fill(null);
 
-// ── WMO HELPERS ───────────────────────────────────────────────────────────
-const WMO_ICON = {0:' ',1:' ',2:' ',3:' ',45:' ',48:' ',51:' ',53:' ',55:' ',
- 61:' ',63:' ',65:' ',71:' ',73:' ',75:' ',80:' ',81:' ',82:' ',
- 95:' ',96:' ',99:' '};
+// ── WEATHER CONDITION ICONS (coloured + animated SVG) ───────────────────────
+function svgWrap(inner){ return `<span class="wx-ico">${inner}</span>`; }
+const WX = {
+ sun(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-sun-rays" stroke="var(--wx-clear)" stroke-width="1.6" stroke-linecap="round">`+
+ [...Array(8)].map((_,i)=>{const a=i*45*Math.PI/180,x1=12+Math.cos(a)*8,y1=12+Math.sin(a)*8,x2=12+Math.cos(a)*10.5,y2=12+Math.sin(a)*10.5;return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`}).join('')+
+ `</g><circle cx="12" cy="12" r="5" fill="var(--wx-clear)" stroke="var(--wx-clear2)" stroke-width="1"/></svg>`},
+ partly(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-sun-rays-sm" stroke="var(--wx-clear)" stroke-width="1.4" stroke-linecap="round">`+
+ [...Array(8)].map((_,i)=>{const a=i*45*Math.PI/180,x1=8+Math.cos(a)*5.5,y1=8+Math.sin(a)*5.5,x2=8+Math.cos(a)*7.5,y2=8+Math.sin(a)*7.5;return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`}).join('')+
+ `</g><circle cx="8" cy="8" r="3.4" fill="var(--wx-clear)"/><g class="wx-cloud-body"><path d="M7 17a3.2 3.2 0 0 1 .3-6.4 4.3 4.3 0 0 1 8.2 1.1A3 3 0 0 1 16 17z" fill="var(--wx-cloud)"/></g></svg>`},
+ cloud(dark){const c=dark?'var(--wx-cloud-dk)':'var(--wx-cloud)';return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 18a3.6 3.6 0 0 1 .3-7.2 5 5 0 0 1 9.5 1.3A3.4 3.4 0 0 1 15.5 18z" fill="${c}"/></g></svg>`},
+ rain(heavy){const drops=heavy?[6,11,16]:[8,14];return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 14a3.4 3.4 0 0 1 .3-6.8 4.8 4.8 0 0 1 9 1.2A3.2 3.2 0 0 1 15 14z" fill="var(--wx-cloud-dk)"/></g><g stroke="var(--wx-rain)" stroke-width="1.8" stroke-linecap="round">`+
+ drops.map(x=>`<line class="wx-rain-drop" x1="${x}" y1="16" x2="${x-1}" y2="20"/>`).join('')+`</g></svg>`},
+ drizzle(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 14a3.4 3.4 0 0 1 .3-6.8 4.8 4.8 0 0 1 9 1.2A3.2 3.2 0 0 1 15 14z" fill="var(--wx-cloud)"/></g><g stroke="var(--wx-rain)" stroke-width="1.4" stroke-linecap="round" opacity=".85"><line class="wx-rain-drop" x1="8" y1="16" x2="8" y2="18.5"/><line class="wx-rain-drop" x1="13" y1="16" x2="13" y2="18.5"/></g></svg>`},
+ storm(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 13a3.4 3.4 0 0 1 .3-6.8 4.8 4.8 0 0 1 9 1.2A3.2 3.2 0 0 1 15 13z" fill="var(--wx-cloud-dk)"/></g><polygon class="wx-bolt" points="11,13 8,18 11,18 9.5,22 15,16 12,16 13.5,13" fill="var(--wx-storm-bolt)" stroke="var(--wx-storm)" stroke-width=".6"/></svg>`},
+ fog(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 11a3.2 3.2 0 0 1 .3-6.4 4.6 4.6 0 0 1 8.7 1.1A3 3 0 0 1 14.5 11z" fill="var(--wx-cloud)"/></g><g stroke="var(--wx-fog)" stroke-width="1.6" stroke-linecap="round"><line class="wx-rain-drop" x1="5" y1="15" x2="17" y2="15"/><line class="wx-rain-drop" x1="7" y1="18" x2="19" y2="18"/><line class="wx-rain-drop" x1="5" y1="21" x2="15" y2="21"/></g></svg>`},
+ snow(){return `<svg viewBox="0 0 24 24" fill="none"><g class="wx-cloud-body"><path d="M6 13a3.4 3.4 0 0 1 .3-6.8 4.8 4.8 0 0 1 9 1.2A3.2 3.2 0 0 1 15 13z" fill="var(--wx-cloud)"/></g><g fill="var(--wx-snow)"><circle class="wx-rain-drop" cx="8" cy="17" r="1.1"/><circle class="wx-rain-drop" cx="12" cy="18" r="1.1"/><circle class="wx-rain-drop" cx="15" cy="17" r="1.1"/></g></svg>`}
+};
+const WMO_ICON_FN = {
+ 0:WX.sun, 1:WX.sun, 2:WX.partly, 3:()=>WX.cloud(true),
+ 45:WX.fog, 48:WX.fog,
+ 51:WX.drizzle, 53:WX.drizzle, 55:WX.drizzle,
+ 61:()=>WX.rain(false), 63:()=>WX.rain(false), 65:()=>WX.rain(true),
+ 71:WX.snow, 73:WX.snow, 75:WX.snow,
+ 80:()=>WX.rain(false), 81:()=>WX.rain(false), 82:()=>WX.rain(true),
+ 95:WX.storm, 96:WX.storm, 99:WX.storm
+};
 const WMO_DESC = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
  45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
  80:'Light showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',
  96:'Thunderstorm+hail',99:'Severe thunderstorm'};
-const wmoIcon = c => WMO_ICON[c] || ' ';
+const wmoIcon = c => svgWrap((WMO_ICON_FN[c] || WX.partly)());
 const wmoDesc = c => WMO_DESC[c] || 'Unknown';
 const deg2comp = d => ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16];
+
+// Animated wind-direction arrow — points where the wind blows TO, coloured by speed
+function windArrowSVG(dirDeg, speed){
+ const col = speed>=30 ? 'var(--red)' : speed>=20 ? 'var(--yellow)' : 'var(--accent)';
+ const rot = (dirDeg + 180) % 360; // wind_direction is "from"
+ return `<span class="hourly-windarrow"><svg viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path d="M12 3 L17 13 L12 10.5 L7 13 Z" fill="${col}"/><line x1="12" y1="10" x2="12" y2="21" stroke="${col}" stroke-width="2" stroke-linecap="round"/></svg></span>`;
+}
 
 function capeRisk(v) {
  v = v || 0;
@@ -1141,6 +1206,13 @@ const res = await fetch(obsUrl);
  const hum = obs.rel_hum;
  const when = obs.local_date_time;
 
+ // convert compass text to degrees for an arrow
+ const compIdx = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf((dirTxt||'').toUpperCase());
+ const dirDeg = compIdx >= 0 ? compIdx * 22.5 : null;
+ const dirCell = dirDeg !== null
+ ? `${windArrowSVG(dirDeg, spd)} ${dirTxt}`
+ : `${dirTxt}`;
+
  let compareHtml = '';
  if (lastHourly && lastHIdx != null) {
  const fSpd = Math.round(lastHourly.wind_speed_10m[lastHIdx]);
@@ -1161,7 +1233,7 @@ const res = await fetch(obsUrl);
  <div class="obs-grid">
  <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${Math.round(spd)}<span class="u"> km/h</span></div></div>
  <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${Math.round(gst)}<span class="u"> km/h</span></div></div>
- <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirTxt}</div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirCell}</div></div>
  <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp}<span class="u"> °C</span></div></div>
  <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${hum}<span class="u"> %</span></div></div>
  </div>
@@ -1215,12 +1287,12 @@ function renderExtended(data, loc) {
  html += `<tr>
  <td>${dateLbl}</td>
  <td>${day}</td>
- <td style="font-size:15px">${wmoIcon(r.code)}</td>
+ <td style="font-size:16px">${wmoIcon(r.code)}</td>
  <td>${Math.round(r.mx)}</td>
  <td style="color:var(--muted)">${Math.round(r.mn)}</td>
  <td>${r.rain.toFixed(1)}</td>
  <td>${r.pc}</td>
- <td class="w-${windCls(r.wind)}">${r.wind}</td>
+ <td class="w-${windCls(r.wind)}">${windArrowSVG(r.dir, r.wind)} ${r.wind}</td>
  <td class="w-${windCls(r.gust>=40?40:r.gust>=30?25:0)}">${r.gust}</td>
  <td>${deg2comp(r.dir)}</td>
  <td class="w-${uvI.cls||'ok'}">${r.uv!==null?Math.round(r.uv):'—'}</td>
@@ -1393,9 +1465,9 @@ function render(data, loc) {
  if (isStorm || highWind) {
  banner.className = 'status-banner danger';
  const r = [];
- if (isStorm) r.push(' Thunderstorm / lightning risk');
- if (highWind) r.push(` Wind ${wind} km/h gusts ${gust}`);
- st.textContent = ` SUSPEND ROWING — ${r.join(' · ')} — ${loc.name}`;
+ if (isStorm) r.push('Thunderstorm / lightning risk');
+ if (highWind) r.push(`Wind ${wind} km/h gusts ${gust}`);
+ st.innerHTML = `${wmoIcon(code)} SUSPEND ROWING — ${r.join(' · ')} — ${loc.name}`;
  } else if (wind >= 20 || cape > 300 || gust >= 30 || uv >= 8) {
  banner.className = 'status-banner caution';
  const r = [];
@@ -1403,10 +1475,10 @@ function render(data, loc) {
  if (gust >= 30) r.push(`Gusts ${gust} km/h`);
  if (uv >= 8) r.push(`UV ${uv}`);
  if (cape > 300) r.push('Storm risk');
- st.textContent = ` CAUTION — ${r.join(' · ')} — ${loc.name}`;
+ st.innerHTML = `${wmoIcon(code)} CAUTION — ${r.join(' · ')} — ${loc.name}`;
  } else {
  banner.className = 'status-banner safe';
- st.textContent = ` CONDITIONS GOOD — ${wmoDesc(code)}, Wind ${wind} km/h, UV ${uv ?? '—'} — ${loc.name}`;
+ st.innerHTML = `${wmoIcon(code)} CONDITIONS GOOD — ${wmoDesc(code)}, Wind ${wind} km/h, UV ${uv ?? '—'} — ${loc.name}`;
  }
 
  document.getElementById('blitz-link').href = loc.blitz;
@@ -1418,17 +1490,39 @@ function render(data, loc) {
  el.className = 'risk-value ' + cls;
  };
 
+ // Risk-row glyphs (coloured weather icons)
+ document.getElementById('ri-wind').innerHTML = windArrowSVG(wdir, wind);
+ document.getElementById('ri-gust').innerHTML = windArrowSVG(wdir, gust);
+ document.getElementById('ri-storm').innerHTML = (isStorm? wmoIcon(95) : wmoIcon(code));
+ document.getElementById('ri-rain').innerHTML = wmoIcon(maxPP>40?61:(code===0||code===1?1:code));
+ document.getElementById('ri-uv').innerHTML = wmoIcon(0);
+ document.getElementById('ri-heat').innerHTML = wmoIcon(0);
+
+ // Metric-card glyphs
+ document.getElementById('mi-temp').innerHTML = wmoIcon(code);
+ document.getElementById('mi-wind').innerHTML = windArrowSVG(wdir, wind);
+ document.getElementById('mi-gust').innerHTML = windArrowSVG(wdir, gust);
+ document.getElementById('mi-humid').innerHTML = wmoIcon(humid>80?3:2);
+ document.getElementById('mi-rain').innerHTML = wmoIcon(rain>1?61:(maxPP>40?51:2));
+ document.getElementById('mi-uv').innerHTML = wmoIcon(0);
+ document.getElementById('mi-cape').innerHTML = wmoIcon(cape>300?95:2);
+
  document.getElementById('cur-temp').innerHTML = `${temp}<span class="unit">°C</span>`;
  document.getElementById('cur-feels').textContent = `Feels like ${feels}°C`;
  document.getElementById('card-temp').className = 'metric-card ' + (temp>35?'danger':temp>28?'warn':'ok');
 
  document.getElementById('cur-wind').innerHTML = `${wind}<span class="unit">km/h</span>`;
  document.getElementById('cur-wdir').textContent = `From ${deg2comp(wdir)} (${wdir}°)`;
- document.getElementById('wind-arrow').style.transform = `rotate(${wdir}deg)`;
+ // ANIMATED COMPASS ARROW — rotate to blowing-toward, colour + pulse by speed
+ const wa = document.getElementById('wind-arrow');
+ wa.style.transform = `rotate(${(wdir+180)%360}deg)`;
+ wa.style.background = wind>=30?'var(--red)':wind>=20?'var(--yellow)':'var(--accent)';
+ wa.style.color = wind>=30?'var(--red)':wind>=20?'var(--yellow)':'var(--accent)';
+ wa.classList.toggle('gust-active', gust>=30);
  document.getElementById('card-wind').className = 'metric-card ' + (wind>=30?'danger':wind>=20?'warn':'ok');
 
  document.getElementById('cur-gust').innerHTML = `${gust}<span class="unit">km/h</span>`;
- document.getElementById('gust-sub').textContent = gust>=40?' Above suspension threshold':gust>=30?'Approaching limit':'Within safe limits';
+ document.getElementById('gust-sub').textContent = gust>=40?'Above suspension threshold':gust>=30?'Approaching limit':'Within safe limits';
  document.getElementById('card-gust').className = 'metric-card ' + (gust>=40?'danger':gust>=30?'warn':'ok');
 
  document.getElementById('cur-humid').innerHTML = `${humid}<span class="unit">%</span>`;
@@ -1456,7 +1550,7 @@ function render(data, loc) {
  setR('r-storm', cI.label, cI.cls);
  setR('r-rain', `${maxPP}%`, maxPP>70?'danger':maxPP>40?'warn':'ok');
  setR('r-uv', uv!==null?uvI.label:'—', uvI.cls);
- setR('r-heat', temp>35?'High ':temp>28?'Moderate':'Low', temp>35?'danger':temp>28?'warn':'ok');
+ setR('r-heat', temp>35?'High':temp>28?'Moderate':'Low', temp>35?'danger':temp>28?'warn':'ok');
 
  renderTides(loc);
  renderWindGraph(h, hIdx);
@@ -1474,7 +1568,7 @@ function render(data, loc) {
  <div class="hourly-time">${isNow?'NOW':hh}</div>
  <div class="hourly-icon">${wmoIcon(h.weathercode[i])}</div>
  <div class="hourly-temp">${Math.round(h.temperature_2m[i])}°</div>
- <div class="hourly-wind"> ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
+ <div class="hourly-wind">${windArrowSVG(h.wind_direction_10m[i], h.wind_speed_10m[i])} ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
  <div class="hourly-rain"> ${h.precipitation_probability[i]??0}%</div>`;
  row.appendChild(d);
  }
@@ -1491,6 +1585,7 @@ function render(data, loc) {
  const uvD = dd.uv_index_max ? dd.uv_index_max[i] : null;
  const uvDI = uvInfo(uvD!==null?Math.round(uvD):null);
  const cDI = capeRisk(dd.cape_max ? dd.cape_max[i] : 0);
+ const wMax = Math.round(dd.wind_speed_10m_max[i]);
  const card = document.createElement('div');
  card.className = 'daily-card' + (dd.time[i]===todayStr?' today':'');
  card.innerHTML = `
@@ -1498,7 +1593,7 @@ function render(data, loc) {
  <div class="daily-icon">${wmoIcon(dd.weathercode[i])}</div>
  <div class="daily-temps">${Math.round(dd.temperature_2m_max[i])}°<span class="daily-lo"> / ${Math.round(dd.temperature_2m_min[i])}°</span></div>
  <div class="daily-detail">
- ${Math.round(dd.wind_speed_10m_max[i])} km/h<br>
+ ${windArrowSVG(dd.wind_direction_10m_dominant[i], wMax)} ${wMax} km/h<br>
  ${rp}%<br>
  UV ${uvD!==null?uvDI.label:'—'}<br>
  ${cDI.label}
@@ -1585,23 +1680,6 @@ setInterval(() => { cache = Array(LOCATIONS.length).fill(null); loadWeather(); }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 loadWeather();
-
- function updateCurrentTime(){
-const now = new Date();
-
-document.getElementById("currentTime").textContent =
-now.toLocaleString("en-AU", {
-weekday: "short",
-hour: "2-digit",
-minute: "2-digit",
-hour12: true,
-timeZone: "Australia/Perth"
-}) + " AWST";
-}
-
-updateCurrentTime();
-setInterval(updateCurrentTime, 60000);
-
 </script>
 </body>
 </html>
