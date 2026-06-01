@@ -1582,6 +1582,22 @@ setInterval(() => { cache = Array(LOCATIONS.length).fill(null); loadWeather(); }
 // ── BOOT ──────────────────────────────────────────────────────────────────
 loadWeather();
 
+ function updateCurrentTime(){
+const now = new Date();
+
+document.getElementById("currentTime").textContent =
+now.toLocaleString("en-AU", {
+weekday: "short",
+hour: "2-digit",
+minute: "2-digit",
+hour12: true,
+timeZone: "Australia/Perth"
+}) + " AWST";
+}
+
+updateCurrentTime();
+setInterval(updateCurrentTime, 60000);
+
 </script>
 </body>
 </html>
