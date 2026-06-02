@@ -1661,14 +1661,47 @@ renderExtended(data, loc);
 
 // ── CONTROLS ──────────────────────────────────────────────────────────────
 function selectLocation(idx) {
-currentLoc = idx;
-document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
-if (cache[idx]) {
-render(cache[idx], LOCATIONS[idx]);
-} else {
-loadWeather();
+ currentLoc = idx;
+ document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+ syncLocDropdown(idx);
+ // bring the chosen tab into view within the scrolling row
+ const tabEl = document.querySelectorAll('#location-tabs .tab')[idx];
+ if (tabEl) tabEl.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+ closeLocDropdown();
+ if (cache[idx]) {
+ render(cache[idx], LOCATIONS[idx]);
+ } else {
+ loadWeather();
+ }
 }
+
+// ── LOCATION DROPDOWN ──────────────────────────────────────────────────────
+function buildLocDropdown() {
+ const menu = document.getElementById('loc-dd-menu');
+ const icons = ['freshwater_bay','champion_lakes','sydney_sirc','lake_nagambie',
+ 'lake_barrington','wyaralong_dam','west_lakes','lake_burley_griffin'];
+ menu.innerHTML = LOCATIONS.map((loc,i) => {
+ const short = loc.name.split(',')[0];
+ return `<div class="loc-dd-item${i===currentLoc?' active':''}" data-idx="${i}" onclick="selectLocation(${i})">
+ <img src="icons/${icons[i]}.png" alt="">${short}</div>`;
+ }).join('');
 }
+function syncLocDropdown(idx) {
+ document.querySelectorAll('.loc-dd-item').forEach(el =>
+ el.classList.toggle('active', +el.dataset.idx === idx));
+}
+function toggleLocDropdown(e) {
+ e.stopPropagation();
+ document.getElementById('loc-dropdown').classList.toggle('open');
+}
+function closeLocDropdown() {
+ document.getElementById('loc-dropdown').classList.remove('open');
+}
+document.addEventListener('click', e => {
+ const dd = document.getElementById('loc-dropdown');
+ if (dd && !dd.contains(e.target)) closeLocDropdown();
+});
+buildLocDropdown();
 
 function selectView(view) {
 currentView = view;
