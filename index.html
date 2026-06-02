@@ -580,7 +580,8 @@ name: "Freshwater Bay, Mosman Park",
 lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.99;x=115.77;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-31.99&lon=115.77&zoom=9",
-obsStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.9091.json" }
+obsStation: { name: "Swanbourne", dist: "~4 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" }
 },
 {
 name: "Champion Lakes, Armadale",
@@ -1167,85 +1168,95 @@ ctx.fillText('km/h', 4, padT - 14);
 
 // ── BOM LIVE OBSERVATIONS ─────────────────────────────────────────────────
 async function renderObservations(loc) {
-const sec = document.getElementById('obs-section');
-const stn = loc.obsStation;
-if (!stn) { sec.innerHTML = ''; return; }
+ const sec = document.getElementById('obs-section');
+ const stn = loc.obsStation;
+ const wStn = loc.windStation || stn; // fall back to obsStation if no windStation
+ if (!stn) { sec.innerHTML = ''; return; }
 
-if (!CORS_PROXY) {
-sec.innerHTML = `
-<div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
-<div class="obs-widget">
-<div class="obs-pending">
-<strong style="color:var(--text)">Live BOM station readings</strong> for <strong>${stn.name}</strong> are ready to switch on.
-BOM blocks direct browser access, so this needs a one-line CORS proxy when hosted.
-On Netlify, set <code>CORS_PROXY</code> near the top of the script to <code>https://corsproxy.io/?</code>
-(quick test) or your own Netlify Function for production.
-Until then, the forecast wind above is from Open-Meteo (BOM ACCESS model).
-<br><br>
-Station feed: <code style="word-break:break-all">${stn.json.replace('http://','')}</code>
-</div>
-</div>`;
-return;
+ if (!CORS_PROXY) {
+ sec.innerHTML = `
+ <div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
+ <div class="obs-widget">
+ <div class="obs-pending">
+ <strong style="color:var(--text)">Live BOM station readings</strong> are ready to switch on.
+ BOM blocks direct browser access, so this needs a one-line CORS proxy when hosted.
+ <br><br>
+ Main station feed: <code style="word-break:break-all">${stn.json.replace('http://','')}</code><br>
+ Wind station feed: <code style="word-break:break-all">${wStn.json.replace('http://','')}</code>
+ </div>
+ </div>`;
+ return;
+ }
+
+ sec.innerHTML = `
+ <div class="section-title">Live Observations · ${stn.name} + wind from ${wStn.name}</div>
+ <div class="obs-widget"><div class="obs-pending"><span class="spinner"></span> Fetching live readings…</div></div>`;
+
+ try {
+ // Fetch both stations in parallel
+ const [mainRes, windRes] = await Promise.all([
+ fetch(bomObsUrl(stn.json)),
+ fetch(bomObsUrl(wStn.json))
+ ]);
+ if (!mainRes.ok) throw new Error('HTTP ' + mainRes.status + ' (main station)');
+ if (!windRes.ok) throw new Error('HTTP ' + windRes.status + ' (wind station)');
+
+ const mainData = await mainRes.json();
+ const windData = await windRes.json();
+
+ const obs = mainData.observations.data[0];
+ const wObs = windData.observations.data[0];
+
+ // Wind + gusts from Melville Water
+ const spd = wObs.wind_spd_kmh;
+ const gst = wObs.gust_kmh;
+ const dirTxt = wObs.wind_dir;
+ const when = wObs.local_date_time;
+
+ // Everything else from Swanbourne
+ const temp = obs.air_temp;
+ const hum = obs.rel_hum;
+ const mainWhen = obs.local_date_time;
+
+ const compIdx = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf((dirTxt||'').toUpperCase());
+ const dirDeg = compIdx >= 0 ? compIdx * 22.5 : null;
+ const dirCell = dirDeg !== null ? `${windArrowSVG(dirDeg, spd)} ${dirTxt}` : `${dirTxt}`;
+
+ let compareHtml = '';
+ if (lastHourly && lastHIdx != null) {
+ const fSpd = Math.round(lastHourly.wind_speed_10m[lastHIdx]);
+ const diff = Math.round(spd) - fSpd;
+ const sign = diff > 0 ? '+' : '';
+ compareHtml = `<div class="obs-compare"><strong style="color:var(--text)">Observed vs forecast:</strong>
+ live ${Math.round(spd)} km/h vs forecast ${fSpd} km/h (${sign}${diff} km/h).
+ ${Math.abs(diff) >= 8 ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
+ }
+
+ sec.innerHTML = `
+ <div class="section-title">Live Observations · wind from ${wStn.name} · other data from ${stn.name}</div>
+ <div class="obs-widget">
+ <div class="obs-head">
+ <div class="obs-title"><span class="obs-live-dot"></span>Live</div>
+ <div class="obs-time">Wind: ${when} · Other: ${mainWhen} · BOM</div>
+ </div>
+ <div class="obs-grid">
+ <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${Math.round(spd)}<span class="u"> km/h</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${Math.round(gst)}<span class="u"> km/h</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirCell}</div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp}<span class="u"> °C</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${hum}<span class="u"> %</span></div></div>
+ </div>
+ ${compareHtml}
+ </div>`;
+
+ } catch (err) {
+ sec.innerHTML = `
+ <div class="section-title">Live Observations</div>
+ <div class="obs-widget"><div class="obs-pending">Couldn't reach station feed (${err.message}).
+ The proxy may be rate-limited or a station briefly offline. Forecast wind above is unaffected.</div></div>`;
+ }
 }
 
-sec.innerHTML = `
-<div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
-<div class="obs-widget"><div class="obs-pending"><span class="spinner"></span> Fetching latest reading from ${stn.name}…</div></div>`;
-
-try {
-const obsUrl = bomObsUrl(loc.obsStation.json);
-const res = await fetch(obsUrl);
-if (!res.ok) throw new Error('HTTP ' + res.status);
-const data = await res.json();
-const obs = data.observations.data[0];
-
-const spd = obs.wind_spd_kmh;
-const gst = obs.gust_kmh;
-const dirTxt = obs.wind_dir;
-const temp = obs.air_temp;
-const hum = obs.rel_hum;
-const when = obs.local_date_time;
-
-// convert compass text to degrees for an arrow
-const compIdx = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf((dirTxt||'').toUpperCase());
-const dirDeg = compIdx >= 0 ? compIdx * 22.5 : null;
-const dirCell = dirDeg !== null
-? `${windArrowSVG(dirDeg, spd)} ${dirTxt}`
-: `${dirTxt}`;
-
-let compareHtml = '';
-if (lastHourly && lastHIdx != null) {
-const fSpd = Math.round(lastHourly.wind_speed_10m[lastHIdx]);
-const diff = Math.round(spd) - fSpd;
-const sign = diff > 0 ? '+' : '';
-compareHtml = `<div class="obs-compare"> <strong style="color:var(--text)">Observed vs forecast:</strong>
-live ${Math.round(spd)} km/h vs forecast ${fSpd} km/h (${sign}${diff} km/h).
-${Math.abs(diff) >= 8 ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
-}
-
-sec.innerHTML = `
-<div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
-<div class="obs-widget">
-<div class="obs-head">
-<div class="obs-title"><span class="obs-live-dot"></span>Live — ${stn.name}</div>
-<div class="obs-time">Recorded ${when} · BOM</div>
-</div>
-<div class="obs-grid">
-<div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${Math.round(spd)}<span class="u"> km/h</span></div></div>
-<div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${Math.round(gst)}<span class="u"> km/h</span></div></div>
-<div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirCell}</div></div>
-<div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp}<span class="u"> °C</span></div></div>
-<div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${hum}<span class="u"> %</span></div></div>
-</div>
-${compareHtml}
-</div>`;
-} catch (err) {
-sec.innerHTML = `
-<div class="section-title">Live Observations · ${stn.name}</div>
-<div class="obs-widget"><div class="obs-pending"> Couldn't reach the ${stn.name} feed (${err.message}).
-The proxy may be rate-limited or the station briefly offline. Forecast wind above is unaffected.</div></div>`;
-}
-}
 
 // ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
 function renderExtended(data, loc) {
