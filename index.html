@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Row Weather · Perth &amp; Sydney</title>
+<title>Row Weather · Australian Rowing Venues</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -23,9 +23,6 @@ radial-gradient(ellipse at 85% 100%,rgba(0,180,216,.08) 0%,transparent 45%);}
 header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
 border-bottom:1px solid var(--border);background:rgba(8,18,31,.9);
 backdrop-filter:blur(12px);position:sticky;top:0;z-index:200;gap:10px;flex-wrap:wrap}
-.logo{display:flex;align-items:center}
-.logo-img{height:42px;width:auto;display:block}
-.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 #clock{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px}
 .btn{background:var(--accent2);color:#fff;border:none;padding:7px 14px;border-radius:4px;
 font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;
@@ -71,6 +68,7 @@ text-transform:uppercase;cursor:pointer;transition:background .2s;text-decoratio
  transition:max-height .28s ease,opacity .2s ease}
  .loc-dropdown.open .loc-dd-menu{max-height:60vh;overflow-y:auto;opacity:1}
  .loc-dd-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;
+ width:100%;text-align:left;background:transparent;border:0;
  font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;
  text-transform:uppercase;color:var(--muted);border-left:3px solid transparent;
  transition:all .15s;white-space:nowrap}
@@ -172,14 +170,13 @@ text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .compass-ring{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;position:relative;flex-shrink:0;
 background:radial-gradient(circle at 50% 50%,rgba(0,180,216,.06),transparent 70%)}
 .compass-arrow{position:absolute;top:50%;left:50%;width:2px;height:14px;
-margin-left:-1px;margin-top:-12px;background:var(--accent);
+margin-left:-1px;margin-top:-12px;background:var(--accent);color:var(--accent);
 transform-origin:bottom center;border-radius:2px 2px 0 0;
 transition:transform 1.1s cubic-bezier(.22,1,.36,1),background .4s}
 .compass-arrow::after{content:'';position:absolute;top:-4px;left:50%;margin-left:-4px;
 border-left:4px solid transparent;border-right:4px solid transparent;
 border-bottom:6px solid currentColor;color:inherit;
 width:0;height:0;background:none}
-.compass-arrow{color:var(--accent)}
 .compass-arrow.gust-active{animation:pulse 1.2s ease-in-out infinite}
 
 .bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin-top:6px}
@@ -190,12 +187,6 @@ width:0;height:0;background:none}
 .tide-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .tide-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--tide)}
 .tide-note{font-size:11px;color:var(--muted)}
-.tide-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
-.tide-card{background:var(--panel2);border:1px solid rgba(72,202,228,.15);border-radius:6px;padding:12px 14px;text-align:center;min-width:90px;flex-shrink:0}
-.tide-card.next-tide{border-color:var(--tide);background:rgba(72,202,228,.08)}
-.tide-type{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
-.tide-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--tide);margin:4px 0}
-.tide-time{font-size:11px;color:var(--muted)}
 .tide-freshwater{padding:14px 16px;background:rgba(72,202,228,.05);border-radius:6px;
 border:1px dashed rgba(72,202,228,.2);font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px}
 
@@ -289,7 +280,9 @@ border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infin
 border-radius:6px;padding:14px;color:var(--red);font-size:13px;margin-bottom:14px}
 
 footer{text-align:center;padding:18px;font-size:10px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--border);margin-top:16px}
-@media(max-width:600px){.grid-top{grid-template-columns:repeat(2,1fr)}.logo-img{height:34px}}
+@media(max-width:600px){.grid-top{grid-template-columns:repeat(2,1fr)}}
+/* Keyboard focus ring for all interactive controls */
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .compact-hero{
 margin:10px 16px 18px;
 padding:14px 18px;
@@ -309,9 +302,6 @@ width:min(100%,620px);
 max-height:95px;
 object-fit:contain;
 display:block;
-}
-
-.hero-logo{
 filter:drop-shadow(0 0 12px rgba(0,180,216,.18));
 }
 
@@ -415,37 +405,30 @@ onclick="loadWeather()">
 <div class="main">
 
 <div class="location-bar">
- <div class="location-tabs" id="location-tabs">
- <div class="tab active" onclick="selectLocation(0)"><img class="tab-icon" src="icons/freshwater_bay.png" alt="">Freshwater Bay</div>
- <div class="tab" onclick="selectLocation(1)"><img class="tab-icon" src="icons/champion_lakes.png" alt="">Champion Lakes</div>
- <div class="tab" onclick="selectLocation(2)"><img class="tab-icon" src="icons/sydney_sirc.png" alt="">Sydney SIRC</div>
- <div class="tab" onclick="selectLocation(3)"><img class="tab-icon" src="icons/lake_nagambie.png" alt="">Lake Nagambie</div>
- <div class="tab" onclick="selectLocation(4)"><img class="tab-icon" src="icons/lake_barrington.png" alt="">Lake Barrington</div>
- <div class="tab" onclick="selectLocation(5)"><img class="tab-icon" src="icons/wyaralong_dam.png" alt="">Wyaralong Dam</div>
- <div class="tab" onclick="selectLocation(6)"><img class="tab-icon" src="icons/west_lakes.png" alt="">West Lakes</div>
- <div class="tab" onclick="selectLocation(7)"><img class="tab-icon" src="icons/lake_burley_griffin.png" alt="">Lake Burley Griffin</div>
- </div>
+ <!-- Tabs and dropdown items are generated from LOCATIONS in the script -->
+ <div class="location-tabs" id="location-tabs" role="tablist" aria-label="Venue"></div>
 
  <div class="loc-dropdown" id="loc-dropdown">
- <div class="loc-dd-btn" onclick="toggleLocDropdown(event)">
- <span>All</span><span class="chev">▼</span>
- </div>
+ <button type="button" class="loc-dd-btn" id="loc-dd-btn" aria-haspopup="true" aria-expanded="false"
+ aria-controls="loc-dd-menu" onclick="toggleLocDropdown(event)">
+ <span>All</span><span class="chev" aria-hidden="true">▼</span>
+ </button>
  <div class="loc-dd-menu" id="loc-dd-menu"></div>
  </div>
 </div>
 
 <div class="view-tabs">
-<button class="view-tab active" id="vt-live" onclick="selectView('live')"> Live &amp; 7-Day</button>
-<button class="view-tab" id="vt-ext" onclick="selectView('ext')"> Extended Outlook (8–16 Day)</button>
+<button type="button" class="view-tab active" id="vt-live" onclick="selectView('live')">Live &amp; 7-Day</button>
+<button type="button" class="view-tab" id="vt-ext" onclick="selectView('ext')">Extended Outlook (8–16 Day)</button>
 </div>
 
-<div id="error-box" style="display:none" class="error-msg"></div>
+<div id="error-box" style="display:none" class="error-msg" role="alert"></div>
 
 <!-- ════════ LIVE / 7-DAY VIEW ════════ -->
 <div class="view-panel active" id="panel-live">
 
-<div class="status-banner loading" id="status-banner">
-<div class="status-dot"></div>
+<div class="status-banner loading" id="status-banner" role="status" aria-live="polite">
+<div class="status-dot" aria-hidden="true"></div>
 <span id="status-text"><span class="spinner"></span> Loading weather data…</span>
 </div>
 
@@ -456,8 +439,8 @@ onclick="loadWeather()">
 <span class="lightning-badge">Live Maps</span>
 </div>
 <div class="lightning-links">
-<a class="btn btn-outline" id="blitz-link" href="#" target="_blank"> Blitzortung</a>
-<a class="btn btn-outline" id="bom-link" href="#" target="_blank"> BOM Radar</a>
+<a class="btn btn-outline" id="blitz-link" href="#" target="_blank" rel="noopener">Blitzortung</a>
+<a class="btn btn-outline" id="bom-link" href="#" target="_blank" rel="noopener">BOM Radar</a>
 </div>
 </div>
 
@@ -553,19 +536,19 @@ onclick="loadWeather()">
 
 <div style="margin-top:18px;padding:12px 15px;background:rgba(0,180,216,.04);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);line-height:1.8">
 <strong style="color:var(--text)">Lightning / CAPE:</strong> CAPE &gt;1000 J/kg = clear the water immediately. Use Blitzortung button for live strike maps. &nbsp;|&nbsp;
-<strong style="color:var(--text)">Tides:</strong> Harmonic predictions based on Fremantle gauge constituents (~4 km from Freshwater Bay). SIRC &amp; Champion Lakes are freshwater — tides not applicable. &nbsp;|&nbsp;
-<strong style="color:var(--text)">Wind:</strong> Forecast from Open-Meteo (BOM ACCESS model). Live observations from nearest BOM station (Swanbourne / Perth Airport / Penrith Lakes). &nbsp;|&nbsp;
-Data: <a href="https://open-meteo.com" target="_blank" style="color:var(--accent)">Open-Meteo</a> (BOM model) · Auto-refreshes every 10 min
+<strong style="color:var(--text)">Tides:</strong> Approximate harmonic prediction for the Fremantle gauge (~4 km from Freshwater Bay) — check against BOM tide tables. All other venues are freshwater — tides not applicable. &nbsp;|&nbsp;
+<strong style="color:var(--text)">Wind:</strong> Forecast from Open-Meteo. Live observations from the nearest BOM station (named above); the status banner uses whichever of forecast or live wind is worse. &nbsp;|&nbsp;
+Data: <a href="https://open-meteo.com" target="_blank" rel="noopener" style="color:var(--accent)">Open-Meteo</a> · Auto-refreshes every 10 min while open
 </div>
 </div>
 
 <!-- ════════ EXTENDED OUTLOOK VIEW ════════ -->
 <div class="view-panel" id="panel-ext">
 
-<div class="ext-warn"> <strong>Extended outlook (days 8–16).</strong> The forecast model extends to 16 days, so this shows real days 8–16 pulled from the same Open-Meteo call. Confidence drops the further out you look — treat the back end as a trend, not a precise forecast. Wind &amp; rain matter most for rowing planning.</div>
+<div class="ext-warn"><strong>Extended outlook (days 8–16).</strong> The forecast model extends to 16 days, so this shows real days 8–16 pulled from the same Open-Meteo call. Confidence drops the further out you look — treat the back end as a trend, not a precise forecast. Wind &amp; rain matter most for rowing planning.</div>
 
-<div id="ext-status" class="status-banner loading">
-<div class="status-dot"></div>
+<div id="ext-status" class="status-banner loading" role="status" aria-live="polite">
+<div class="status-dot" aria-hidden="true"></div>
 <span><span class="spinner"></span> Loading extended outlook…</span>
 </div>
 
@@ -606,69 +589,69 @@ Data: <a href="https://open-meteo.com" target="_blank" style="color:var(--accent
 
 <div style="margin-top:6px;padding:12px 15px;background:rgba(0,180,216,.04);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);line-height:1.8">
 <strong style="color:var(--text)">Planning use:</strong> Best for picking regatta &amp; training days a week or two out. Green = rowable wind (&lt;20 km/h max), amber = caution (20–30), red = likely suspension (&gt;30). &nbsp;|&nbsp;
-Same Open-Meteo (BOM ACCESS) 16-day call as the live view.
+Same Open-Meteo 16-day call as the live view.
 </div>
 </div>
 
 </div>
 
-<footer>Row Weather · IGSSA Rowing · Perth &amp; Sydney · Open-Meteo CC BY 4.0</footer>
+<footer>Row Weather · IGSSA Rowing · Australian rowing venues · Open-Meteo CC BY 4.0</footer>
 
 <script>
 // ── LOCATIONS ──────────────────────────────────────────────────────────────
 const LOCATIONS = [
 {
-name: "Freshwater Bay, Mosman Park",
+name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png",
 lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.99;x=115.77;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-31.99&lon=115.77&zoom=9",
-obsStation: { name: "Swanbourne", dist: "~4 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
-windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" }
+obsStation: { name: "Swanbourne", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" }
 },
 {
-name: "Champion Lakes, Armadale",
+name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion_lakes.png",
 lat: -32.1570, lon: 116.0010, tz: "Australia/Perth", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.16;x=116.00;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-32.16&lon=116.00&zoom=9",
-obsStation: { name: "Perth Airport", dist: "~14 km", json: "http://www.bom.gov.au/fwo/IDW60801/IDW60801.94610.json" }
+obsStation: { name: "Perth Airport", dist: "~14 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94610.json" }
 },
 {
-name: "Sydney International Regatta Centre, Penrith",
+name: "Sydney International Regatta Centre, Penrith", short: "Sydney SIRC", icon: "icons/sydney_sirc.png",
 lat: -33.7580, lon: 150.6730, tz: "Australia/Sydney", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-33.76;x=150.67;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-33.76&lon=150.67&zoom=9",
-obsStation: { name: "Penrith Lakes AWS", dist: "~2 km", json: "http://www.bom.gov.au/fwo/IDN60801/IDN60801.94759.json" }
+obsStation: { name: "Penrith Lakes AWS", dist: "~2 km", json: "https://www.bom.gov.au/fwo/IDN60801/IDN60801.94759.json" }
 },
 {
-name: "Lake Nagambie, Victoria",
+name: "Lake Nagambie, Victoria", short: "Lake Nagambie", icon: "icons/lake_nagambie.png",
 lat: -36.7850, lon: 145.1700, tz: "Australia/Melbourne", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-36.79;x=145.17;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-36.79&lon=145.17&zoom=9",
 obsStation: { name: "Shepparton Airport", dist: "~40 km", json: "https://www.bom.gov.au/fwo/IDV60801/IDV60801.94875.json" }
 },
 {
-name: "Lake Barrington, Tasmania",
+name: "Lake Barrington, Tasmania", short: "Lake Barrington", icon: "icons/lake_barrington.png",
 lat: -41.3650, lon: 146.2300, tz: "Australia/Hobart", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-41.37;x=146.23;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-41.37&lon=146.23&zoom=9",
 obsStation: { name: "Sheffield School Farm", dist: "~8 km", json: "https://www.bom.gov.au/fwo/IDT60801/IDT60801.94955.json" }
 },
 {
-name: "Wyaralong Dam, Queensland",
+name: "Wyaralong Dam, Queensland", short: "Wyaralong Dam", icon: "icons/wyaralong_dam.png",
 lat: -27.9150, lon: 152.8850, tz: "Australia/Brisbane", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-27.92;x=152.89;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-27.92&lon=152.89&zoom=9",
 obsStation: { name: "Beaudesert AWS", dist: "~12 km", json: "https://www.bom.gov.au/fwo/IDQ60801/IDQ60801.95575.json" }
 },
 {
-name: "West Lakes, South Australia",
+name: "West Lakes, South Australia", short: "West Lakes", icon: "icons/west_lakes.png",
 lat: -34.8720, lon: 138.4890, tz: "Australia/Adelaide", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-34.87;x=138.49;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-34.87&lon=138.49&zoom=9",
 obsStation: { name: "Adelaide West Terrace", dist: "~13 km", json: "https://www.bom.gov.au/fwo/IDS60801/IDS60801.94648.json" }
 },
 {
-name: "Lake Burley Griffin, ACT",
+name: "Lake Burley Griffin, ACT", short: "Lake Burley Griffin", icon: "icons/lake_burley_griffin.png",
 lat: -35.2930, lon: 149.1200, tz: "Australia/Sydney", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-35.29;x=149.12;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-35.29&lon=149.12&zoom=9",
@@ -690,9 +673,52 @@ if (rawUrl.startsWith(CORS_PROXY)) return rawUrl;
 return CORS_PROXY + encodeURIComponent(rawUrl);
 }
 
+// ── SAFETY THRESHOLDS (single source of truth) ────────────────────────────
+// Change a limit here and every banner, card, chart and table follows.
+const THRESHOLDS = {
+wind: { caution: 20, danger: 30 }, // km/h sustained
+gust: { caution: 30, danger: 40 }, // km/h
+cape: { moderate: 300, high: 1000, extreme: 2500 }, // J/kg
+uv: { caution: 8 },
+rainChance: { caution: 40, danger: 70 }, // %
+rainMm: { caution: 1, danger: 5 }, // mm in last hour
+temp: { caution: 28, danger: 35 }, // °C
+obsDiff: 8 // km/h gap between live and forecast wind worth flagging
+};
+const STORM_CODES = [95, 96, 99];
+const REFRESH_MS = 10 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 15000;
+
+const level = (v, t) => v >= t.danger ? 'danger' : v >= t.caution ? 'warn' : 'ok';
+const LEVEL_COLOUR = { ok: 'var(--accent)', warn: 'var(--yellow)', danger: 'var(--red)' };
+const LEVEL_HEX = { ok: '#00b4d8', warn: '#ffd166', danger: '#e63946' }; // for canvas
+
+// Escape text from external feeds before it goes into innerHTML
+function esc(v) {
+return String(v ?? '').replace(/[&<>"']/g, ch =>
+({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// fetch() with a timeout so a hung request can't leave the page stuck on "Loading…"
+async function fetchWithTimeout(url, ms = FETCH_TIMEOUT_MS) {
+const ctrl = new AbortController();
+const timer = setTimeout(() => ctrl.abort(), ms);
+try {
+return await fetch(url, { signal: ctrl.signal });
+} catch (err) {
+if (err.name === 'AbortError') throw new Error('request timed out');
+throw err;
+} finally {
+clearTimeout(timer);
+}
+}
+
 let currentLoc = 0;
 let currentView = 'live';
+// cache[i] = { data, at } — `at` is when it was fetched, so stale entries get refetched
 let cache = Array(LOCATIONS.length).fill(null);
+const isFresh = idx => cache[idx] && (Date.now() - cache[idx].at) < REFRESH_MS;
+let lastForecast = null; // forecast values the status banner was last built from
 
 // ── WEATHER CONDITION ICONS (coloured + animated SVG) ───────────────────────
 function svgWrap(inner){ return `<span class="wx-ico">${inner}</span>`; }
@@ -731,17 +757,18 @@ const deg2comp = d => ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW',
 
 // Animated wind-direction arrow — points where the wind blows TO, coloured by speed
 function windArrowSVG(dirDeg, speed){
-const col = speed>=30 ? 'var(--red)' : speed>=20 ? 'var(--yellow)' : 'var(--accent)';
+const col = LEVEL_COLOUR[windCls(speed)];
 const rot = (dirDeg + 180) % 360; // wind_direction is "from"
 return `<span class="hourly-windarrow"><svg viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path d="M12 3 L17 13 L12 10.5 L7 13 Z" fill="${col}"/><line x1="12" y1="10" x2="12" y2="21" stroke="${col}" stroke-width="2" stroke-linecap="round"/></svg></span>`;
 }
 
 function capeRisk(v) {
 v = v || 0;
-if (v < 300) return {label:'Low', cls:'ok', pct: Math.min(v/300*25, 25)};
-if (v < 1000) return {label:'Moderate', cls:'warn', pct: 25+(v-300)/700*35};
-if (v < 2500) return {label:'HIGH ', cls:'danger', pct: 60+(v-1000)/1500*30};
-return {label:'EXTREME ',cls:'danger', pct: 95};
+const T = THRESHOLDS.cape;
+if (v < T.moderate) return {label:'Low', cls:'ok', pct: Math.min(v/T.moderate*25, 25)};
+if (v < T.high) return {label:'Moderate', cls:'warn', pct: 25+(v-T.moderate)/(T.high-T.moderate)*35};
+if (v < T.extreme) return {label:'HIGH', cls:'danger', pct: 60+(v-T.high)/(T.extreme-T.high)*30};
+return {label:'EXTREME',cls:'danger', pct: 95};
 }
 
 function uvInfo(u) {
@@ -752,7 +779,11 @@ if (u <= 7) return {label:`${u} — High`, cls:'warn', pct:u/11*100, col:'#f77f0
 if (u <= 10) return {label:`${u} — Very High`, cls:'danger', pct:u/11*100, col:'#e63946'};
 return {label:`${u} — Extreme`, cls:'danger', pct:100, col:'#c1121f'};
 }
-const windCls = w => w >= 30 ? 'danger' : w >= 20 ? 'warn' : 'ok';
+function windCls(w) { return level(w, THRESHOLDS.wind); }
+function gustCls(g) { return level(g, THRESHOLDS.gust); }
+// Temperature and rain have always triggered when strictly ABOVE the limit
+const above = (v, t) => v > t.danger ? 'danger' : v > t.caution ? 'warn' : 'ok';
+const tempCls = t => above(t, THRESHOLDS.temp);
 
 // ── TIDAL HARMONICS (Fremantle) ───────────────────────────────────────────
 const HARMONICS = [
@@ -767,28 +798,19 @@ const HARMONICS = [
 {amp:0.010, phase: 50.0, period:327.860},
 ];
 const MSL = 0.78;
+// NOTE: these constants and the formula below are approximate. The phase is
+// measured from 1 Jan 1970 without each constituent's astronomical argument
+// (V0+u) or nodal factor (f), so times can drift from reality. Check against
+// BOM's published Fremantle tide tables before relying on them.
 
+// Returns the unrounded height — round only when displaying. (Rounding here
+// made neighbouring samples equal at the top/bottom of a tide, so the strict
+// peak test below missed high and low waters.)
 function tideHeight(ms) {
 const t = ms / 3600000;
 let h = MSL;
 for (const c of HARMONICS) h += c.amp * Math.cos(2*Math.PI*t/c.period - c.phase*Math.PI/180);
-return Math.round(h * 100) / 100;
-}
-
-function getTides() {
-const now = Date.now();
-const samples = [];
-for (let dt = -24*60; dt <= 24*60; dt += 5) {
-const ms = now + dt * 60000;
-samples.push({ms, h: tideHeight(ms)});
-}
-const extrema = [];
-for (let i = 1; i < samples.length - 1; i++) {
-const a = samples[i-1].h, b = samples[i].h, c2 = samples[i+1].h;
-if (b > a && b > c2) extrema.push({ms: samples[i].ms, h: b, type:'HW'});
-else if (b < a && b < c2) extrema.push({ms: samples[i].ms, h: b, type:'LW'});
-}
-return {current: tideHeight(now), extrema: extrema.filter(e => e.ms >= now).slice(0, 4)};
+return h;
 }
 
 // Next high & low after now (for the countdown cards)
@@ -831,14 +853,13 @@ return `${hr}<small>hr</small> ${mins}<small>min</small>`;
 function renderTides(loc) {
 const sec = document.getElementById('tide-section');
 if (!loc.tidal) {
-sec.innerHTML = `<div class="tide-freshwater"> <strong style="color:var(--text)">Tidal data:</strong> ${loc.name} is a freshwater / inland venue — tides are not applicable. River flow and lake levels are monitored by local authorities for competition planning.</div>`;
+sec.innerHTML = `<div class="tide-freshwater"><strong style="color:var(--text)">Tidal data:</strong> ${loc.name} is a freshwater / inland venue — tides are not applicable. River flow and lake levels are monitored by local authorities for competition planning.</div>`;
 return;
 }
 tideLocRef = loc;
 
 const {nextHigh, nextLow} = nextExtrema();
-const fmt = ms => new Date(ms).toLocaleTimeString('en-AU',
-{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});
+const fmt = fmtPerthTime;
 
 const lowCard = nextLow ? `
 <div class="tide-next-card">
@@ -863,7 +884,7 @@ sec.innerHTML = `
 <div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
 <div class="tide-widget">
 <div class="tide-header">
-<div class="tide-title"> Fremantle gauge — ~4 km from venue</div>
+<div class="tide-title">Fremantle gauge — ~4 km from venue</div>
 <div class="tide-note">Now: <strong style="color:var(--tide)">${tideHeight(Date.now()).toFixed(2)} m</strong> ACD</div>
 </div>
 <div class="tide-next">${lowCard}${highCard}</div>
@@ -887,11 +908,12 @@ if (!canvas) return;
 const dpr = window.devicePixelRatio || 1;
 const days = tideRangeDays;
 
-// window starts at local midnight today
-const startD = new Date(); startD.setHours(0,0,0,0);
-const start = startD.getTime();
-const end = start + days*24*3600000;
+// window starts at midnight today in PERTH time (not the viewer's time zone).
+// Perth has no daylight saving, so a fixed +8h offset is exact.
+const DAY = 24*3600000, PERTH_OFFSET = 8*3600000;
 const now = Date.now();
+const start = Math.floor((now + PERTH_OFFSET) / DAY) * DAY - PERTH_OFFSET;
+const end = start + days*DAY;
 
 // sample the curve every 10 min
 const step = 10*60000;
@@ -956,7 +978,7 @@ ctx.font = '700 12px "Barlow Condensed", sans-serif';
 ctx.fillText(dd.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'}), cx+6, 4);
 ctx.fillStyle = '#6b8fb5';
 ctx.font = '11px "Barlow Condensed", sans-serif';
-const wd = ctx.measureText(dd.toLocaleDateString('en-AU',{weekday:'short'})).width;
+const wd = ctx.measureText(dd.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'})).width;
 ctx.fillText(dd.toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'Australia/Perth'}), cx+6+wd+16, 4);
 }
 }
@@ -993,7 +1015,7 @@ ctx.beginPath(); ctx.arc(nx, y(nh), 6, 0, 2*Math.PI);
 ctx.fillStyle = '#fff'; ctx.fill();
 ctx.strokeStyle = '#48cae4'; ctx.lineWidth = 2; ctx.stroke();
 // current reading pill
-const lbl = `${fmt2(now)} ${nh.toFixed(2)} m`;
+const lbl = `${fmtPerthTime(now)} ${nh.toFixed(2)} m`;
 ctx.font = '700 11px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width;
 let px = nx - (tw+16)/2;
@@ -1004,7 +1026,7 @@ ctx.fillStyle = '#deeaf8'; ctx.textAlign='left'; ctx.textBaseline='top';
 ctx.fillText(lbl, px+8, padT+1);
 }
 }
-function fmt2(ms){return new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});}
+function fmtPerthTime(ms){return new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});}
 
 // ── FETCH (16-day) ──────────────────────────────────────────────────────────
 async function fetchWeather(idx) {
@@ -1022,7 +1044,7 @@ daily: ['temperature_2m_max','temperature_2m_min','precipitation_sum',
 'wind_direction_10m_dominant','weathercode','cape_max','uv_index_max'].join(','),
 forecast_days: 16, wind_speed_unit: 'kmh'
 });
-const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+const res = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?${params}`);
 if (!res.ok) throw new Error(`API error ${res.status}`);
 return res.json();
 }
@@ -1109,8 +1131,9 @@ ctx.fillStyle = '#6b8fb5';
 ctx.fillText(Math.round(val), padL - 6, yy);
 }
 
-if (30 <= maxVal) {
-const yT = y(30);
+const suspendAt = THRESHOLDS.wind.danger;
+if (suspendAt <= maxVal) {
+const yT = y(suspendAt);
 ctx.strokeStyle = 'rgba(230,57,70,0.45)';
 ctx.lineWidth = 1;
 ctx.setLineDash([4, 4]);
@@ -1118,7 +1141,7 @@ ctx.beginPath(); ctx.moveTo(padL, yT); ctx.lineTo(cssW - padR, yT); ctx.stroke()
 ctx.setLineDash([]);
 ctx.fillStyle = 'rgba(230,57,70,0.8)';
 ctx.textAlign = 'left';
-ctx.fillText('30 — suspend', padL + 4, yT - 7);
+ctx.fillText(`${suspendAt} — suspend`, padL + 4, yT - 7);
 }
 
 ctx.beginPath();
@@ -1168,8 +1191,7 @@ const ang = (dir[i] + 180) * Math.PI / 180;
 const len = 7;
 const dx = Math.sin(ang) * len;
 const dy = -Math.cos(ang) * len;
-const sv = spd[i];
-const col = sv >= 30 ? '#e63946' : sv >= 20 ? '#ffd166' : '#00b4d8';
+const col = LEVEL_HEX[windCls(spd[i])];
 ctx.strokeStyle = col;
 ctx.fillStyle = col;
 ctx.lineWidth = 1.5;
@@ -1209,96 +1231,116 @@ ctx.fillText('km/h', 4, padT - 14);
 }
 
 // ── BOM LIVE OBSERVATIONS ─────────────────────────────────────────────────
+const COMPASS16 = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+// BOM often reports missing readings as null; keep them null instead of letting Math.round turn them into 0
+const num = v => (typeof v === 'number' && Number.isFinite(v)) ? v : null;
+const showNum = v => v === null ? '—' : Math.round(v);
+let obsRequestId = 0; // bumps on every call, so a slow response for an old venue is ignored
+
+async function fetchBomLatest(url, label) {
+ const res = await fetchWithTimeout(bomObsUrl(url));
+ if (!res.ok) throw new Error(`HTTP ${res.status} (${label})`);
+ const json = await res.json();
+ const row = json?.observations?.data?.[0];
+ if (!row) throw new Error(`no readings (${label})`);
+ return row;
+}
+
 async function renderObservations(loc) {
+ const myId = ++obsRequestId;
  const sec = document.getElementById('obs-section');
  const stn = loc.obsStation;
- const wStn = loc.windStation || stn; // fall back to obsStation if no windStation
  if (!stn) { sec.innerHTML = ''; return; }
+ const wStn = loc.windStation || stn; // fall back to obsStation if no windStation
+ const sameStation = wStn.json === stn.json;
+ const heading = sameStation
+ ? `Live Observations · ${esc(stn.name)} (${esc(stn.dist)} from venue)`
+ : `Live Observations · wind from ${esc(wStn.name)} · other data from ${esc(stn.name)}`;
 
  if (!CORS_PROXY) {
  sec.innerHTML = `
- <div class="section-title">Live Observations · ${stn.name} (${stn.dist} from venue)</div>
+ <div class="section-title">${heading}</div>
  <div class="obs-widget">
  <div class="obs-pending">
  <strong style="color:var(--text)">Live BOM station readings</strong> are ready to switch on.
  BOM blocks direct browser access, so this needs a one-line CORS proxy when hosted.
  <br><br>
- Main station feed: <code style="word-break:break-all">${stn.json.replace('http://','')}</code><br>
- Wind station feed: <code style="word-break:break-all">${wStn.json.replace('http://','')}</code>
+ Main station feed: <code style="word-break:break-all">${esc(stn.json)}</code>
+ ${sameStation ? '' : `<br>Wind station feed: <code style="word-break:break-all">${esc(wStn.json)}</code>`}
  </div>
  </div>`;
  return;
  }
 
  sec.innerHTML = `
- <div class="section-title">Live Observations · ${stn.name} + wind from ${wStn.name}</div>
+ <div class="section-title">${heading}</div>
  <div class="obs-widget"><div class="obs-pending"><span class="spinner"></span> Fetching live readings…</div></div>`;
 
  try {
- // Fetch both stations in parallel
- const [mainRes, windRes] = await Promise.all([
- fetch(bomObsUrl(stn.json)),
- fetch(bomObsUrl(wStn.json))
- ]);
- if (!mainRes.ok) throw new Error('HTTP ' + mainRes.status + ' (main station)');
- if (!windRes.ok) throw new Error('HTTP ' + windRes.status + ' (wind station)');
+ // Fetch both stations in parallel — or just one if they're the same feed
+ const [obs, wObs] = sameStation
+ ? await fetchBomLatest(stn.json, stn.name).then(o => [o, o])
+ : await Promise.all([fetchBomLatest(stn.json, stn.name), fetchBomLatest(wStn.json, wStn.name)]);
 
- const mainData = await mainRes.json();
- const windData = await windRes.json();
+ // User switched venue (or a newer refresh started) while we were waiting
+ if (myId !== obsRequestId) return;
 
- const obs = mainData.observations.data[0];
- const wObs = windData.observations.data[0];
+ // Wind + gusts from the wind station
+ const spd = num(wObs.wind_spd_kmh);
+ const gst = num(wObs.gust_kmh);
+ const dirTxt = wObs.wind_dir || '—';
+ const when = wObs.local_date_time || '—';
 
- // Wind + gusts from Melville Water
- const spd = wObs.wind_spd_kmh;
- const gst = wObs.gust_kmh;
- const dirTxt = wObs.wind_dir;
- const when = wObs.local_date_time;
+ // Everything else from the main station
+ const temp = num(obs.air_temp);
+ const hum = num(obs.rel_hum);
+ const mainWhen = obs.local_date_time || '—';
 
- // Everything else from Swanbourne
- const temp = obs.air_temp;
- const hum = obs.rel_hum;
- const mainWhen = obs.local_date_time;
-
- const compIdx = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf((dirTxt||'').toUpperCase());
+ const compIdx = COMPASS16.indexOf(String(dirTxt).toUpperCase());
  const dirDeg = compIdx >= 0 ? compIdx * 22.5 : null;
- const dirCell = dirDeg !== null ? `${windArrowSVG(dirDeg, spd)} ${dirTxt}` : `${dirTxt}`;
+ const dirCell = dirDeg !== null && spd !== null ? `${windArrowSVG(dirDeg, spd)} ${esc(dirTxt)}` : esc(dirTxt);
 
  let compareHtml = '';
- if (lastHourly && lastHIdx != null) {
+ if (lastHourly && lastHIdx != null && spd !== null) {
  const fSpd = Math.round(lastHourly.wind_speed_10m[lastHIdx]);
  const diff = Math.round(spd) - fSpd;
  const sign = diff > 0 ? '+' : '';
  compareHtml = `<div class="obs-compare"><strong style="color:var(--text)">Observed vs forecast:</strong>
  live ${Math.round(spd)} km/h vs forecast ${fSpd} km/h (${sign}${diff} km/h).
- ${Math.abs(diff) >= 8 ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
+ ${Math.abs(diff) >= THRESHOLDS.obsDiff ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
  }
 
+ const timeLine = sameStation ? `${esc(when)} · BOM` : `Wind: ${esc(when)} · Other: ${esc(mainWhen)} · BOM`;
  sec.innerHTML = `
- <div class="section-title">Live Observations · wind from ${wStn.name} · other data from ${stn.name}</div>
+ <div class="section-title">${heading}</div>
  <div class="obs-widget">
  <div class="obs-head">
  <div class="obs-title"><span class="obs-live-dot"></span>Live</div>
- <div class="obs-time">Wind: ${when} · Other: ${mainWhen} · BOM</div>
+ <div class="obs-time">${timeLine}</div>
  </div>
  <div class="obs-grid">
- <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${Math.round(spd)}<span class="u"> km/h</span></div></div>
- <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${Math.round(gst)}<span class="u"> km/h</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${showNum(spd)}<span class="u"> km/h</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${showNum(gst)}<span class="u"> km/h</span></div></div>
  <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirCell}</div></div>
- <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp}<span class="u"> °C</span></div></div>
- <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${hum}<span class="u"> %</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp === null ? '—' : temp}<span class="u"> °C</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${showNum(hum)}<span class="u"> %</span></div></div>
  </div>
  ${compareHtml}
  </div>`;
 
+ // Feed the live wind into the status banner — it uses whichever is worse
+ if (lastForecast && lastForecast.loc === loc) {
+ updateStatusBanner(loc, lastForecast, { wind: spd, gust: gst });
+ }
+
  } catch (err) {
+ if (myId !== obsRequestId) return;
  sec.innerHTML = `
  <div class="section-title">Live Observations</div>
- <div class="obs-widget"><div class="obs-pending">Couldn't reach station feed (${err.message}).
+ <div class="obs-widget"><div class="obs-pending">Couldn't reach station feed (${esc(err.message)}).
  The proxy may be rate-limited or a station briefly offline. Forecast wind above is unaffected.</div></div>`;
  }
 }
-
 
 // ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
 function renderExtended(data, loc) {
@@ -1308,7 +1350,7 @@ const total = dd.time.length;
 const startIdx = 7; // day 8 onward (0-based index 7)
 document.getElementById('ext-status').className = 'status-banner safe';
 document.getElementById('ext-status').innerHTML =
-`<div class="status-dot"></div><span> Extended outlook loaded · ${total - startIdx} day window (days 8–${total}) · ${loc.name}</span>`;
+`<div class="status-dot" aria-hidden="true"></div><span>Extended outlook loaded · ${total - startIdx} day window (days 8–${total}) · ${loc.name}</span>`;
 
 // Build row arrays
 const rows = [];
@@ -1346,7 +1388,7 @@ html += `<tr>
 <td>${r.rain.toFixed(1)}</td>
 <td>${r.pc}</td>
 <td class="w-${windCls(r.wind)}">${windArrowSVG(r.dir, r.wind)} ${r.wind}</td>
-<td class="w-${windCls(r.gust>=40?40:r.gust>=30?25:0)}">${r.gust}</td>
+<td class="w-${gustCls(r.gust)}">${r.gust}</td>
 <td>${deg2comp(r.dir)}</td>
 <td class="w-${uvI.cls||'ok'}">${r.uv!==null?Math.round(r.uv):'—'}</td>
 <td class="w-${cI.cls}">${cI.label}</td>
@@ -1405,12 +1447,13 @@ const maxVal = Math.max(40, Math.ceil(Math.max(...gust)/10)*10);
 const y = v => S.padT + S.plotH - (v/maxVal)*S.plotH;
 extGrid(ctx, S, maxVal);
 // suspend threshold
-if (30 <= maxVal) {
-const yT = y(30);
+const suspendAt = THRESHOLDS.wind.danger;
+if (suspendAt <= maxVal) {
+const yT = y(suspendAt);
 ctx.strokeStyle = 'rgba(230,57,70,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
 ctx.beginPath(); ctx.moveTo(S.padL, yT); ctx.lineTo(S.cssW-S.padR, yT); ctx.stroke(); ctx.setLineDash([]);
 ctx.fillStyle = 'rgba(230,57,70,0.8)'; ctx.textAlign='left';
-ctx.fillText('30 — suspend', S.padL+4, yT-7);
+ctx.fillText(`${suspendAt} — suspend`, S.padL+4, yT-7);
 }
 // bars: wind + gust
 const bw = Math.min(22, (S.cssW-S.padL-S.padR)/n*0.5);
@@ -1421,7 +1464,7 @@ ctx.fillStyle = 'rgba(247,127,0,0.55)';
 ctx.fillRect(cx-bw/2, y(gust[i]), bw, S.padT+S.plotH - y(gust[i]));
 // wind (front, teal) — colour by risk
 const w = wind[i];
-ctx.fillStyle = w>=30?'#e63946':w>=20?'#ffd166':'#00b4d8';
+ctx.fillStyle = LEVEL_HEX[windCls(w)];
 ctx.fillRect(cx-bw/2+bw*0.18, y(w), bw*0.64, S.padT+S.plotH - y(w));
 ctx.fillStyle='#deeaf8'; ctx.font='700 10px "Barlow Condensed",sans-serif';
 ctx.textAlign='center'; ctx.textBaseline='bottom';
@@ -1485,6 +1528,44 @@ ctx.fillStyle='#ffd166';ctx.fill();}
 extLabels(ctx, S, labels);
 }
 
+// ── STATUS BANNER ─────────────────────────────────────────────────────────
+// Built from the forecast first, then rebuilt when the live BOM reading arrives.
+// Whichever wind/gust is worse (forecast or live) decides the status.
+function updateStatusBanner(loc, fc, obs) {
+const W = THRESHOLDS.wind, G = THRESHOLDS.gust, C = THRESHOLDS.cape;
+const obsWind = obs?.wind ?? null, obsGust = obs?.gust ?? null;
+const wind = Math.round(Math.max(fc.wind, obsWind ?? -Infinity));
+const gust = Math.round(Math.max(fc.gust, obsGust ?? -Infinity));
+const liveWorse = (obsWind !== null && Math.round(obsWind) > fc.wind) ||
+(obsGust !== null && Math.round(obsGust) > fc.gust);
+const src = liveWorse ? ' (live)' : '';
+const {code, cape, uv} = fc;
+const isStorm = STORM_CODES.includes(code) || cape >= C.high;
+const highWind = wind >= W.danger || gust >= G.danger;
+const highUV = uv !== null && uv >= THRESHOLDS.uv.caution;
+
+const banner = document.getElementById('status-banner');
+const st = document.getElementById('status-text');
+if (isStorm || highWind) {
+banner.className = 'status-banner danger';
+const r = [];
+if (isStorm) r.push('Thunderstorm / lightning risk');
+if (highWind) r.push(`Wind ${wind} km/h gusts ${gust}${src}`);
+st.innerHTML = `${wmoIcon(code)} SUSPEND ROWING — ${r.join(' · ')} — ${loc.name}`;
+} else if (wind >= W.caution || gust >= G.caution || cape >= C.moderate || highUV) {
+banner.className = 'status-banner caution';
+const r = [];
+if (wind >= W.caution) r.push(`Wind ${wind} km/h${src}`);
+if (gust >= G.caution) r.push(`Gusts ${gust} km/h${src}`);
+if (highUV) r.push(`UV ${uv}`);
+if (cape >= C.moderate) r.push('Storm risk');
+st.innerHTML = `${wmoIcon(code)} CAUTION — ${r.join(' · ')} — ${loc.name}`;
+} else {
+banner.className = 'status-banner safe';
+st.innerHTML = `${wmoIcon(code)} CONDITIONS GOOD — ${wmoDesc(code)}, Wind ${wind} km/h${src}, UV ${uv ?? '—'} — ${loc.name}`;
+}
+}
+
 // ── RENDER LIVE ───────────────────────────────────────────────────────────
 function render(data, loc) {
 const c = data.current;
@@ -1498,10 +1579,12 @@ const rain = c.rain ?? c.precipitation ?? 0;
 const cape = c.cape ?? 0;
 const code = c.weathercode;
 
-const now = new Date();
+// Open-Meteo returns times in the VENUE's local time (we pass `timezone`), so
+// find "now" using its own timestamp — not the browser's UTC clock, which
+// pointed 8–11 hours into the past.
 const h = data.hourly;
-const hourStr = now.toISOString().slice(0,13);
-let hIdx = h.time.findIndex(t => t.startsWith(hourStr));
+const curHour = (c.time || '').slice(0, 13); // e.g. "2026-11-13T20"
+let hIdx = h.time.findIndex(t => t.startsWith(curHour));
 if (hIdx < 0) hIdx = 0;
 
 const uvRaw = h.uv_index ? h.uv_index[hIdx] : null;
@@ -1511,28 +1594,9 @@ const uvI = uvInfo(uv);
 const pp = h.precipitation_probability;
 const maxPP = pp ? Math.max(...pp.slice(hIdx, hIdx+6)) : 0;
 
-const isStorm = [95,96,99].includes(code) || cape > 1000;
-const highWind = wind >= 30 || gust >= 40;
-const banner = document.getElementById('status-banner');
-const st = document.getElementById('status-text');
-if (isStorm || highWind) {
-banner.className = 'status-banner danger';
-const r = [];
-if (isStorm) r.push('Thunderstorm / lightning risk');
-if (highWind) r.push(`Wind ${wind} km/h gusts ${gust}`);
-st.innerHTML = `${wmoIcon(code)} SUSPEND ROWING — ${r.join(' · ')} — ${loc.name}`;
-} else if (wind >= 20 || cape > 300 || gust >= 30 || uv >= 8) {
-banner.className = 'status-banner caution';
-const r = [];
-if (wind >= 20) r.push(`Wind ${wind} km/h`);
-if (gust >= 30) r.push(`Gusts ${gust} km/h`);
-if (uv >= 8) r.push(`UV ${uv}`);
-if (cape > 300) r.push('Storm risk');
-st.innerHTML = `${wmoIcon(code)} CAUTION — ${r.join(' · ')} — ${loc.name}`;
-} else {
-banner.className = 'status-banner safe';
-st.innerHTML = `${wmoIcon(code)} CONDITIONS GOOD — ${wmoDesc(code)}, Wind ${wind} km/h, UV ${uv ?? '—'} — ${loc.name}`;
-}
+const isStorm = STORM_CODES.includes(code) || cape >= THRESHOLDS.cape.high;
+lastForecast = {loc, wind, gust, code, cape, uv};
+updateStatusBanner(loc, lastForecast, null);
 
 document.getElementById('blitz-link').href = loc.blitz;
 document.getElementById('bom-link').href = loc.bom;
@@ -1547,7 +1611,7 @@ el.className = 'risk-value ' + cls;
 document.getElementById('ri-wind').innerHTML = windArrowSVG(wdir, wind);
 document.getElementById('ri-gust').innerHTML = windArrowSVG(wdir, gust);
 document.getElementById('ri-storm').innerHTML = (isStorm? wmoIcon(95) : wmoIcon(code));
-document.getElementById('ri-rain').innerHTML = wmoIcon(maxPP>40?61:(code===0||code===1?1:code));
+document.getElementById('ri-rain').innerHTML = wmoIcon(maxPP>THRESHOLDS.rainChance.caution?61:(code===0||code===1?1:code));
 document.getElementById('ri-uv').innerHTML = wmoIcon(0);
 document.getElementById('ri-heat').innerHTML = wmoIcon(0);
 
@@ -1556,34 +1620,37 @@ document.getElementById('mi-temp').innerHTML = wmoIcon(code);
 document.getElementById('mi-wind').innerHTML = windArrowSVG(wdir, wind);
 document.getElementById('mi-gust').innerHTML = windArrowSVG(wdir, gust);
 document.getElementById('mi-humid').innerHTML = wmoIcon(humid>80?3:2);
-document.getElementById('mi-rain').innerHTML = wmoIcon(rain>1?61:(maxPP>40?51:2));
+document.getElementById('mi-rain').innerHTML = wmoIcon(rain>THRESHOLDS.rainMm.caution?61:(maxPP>THRESHOLDS.rainChance.caution?51:2));
 document.getElementById('mi-uv').innerHTML = wmoIcon(0);
-document.getElementById('mi-cape').innerHTML = wmoIcon(cape>300?95:2);
+document.getElementById('mi-cape').innerHTML = wmoIcon(cape>=THRESHOLDS.cape.moderate?95:2);
 
 document.getElementById('cur-temp').innerHTML = `${temp}<span class="unit">°C</span>`;
 document.getElementById('cur-feels').textContent = `Feels like ${feels}°C`;
-document.getElementById('card-temp').className = 'metric-card ' + (temp>35?'danger':temp>28?'warn':'ok');
+document.getElementById('card-temp').className = 'metric-card ' + tempCls(temp);
 
 document.getElementById('cur-wind').innerHTML = `${wind}<span class="unit">km/h</span>`;
 document.getElementById('cur-wdir').textContent = `From ${deg2comp(wdir)} (${wdir}°)`;
 // ANIMATED COMPASS ARROW — rotate to blowing-toward, colour + pulse by speed
 const wa = document.getElementById('wind-arrow');
+const windColour = LEVEL_COLOUR[windCls(wind)];
 wa.style.transform = `rotate(${(wdir+180)%360}deg)`;
-wa.style.background = wind>=30?'var(--red)':wind>=20?'var(--yellow)':'var(--accent)';
-wa.style.color = wind>=30?'var(--red)':wind>=20?'var(--yellow)':'var(--accent)';
-wa.classList.toggle('gust-active', gust>=30);
-document.getElementById('card-wind').className = 'metric-card ' + (wind>=30?'danger':wind>=20?'warn':'ok');
+wa.style.background = windColour;
+wa.style.color = windColour;
+wa.classList.toggle('gust-active', gust >= THRESHOLDS.gust.caution);
+document.getElementById('card-wind').className = 'metric-card ' + windCls(wind);
 
 document.getElementById('cur-gust').innerHTML = `${gust}<span class="unit">km/h</span>`;
-document.getElementById('gust-sub').textContent = gust>=40?'Above suspension threshold':gust>=30?'Approaching limit':'Within safe limits';
-document.getElementById('card-gust').className = 'metric-card ' + (gust>=40?'danger':gust>=30?'warn':'ok');
+const gCls = gustCls(gust);
+document.getElementById('gust-sub').textContent = gCls==='danger'?'Above suspension threshold':gCls==='warn'?'Approaching limit':'Within safe limits';
+document.getElementById('card-gust').className = 'metric-card ' + gCls;
 
 document.getElementById('cur-humid').innerHTML = `${humid}<span class="unit">%</span>`;
 document.getElementById('humid-sub').textContent = humid>80?'Very humid':humid>60?'Moderate':'Comfortable';
 
 document.getElementById('cur-rain').innerHTML = `${rain.toFixed(1)}<span class="unit">mm</span>`;
 document.getElementById('rain-sub').textContent = `Next 6h chance: ${maxPP}%`;
-document.getElementById('card-rain').className = 'metric-card ' + (rain>5?'danger':rain>1?'warn':'');
+const rCls = above(rain, THRESHOLDS.rainMm);
+document.getElementById('card-rain').className = 'metric-card ' + (rCls === 'ok' ? '' : rCls);
 
 document.getElementById('cur-uv').textContent = uv !== null ? uvI.label : 'No data';
 const uvBar = document.getElementById('uv-bar');
@@ -1598,12 +1665,13 @@ capeBar.style.width = cI.pct + '%';
 capeBar.style.background = cI.cls==='ok'?'var(--green)':cI.cls==='warn'?'var(--yellow)':'var(--red)';
 document.getElementById('card-cape').className = 'metric-card ' + cI.cls;
 
-setR('r-wind', `${wind} km/h`, wind>=30?'danger':wind>=20?'warn':'ok');
-setR('r-gust', `${gust} km/h`, gust>=40?'danger':gust>=30?'warn':'ok');
+const heat = tempCls(temp);
+setR('r-wind', `${wind} km/h`, windCls(wind));
+setR('r-gust', `${gust} km/h`, gCls);
 setR('r-storm', cI.label, cI.cls);
-setR('r-rain', `${maxPP}%`, maxPP>70?'danger':maxPP>40?'warn':'ok');
+setR('r-rain', `${maxPP}%`, above(maxPP, THRESHOLDS.rainChance));
 setR('r-uv', uv!==null?uvI.label:'—', uvI.cls);
-setR('r-heat', temp>35?'High':temp>28?'Moderate':'Low', temp>35?'danger':temp>28?'warn':'ok');
+setR('r-heat', heat==='danger'?'High':heat==='warn'?'Moderate':'Low', heat);
 
 renderTides(loc);
 renderWindGraph(h, hIdx);
@@ -1612,9 +1680,8 @@ renderObservations(loc);
 const row = document.getElementById('hourly-row');
 row.innerHTML = '';
 for (let i = hIdx; i < Math.min(hIdx+13, h.time.length); i++) {
-const t = new Date(h.time[i]);
 const isNow = i === hIdx;
-const hh = t.getHours().toString().padStart(2,'0') + ':00';
+const hh = h.time[i].slice(11, 16); // venue-local "HH:MM" straight from the API
 const d = document.createElement('div');
 d.className = 'hourly-card' + (isNow?' hl':'');
 d.innerHTML = `
@@ -1622,14 +1689,14 @@ d.innerHTML = `
 <div class="hourly-icon">${wmoIcon(h.weathercode[i])}</div>
 <div class="hourly-temp">${Math.round(h.temperature_2m[i])}°</div>
 <div class="hourly-wind">${windArrowSVG(h.wind_direction_10m[i], h.wind_speed_10m[i])} ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
-<div class="hourly-rain"> ${h.precipitation_probability[i]??0}%</div>`;
+<div class="hourly-rain">Rain ${h.precipitation_probability[i]??0}%</div>`;
 row.appendChild(d);
 }
 
 const dg = document.getElementById('daily-grid');
 dg.innerHTML = '';
 const dd = data.daily;
-const todayStr = now.toISOString().slice(0,10);
+const todayStr = (c.time || '').slice(0, 10); // venue-local date, not UTC
 // Live 7-day view: show first 7 days only
 for (let i = 0; i < Math.min(7, dd.time.length); i++) {
 const dt = new Date(dd.time[i] + 'T12:00:00');
@@ -1647,7 +1714,7 @@ card.innerHTML = `
 <div class="daily-temps">${Math.round(dd.temperature_2m_max[i])}°<span class="daily-lo"> / ${Math.round(dd.temperature_2m_min[i])}°</span></div>
 <div class="daily-detail">
 ${windArrowSVG(dd.wind_direction_10m_dominant[i], wMax)} ${wMax} km/h<br>
-${rp}%<br>
+Rain ${rp}%<br>
 UV ${uvD!==null?uvDI.label:'—'}<br>
 ${cDI.label}
 </div>
@@ -1662,29 +1729,35 @@ renderExtended(data, loc);
 // ── CONTROLS ──────────────────────────────────────────────────────────────
 function selectLocation(idx) {
  currentLoc = idx;
- document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+ document.querySelectorAll('#location-tabs .tab').forEach((t,i) => {
+ t.classList.toggle('active', i===idx);
+ t.setAttribute('aria-selected', i===idx ? 'true' : 'false');
+ });
  syncLocDropdown(idx);
  // bring the chosen tab into view within the scrolling row
  const tabEl = document.querySelectorAll('#location-tabs .tab')[idx];
  if (tabEl) tabEl.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
  closeLocDropdown();
- if (cache[idx]) {
- render(cache[idx], LOCATIONS[idx]);
+ updateClock();
+ if (isFresh(idx)) {
+ render(cache[idx].data, LOCATIONS[idx]);
  } else {
  loadWeather();
  }
 }
 
-// ── LOCATION DROPDOWN ──────────────────────────────────────────────────────
+// ── LOCATION TABS + DROPDOWN (both generated from LOCATIONS) ──────────────
+function buildLocationTabs() {
+ document.getElementById('location-tabs').innerHTML = LOCATIONS.map((loc,i) =>
+ `<button type="button" class="tab${i===currentLoc?' active':''}" role="tab"
+ aria-selected="${i===currentLoc}" onclick="selectLocation(${i})">
+ <img class="tab-icon" src="${loc.icon}" alt="">${loc.short}</button>`).join('');
+}
 function buildLocDropdown() {
  const menu = document.getElementById('loc-dd-menu');
- const icons = ['freshwater_bay','champion_lakes','sydney_sirc','lake_nagambie',
- 'lake_barrington','wyaralong_dam','west_lakes','lake_burley_griffin'];
- menu.innerHTML = LOCATIONS.map((loc,i) => {
- const short = loc.name.split(',')[0];
- return `<div class="loc-dd-item${i===currentLoc?' active':''}" data-idx="${i}" onclick="selectLocation(${i})">
- <img src="icons/${icons[i]}.png" alt="">${short}</div>`;
- }).join('');
+ menu.innerHTML = LOCATIONS.map((loc,i) =>
+ `<button type="button" class="loc-dd-item${i===currentLoc?' active':''}" data-idx="${i}" onclick="selectLocation(${i})">
+ <img src="${loc.icon}" alt="">${loc.short}</button>`).join('');
 }
 function syncLocDropdown(idx) {
  document.querySelectorAll('.loc-dd-item').forEach(el =>
@@ -1692,15 +1765,19 @@ function syncLocDropdown(idx) {
 }
 function toggleLocDropdown(e) {
  e.stopPropagation();
- document.getElementById('loc-dropdown').classList.toggle('open');
+ const open = document.getElementById('loc-dropdown').classList.toggle('open');
+ document.getElementById('loc-dd-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 function closeLocDropdown() {
  document.getElementById('loc-dropdown').classList.remove('open');
+ document.getElementById('loc-dd-btn').setAttribute('aria-expanded', 'false');
 }
 document.addEventListener('click', e => {
  const dd = document.getElementById('loc-dropdown');
  if (dd && !dd.contains(e.target)) closeLocDropdown();
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLocDropdown(); });
+buildLocationTabs();
 buildLocDropdown();
 
 function selectView(view) {
@@ -1710,13 +1787,25 @@ document.getElementById('vt-ext').classList.toggle('active', view==='ext');
 document.getElementById('panel-live').classList.toggle('active', view==='live');
 document.getElementById('panel-ext').classList.toggle('active', view==='ext');
 // Charts need a redraw when their panel becomes visible (canvas sized to 0 while hidden)
-if (cache[currentLoc]) {
-if (view==='live') renderWindGraph(lastHourly, lastHIdx);
-else renderExtended(cache[currentLoc], LOCATIONS[currentLoc]);
+redrawCharts();
+}
+
+function redrawCharts() {
+const entry = cache[currentLoc];
+if (!entry) return;
+if (currentView === 'live') {
+if (lastHourly) renderWindGraph(lastHourly, lastHIdx);
+drawTideChart();
+} else {
+renderExtended(entry.data, LOCATIONS[currentLoc]);
 }
 }
 
+let loadsInFlight = 0;
 async function loadWeather() {
+// Remember WHICH venue this request is for — the user may switch venue while it loads
+const idx = currentLoc;
+loadsInFlight++;
 const btn = document.getElementById('refresh-btn');
 btn.disabled = true;
 btn.textContent = '↻ Loading…';
@@ -1724,21 +1813,27 @@ document.getElementById('error-box').style.display = 'none';
 document.getElementById('status-banner').className = 'status-banner loading';
 document.getElementById('status-text').innerHTML = '<span class="spinner"></span> Loading weather data…';
 document.getElementById('ext-status').className = 'status-banner loading';
-document.getElementById('ext-status').innerHTML = '<div class="status-dot"></div><span><span class="spinner"></span> Loading extended outlook…</span>';
+document.getElementById('ext-status').innerHTML = '<div class="status-dot" aria-hidden="true"></div><span><span class="spinner"></span> Loading extended outlook…</span>';
 try {
-const data = await fetchWeather(currentLoc);
-cache[currentLoc] = data;
-render(data, LOCATIONS[currentLoc]);
+const data = await fetchWeather(idx);
+cache[idx] = { data, at: Date.now() };
+// Only draw it if the user is still looking at that venue
+if (idx === currentLoc) render(data, LOCATIONS[idx]);
 } catch(err) {
+if (idx !== currentLoc) return; // a newer request owns the screen now
 document.getElementById('error-box').style.display = 'block';
 document.getElementById('error-box').textContent = `Could not load weather data: ${err.message}. Check your internet connection and try refreshing.`;
 document.getElementById('status-banner').className = 'status-banner loading';
 document.getElementById('status-text').textContent = 'Data unavailable — tap Refresh to retry';
 document.getElementById('ext-status').className = 'status-banner loading';
-document.getElementById('ext-status').innerHTML = '<div class="status-dot"></div><span>Data unavailable — tap Refresh to retry</span>';
-}
+document.getElementById('ext-status').innerHTML = '<div class="status-dot" aria-hidden="true"></div><span>Data unavailable — tap Refresh to retry</span>';
+} finally {
+// Always re-enable the button once nothing is loading, even if something above threw
+if (--loadsInFlight === 0) {
 btn.disabled = false;
 btn.textContent = '↻ Refresh';
+}
+}
 }
 
 // ── CLOCK ─────────────────────────────────────────────────────────────────
@@ -1754,15 +1849,19 @@ updateClock();
 let resizeTimer;
 window.addEventListener('resize', () => {
 clearTimeout(resizeTimer);
-resizeTimer = setTimeout(() => {
-if (!cache[currentLoc]) return;
-if (currentView === 'live') { renderWindGraph(lastHourly, lastHIdx); drawTideChart(); }
-else renderExtended(cache[currentLoc], LOCATIONS[currentLoc]);
-}, 150);
+resizeTimer = setTimeout(redrawCharts, 150);
 });
 
-// ── AUTO-REFRESH every 10 min ─────────────────────────────────────────────
-setInterval(() => { cache = Array(LOCATIONS.length).fill(null); loadWeather(); }, 600000);
+// Canvas text is drawn with Barlow — redraw once the web fonts have loaded,
+// otherwise the first draw uses the fallback font
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawCharts);
+
+// ── AUTO-REFRESH every 10 min (paused while the tab is hidden) ────────────
+setInterval(() => { if (!document.hidden) loadWeather(); }, REFRESH_MS);
+// Coming back to the tab after a while: refresh straight away if data is stale
+document.addEventListener('visibilitychange', () => {
+if (!document.hidden && !isFresh(currentLoc)) loadWeather();
+});
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 loadWeather();
