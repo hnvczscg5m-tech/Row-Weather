@@ -749,22 +749,41 @@ width:1em;height:1em;vertical-align:-0.18em;line-height:0}
 //   description short plain-English note shown in the Rowing Wind panel
 //   source      where the bearing came from (shown on tap) — keep this when you change it
 //   presets     optional extra headings, e.g. training routes: [{ label: 'Upriver', bearing: 120 }]
+//   raceLabel / reverseLabel  optional names for the two direction buttons (e.g. 'Downstream' / 'Return')
 // The readable compass point (N, NNE…) is worked out from the bearing automatically.
 // Adding a venue = add one entry with lat/lon/tz and a course; everything else follows.
 const LOCATIONS = [
 {
 name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA",
 course: {
-  bearing: null, status: 'none',
-  description: 'No fixed 2,000 m course — training routes vary on the Swan River. Choose the heading your crew is rowing.',
-  source: null,
-  presets: [] // add named training routes here, e.g. { label: 'Upriver leg', bearing: 120 }
+  bearing: 188, status: 'approximate',
+  raceLabel: 'Outbound', reverseLabel: 'Return',
+  description: 'Christchurch to Scotch training course (≈750 m one way, ≈1.5 km out and back) along the western shore of Freshwater Bay: outbound south from the Christchurch turn mark to the Scotch turn mark (near The Esplanade jetty), then return north. Turn marks are temporary or coach buoys. For other training routes, use the heading selector.',
+  source: 'Freshwater Bay course map (Christchurch to Scotch) supplied by a local coach: drawn legs measure 188°. The real western shoreline on Google satellite runs 185.5°. (The map legend says ≈193°, which doesn\'t match its own drawing.)',
+  presets: [] // add other named training routes here, e.g. { label: 'Upriver leg', bearing: 120 }
 },
 lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.99;x=115.77;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-31.99&lon=115.77&zoom=9",
 obsStation: { name: "Swanbourne", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
-windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" }
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" },
+tideDist: "~4 km"
+},
+{
+name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA",
+course: {
+  bearing: 204, status: 'approximate',
+  raceLabel: 'Downstream', reverseLabel: 'Return',
+  description: 'Two 2,000 m courses on Blackwall Reach, rowed both ways: downstream from the Point Walter navigation spit post to the East Fremantle Yacht Club (western end), and the return course back to Point Walter. The main navigation channel runs between them — keep clear.',
+  source: 'Course map supplied by a local coach (rough, north-up). Bearing measured along both drawn courses: downstream 203–205°, return 023–025°.',
+  presets: []
+},
+lat: -32.0200, lon: 115.7700, tz: "Australia/Perth", tidal: true, // approximate mid-course — check
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.02;x=115.77;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-32.02&lon=115.77&zoom=9",
+obsStation: { name: "Swanbourne", dist: "~6 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" },
+tideDist: "~3 km"
 },
 {
 name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion_lakes.png", state: "WA",
@@ -893,7 +912,7 @@ obsDiff: 8 // km/h gap between live and forecast wind worth flagging
 };
 const STORM_CODES = [95, 96, 99];
 const REFRESH_MS = 10 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 15000;
+const FETCH_TIMEOUT_MS = 30000; // mobile data at the ramp can be slow — be patient
 
 const level = (v, t) => v >= t.danger ? 'danger' : v >= t.caution ? 'warn' : 'ok';
 const LEVEL_COLOUR = { ok: 'var(--accent)', warn: 'var(--yellow)', danger: 'var(--red)' };
@@ -933,6 +952,8 @@ try {
 return await fetch(url, { signal: ctrl.signal });
 } catch (err) {
 if (err.name === 'AbortError') throw new Error('request timed out');
+// Browsers word a dropped connection differently ("Failed to fetch", "Load failed"…)
+if (err instanceof TypeError) throw new Error('no connection');
 throw err;
 } finally {
 clearTimeout(timer);
@@ -1046,8 +1067,8 @@ return { mode: RowingWind.isNum(loc.course?.bearing) ? 'race' : 'none' };
 // The heading wind is analysed against, or null when none is set (no misleading labels)
 function effectiveHeading(loc) {
 const ch = getHeadingChoice(loc), b = loc.course?.bearing, has = RowingWind.isNum(b);
-if (ch.mode === 'race' && has) return { bearing: b, label: 'Racing direction (start → finish)' };
-if (ch.mode === 'reverse' && has) return { bearing: RowingWind.norm(b + 180), label: 'Reverse (finish → start)' };
+if (ch.mode === 'race' && has) return { bearing: b, label: loc.course.raceLabel || 'Racing direction (start → finish)' };
+if (ch.mode === 'reverse' && has) return { bearing: RowingWind.norm(b + 180), label: loc.course.reverseLabel || 'Reverse (finish → start)' };
 if ((ch.mode === 'custom' || ch.mode === 'preset') && RowingWind.isNum(ch.bearing))
 return { bearing: RowingWind.norm(ch.bearing), label: ch.label || 'Your heading' };
 return null;
@@ -1203,8 +1224,8 @@ ${rwDialSVG(heading, primary, secondary, kind)}
 <div class="rw-stats">${stats}</div>
 </div>
 <div class="rw-controls" role="group" aria-label="Crew heading">
-${hasRace ? `<button type="button" class="rw-btn${ch.mode === 'race' ? ' active' : ''}" onclick="setHeading('race')">Race direction</button>` : ''}
-<button type="button" class="rw-btn${ch.mode === 'reverse' ? ' active' : ''}" onclick="reverseHeading()"${hd ? '' : ' disabled'}>⇄ Reverse</button>
+${hasRace ? `<button type="button" class="rw-btn${ch.mode === 'race' ? ' active' : ''}" onclick="setHeading('race')">${esc(course.raceLabel || 'Race direction')}</button>` : ''}
+<button type="button" class="rw-btn${ch.mode === 'reverse' ? ' active' : ''}" onclick="reverseHeading()"${hd ? '' : ' disabled'}>⇄ ${esc(hasRace && course.reverseLabel ? course.reverseLabel : 'Reverse')}</button>
 ${presets}
 <select class="rw-select" aria-label="Heading" onchange="pickHeadingFromSelect(this)">${options}</select>
 <span class="rw-nudge"><button type="button" class="rw-btn" onclick="nudgeHeading(-5)" aria-label="Turn heading 5 degrees left">−5°</button><button type="button" class="rw-btn" onclick="nudgeHeading(5)" aria-label="Turn heading 5 degrees right">+5°</button></span>
@@ -1359,10 +1380,10 @@ const highCard = nextHigh ? `
 </div>` : '';
 
 sec.innerHTML = `
-<div class="section-title">Tidal Predictions · Fremantle (Freshwater Bay reference)</div>
+<div class="section-title">Tidal predictions · Fremantle gauge (${loc.short})</div>
 <div class="tide-widget">
 <div class="tide-header">
-<div class="tide-title">Fremantle gauge — ~4 km from venue</div>
+<div class="tide-title">Fremantle gauge${loc.tideDist ? ` — ${loc.tideDist} from venue` : ''}</div>
 <div class="tide-note">Now: <strong style="color:var(--tide)">${tideHeight(Date.now()).toFixed(2)} m</strong> ACD</div>
 </div>
 <div class="tide-next">${lowCard}${highCard}</div>
@@ -1522,9 +1543,55 @@ daily: ['temperature_2m_max','temperature_2m_min','precipitation_sum',
 'wind_direction_10m_dominant','weathercode','cape_max','uv_index_max','sunrise','sunset'].join(','),
 forecast_days: 16, wind_speed_unit: 'kmh'
 });
-const res = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?${params}`);
-if (!res.ok) throw new Error(`API error ${res.status}`);
-return res.json();
+const url = `https://api.open-meteo.com/v1/forecast?${params}`;
+// One automatic retry for timeouts, dropped connections and server hiccups
+for (let attempt = 1; ; attempt++) {
+try {
+const res = await fetchWithTimeout(url);
+if (!res.ok) {
+const err = new Error(`API error ${res.status}`);
+err.retry = res.status >= 500 || res.status === 429;
+throw err;
+}
+return await res.json();
+} catch (err) {
+const retryable = err.retry !== false && !(err.message || '').startsWith('API error 4');
+if (attempt >= 2 || !retryable) throw err;
+await new Promise(r => setTimeout(r, 1500));
+}
+}
+}
+
+// ── OFFLINE FALLBACK: last good forecast saved on this device ─────────────
+const SAVED_MAX_AGE_MS = 12 * 3600 * 1000;
+const savedKey = idx => 'forecast.' + headingKey(LOCATIONS[idx]).slice(8); // per venue
+function saveForecast(idx, data) {
+try { localStorage.setItem('rowwx.' + savedKey(idx), JSON.stringify({ at: Date.now(), data })); } catch {}
+}
+function loadSavedForecast(idx) {
+try {
+const v = JSON.parse(localStorage.getItem('rowwx.' + savedKey(idx)) || 'null');
+if (v && v.data && Date.now() - v.at < SAVED_MAX_AGE_MS) return v;
+} catch {}
+return null;
+}
+// Venue-local "YYYY-MM-DDTHH" right now (what Open-Meteo uses in its time arrays)
+function venueHourNow(tz) {
+return new Date().toLocaleString('sv-SE', { timeZone: tz, hour12: false }).replace(' ', 'T').slice(0, 13);
+}
+// An older forecast's "current" block is out of date — rebuild it from that forecast's
+// figures for the hour we're in now, so "Now", the banner and the tiles stay sensible.
+function currentFromHourly(data, loc) {
+const h = data.hourly, nowH = venueHourNow(loc.tz);
+const i = h.time.findIndex(t => t.startsWith(nowH));
+if (i < 0) return data;
+const pick = k => (h[k] ? h[k][i] : null);
+data.current = { ...data.current, time: h.time[i],
+temperature_2m: pick('temperature_2m'), apparent_temperature: pick('apparent_temperature'),
+relative_humidity_2m: pick('relative_humidity_2m'), wind_speed_10m: pick('wind_speed_10m'),
+wind_gusts_10m: pick('wind_gusts_10m'), wind_direction_10m: pick('wind_direction_10m'),
+precipitation: pick('precipitation'), rain: pick('precipitation'), cape: pick('cape'), weathercode: pick('weathercode') };
+return data;
 }
 
 // ── WIND TRACKER GRAPH (WillyWeather-style) ───────────────────────────────
@@ -2282,9 +2349,9 @@ const el = document.getElementById('daylight');
 const dd = data.daily;
 if (!dd || !dd.time || !dd.time.length) { el.innerHTML = ''; return; }
 // After today's last light, show tomorrow (that's the next session that matters)
-let i = 0;
-const today = sunTimes(dd.time[0], loc.lat, loc.lon, -6);
-if (today && Date.now() > today.set && dd.time.length > 1) i = 1;
+let i = Math.max(0, dd.time.indexOf(venueHourNow(loc.tz).slice(0, 10)));
+const today = sunTimes(dd.time[i], loc.lat, loc.lon, -6);
+if (today && Date.now() > today.set && dd.time.length > i + 1) i++;
 const civil = sunTimes(dd.time[i], loc.lat, loc.lon, -6);
 const sun = sunTimes(dd.time[i], loc.lat, loc.lon, -0.833);
 if (!civil || !sun) { el.innerHTML = ''; return; }
@@ -2313,7 +2380,7 @@ el.textContent = stale ? `⚠ Forecast updated ${ago} — tap Refresh` : `Foreca
 // ── CONTROLS ──────────────────────────────────────────────────────────────
 function selectLocation(idx) {
 currentLoc = idx;
-store.set('venue', String(idx));
+store.set('venue', LOCATIONS[idx].short);
 lastObs = null;
 closeVenueSheet();
 updateVenueButton();
@@ -2482,12 +2549,23 @@ document.getElementById('ext-status').innerHTML = '<div class="status-dot" aria-
 try {
 const data = await fetchWeather(idx);
 cache[idx] = { data, at: Date.now() };
+saveForecast(idx, data);
 // Only draw it if the user is still looking at that venue
 if (idx === currentLoc) render(data, LOCATIONS[idx]);
 } catch(err) {
 if (idx !== currentLoc) return; // a newer request owns the screen now
-document.getElementById('error-box').style.display = 'block';
-document.getElementById('error-box').textContent = `Could not load weather data: ${err.message}. Check your internet connection and try refreshing.`;
+const box = document.getElementById('error-box');
+box.style.display = 'block';
+// Fall back to what we already have: this session's copy, or the last one saved on this device
+const fallback = cache[idx] || loadSavedForecast(idx);
+if (fallback) {
+cache[idx] = fallback;
+const t = new Date(fallback.at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+box.textContent = `Couldn't refresh (${err.message}). Showing the last forecast saved on this device, from ${t} — tap Refresh to try again.`;
+render(currentFromHourly(fallback.data, LOCATIONS[idx]), LOCATIONS[idx]);
+return;
+}
+box.textContent = `Could not load weather data: ${err.message}. Check your signal and tap Refresh to try again.`;
 document.getElementById('status-banner').className = 'status-banner loading';
 document.getElementById('status-text').textContent = 'Data unavailable — tap Refresh to retry';
 document.getElementById('ext-status').className = 'status-banner loading';
@@ -2528,8 +2606,9 @@ if (!document.hidden && !isFresh(currentLoc)) loadWeather();
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 {
-const saved = parseInt(store.get('venue', '0'), 10);
-currentLoc = Number.isInteger(saved) && saved >= 0 && saved < LOCATIONS.length ? saved : 0;
+const saved = store.get('venue', '');
+const byName = LOCATIONS.findIndex(l => l.short === saved);
+currentLoc = byName >= 0 ? byName : 0; // (older saves stored a list position; those simply reset to the first venue)
 }
 applyTheme(store.get('theme', 'dark'));
 applyCrewLimits();
