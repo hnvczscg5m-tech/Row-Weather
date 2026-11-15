@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Weatherow · Australian Rowing Venues</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Set the saved theme before anything draws (no flash of the wrong theme or ribbon),
+     and start downloading the one ribbon this theme and screen size will use. -->
+<script>try{var sun=localStorage.getItem('rowwx.theme')==='sun';if(sun)document.documentElement.setAttribute('data-theme','sun');
+var l=document.createElement('link');l.rel='preload';l.as='image';l.type='image/webp';
+l.href='weatherow_'+(sun?'day':'night')+'_mode_ribbon'+(matchMedia('(max-width:700px)').matches?'-1200':'')+'.webp';
+document.head.appendChild(l)}catch(e){}</script>
+<!-- Speed: open connections early; load fonts without holding up the first paint -->
+<link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@400;500;600&display=swap"></noscript>
 <style>
 :root {
 --navy:#08121f;--deep:#0b1a2e;--panel:#0d2040;--panel2:#0f2545;
@@ -488,6 +499,45 @@ details.rw-about strong{color:var(--text)}
 }
 @media(max-width:360px){.rw-body{grid-template-columns:1fr}.rw-dial{margin:0 auto}}
 
+/* ===== Header ribbon (day / night artwork) =====
+   The ribbon artwork sits in the middle of a 2172×724 transparent PNG. The box below shows
+   exactly the ribbon (2068×464 window starting at 52,128), keeping its proportions — the image
+   files themselves are untouched. Night ribbon is the default; Sun mode swaps to the day ribbon.
+   Only the ribbon for the current theme and screen size is downloaded. */
+.ribbon-header{display:block;max-width:1400px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) 14px 6px}
+.ribbon{position:relative;width:100%;max-width:720px;margin:0 auto;aspect-ratio:2068/464;
+background-repeat:no-repeat;background-size:105.029% auto;background-position:50% 49.23%;
+background-image:url(weatherow_night_mode_ribbon.png);
+background-image:-webkit-image-set(url(weatherow_night_mode_ribbon.webp) 1x);
+background-image:image-set(url(weatherow_night_mode_ribbon.webp) type("image/webp"),url(weatherow_night_mode_ribbon.png) type("image/png"))}
+[data-theme="sun"] .ribbon{background-image:url(weatherow_day_mode_ribbon.png);
+background-image:-webkit-image-set(url(weatherow_day_mode_ribbon.webp) 1x);
+background-image:image-set(url(weatherow_day_mode_ribbon.webp) type("image/webp"),url(weatherow_day_mode_ribbon.png) type("image/png"))}
+@media(max-width:700px){
+.ribbon{background-image:url(weatherow_night_mode_ribbon.png);
+background-image:-webkit-image-set(url(weatherow_night_mode_ribbon-1200.webp) 1x);
+background-image:image-set(url(weatherow_night_mode_ribbon-1200.webp) type("image/webp"),url(weatherow_night_mode_ribbon.png) type("image/png"))}
+[data-theme="sun"] .ribbon{background-image:url(weatherow_day_mode_ribbon.png);
+background-image:-webkit-image-set(url(weatherow_day_mode_ribbon-1200.webp) 1x);
+background-image:image-set(url(weatherow_day_mode_ribbon-1200.webp) type("image/webp"),url(weatherow_day_mode_ribbon.png) type("image/png"))}
+.ribbon-header{padding:calc(6px + env(safe-area-inset-top)) 13px 4px}
+}
+/* Transparent Refresh button laid exactly over the cyan refresh icon in the artwork */
+.ribbon-refresh{position:absolute;left:82.64%;top:25.43%;width:11.75%;height:52.16%;padding:0;margin:0;border:0;
+border-radius:20%;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;
+transition:background-color .15s,box-shadow .15s}
+.ribbon-refresh::before{content:'';position:absolute;inset:-4px;border-radius:24%} /* slightly larger tap area */
+.ribbon-refresh:hover{background:rgba(255,255,255,.16)}
+.ribbon-refresh:active{background:rgba(0,0,0,.2)}
+.ribbon-refresh:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px rgba(0,103,163,.65)}
+.ribbon-refresh:disabled{cursor:progress}
+/* While refreshing: a white ring spins over the icon (the artwork itself is never changed) */
+.ribbon-refresh.is-loading::after{content:'';position:absolute;inset:16%;border-radius:50%;
+border:3px solid rgba(255,255,255,.95);border-left-color:transparent;border-right-color:transparent;
+animation:spin .9s linear infinite}
+@media (prefers-reduced-motion:reduce){.ribbon-refresh.is-loading::after{animation:none;border-color:rgba(255,255,255,.9)}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 /* ===== Weather condition icon system (NEW) ===== */
 .wx-ico{display:inline-flex;align-items:center;justify-content:center;
 width:1em;height:1em;vertical-align:-0.18em;line-height:0}
@@ -510,16 +560,25 @@ width:1em;height:1em;vertical-align:-0.18em;line-height:0}
 .compass-arrow,.compass-arrow.gust-active,.hourly-windarrow svg{animation:none!important}
 }
 </style>
-<script>try{if(localStorage.getItem('rowwx.theme')==='sun')document.documentElement.setAttribute('data-theme','sun')}catch(e){}</script>
 </head>
 <body>
 
+<header class="ribbon-header">
+<div class="ribbon">
+<h1 class="sr-only">Weatherow</h1>
+<button type="button" class="ribbon-refresh" id="refresh-btn" onclick="loadWeather()"
+aria-label="Refresh weather data" title="Refresh weather data"></button>
+</div>
+</header>
+<!-- PREVIOUS HEADER — to switch back: delete the ribbon <header> above and remove the
+     comment marks around the block below (it still works with the current page).
 <header class="compact-hero">
 <img src="weatherow-logo-800.webp" alt="Weatherow" class="hero-logo">
 <div class="hero-actions">
 <button type="button" class="hero-refresh" id="refresh-btn" onclick="loadWeather()">↻ Refresh</button>
 </div>
 </header>
+-->
 
 <!-- Venue + view controls. Sticky at the top on desktop, fixed at the bottom (thumb reach) on phones -->
 <nav class="control-bar" aria-label="Venue and forecast range">
@@ -1528,10 +1587,12 @@ ctx.fillText(lbl, px+8, padT+1);
 function fmtPerthTime(ms){return new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});}
 
 // ── FETCH (16-day) ──────────────────────────────────────────────────────────
-async function fetchWeather(idx) {
+// Speed: the live view needs 8 days of hourly data; days 8–16 only need daily figures.
+// So ask for two smaller things in parallel instead of 16 days of hourly data.
+function forecastUrls(idx) {
 const loc = LOCATIONS[idx];
-const params = new URLSearchParams({
-latitude: loc.lat, longitude: loc.lon, timezone: loc.tz,
+const base = { latitude: loc.lat, longitude: loc.lon, timezone: loc.tz, wind_speed_unit: 'kmh' };
+const live = new URLSearchParams({ ...base,
 current: ['temperature_2m','apparent_temperature','relative_humidity_2m',
 'wind_speed_10m','wind_gusts_10m','wind_direction_10m',
 'precipitation','rain','cape','weathercode'].join(','),
@@ -1541,9 +1602,17 @@ hourly: ['temperature_2m','relative_humidity_2m','precipitation_probability',
 daily: ['temperature_2m_max','temperature_2m_min','precipitation_sum',
 'precipitation_probability_max','wind_speed_10m_max','wind_gusts_10m_max',
 'wind_direction_10m_dominant','weathercode','cape_max','uv_index_max','sunrise','sunset'].join(','),
-forecast_days: 16, wind_speed_unit: 'kmh'
+forecast_days: 8 // covers "now" plus the 7-day wind graph from any hour today
 });
-const url = `https://api.open-meteo.com/v1/forecast?${params}`;
+const ext = new URLSearchParams({ ...base,
+daily: ['temperature_2m_max','temperature_2m_min','precipitation_sum',
+'precipitation_probability_max','wind_speed_10m_max','wind_gusts_10m_max',
+'wind_direction_10m_dominant','weathercode','cape_max','uv_index_max','sunrise','sunset'].join(','),
+forecast_days: 16
+});
+return { live: `https://api.open-meteo.com/v1/forecast?${live}`, ext: `https://api.open-meteo.com/v1/forecast?${ext}` };
+}
+async function fetchJSON(url) {
 // One automatic retry for timeouts, dropped connections and server hiccups
 for (let attempt = 1; ; attempt++) {
 try {
@@ -1896,6 +1965,14 @@ async function renderObservations(loc) {
 // ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
 function renderExtended(data, loc) {
 document.getElementById('ext-loc-name').textContent = loc.short;
+if (data._extPending || data.daily.time.length < 9) {
+const pending = !!data._extPending;
+document.getElementById('ext-status').className = 'status-banner ' + (pending ? 'loading' : 'caution');
+document.getElementById('ext-status').innerHTML = pending
+? '<div class="status-dot" aria-hidden="true"></div><span><span class="spinner"></span> Loading days 8–16…</span>'
+: '<div class="status-dot" aria-hidden="true"></div><span>Days 8–16 unavailable — tap Refresh to retry</span>';
+return;
+}
 const dd = data.daily;
 const total = dd.time.length;
 const startIdx = 7; // day 8 onward (0-based index 7)
@@ -2372,6 +2449,7 @@ const e = cache[currentLoc];
 if (!e) { el.className = 'freshness'; el.textContent = 'Updating…'; return; }
 const mins = Math.floor((Date.now() - e.at) / 60000);
 const ago = mins < 1 ? 'just now' : `${mins} min ago`;
+if (refreshing) { el.className = 'freshness'; el.textContent = `Updating… (showing forecast from ${ago})`; return; }
 const stale = mins >= STALE_MIN;
 el.className = 'freshness' + (stale ? ' stale' : '');
 el.textContent = stale ? `⚠ Forecast updated ${ago} — tap Refresh` : `Forecast updated ${ago}`;
@@ -2389,6 +2467,10 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
 if (isFresh(idx)) {
 render(cache[idx].data, LOCATIONS[idx]);
 } else {
+if (!cache[idx]) {
+const saved = loadSavedForecast(idx);
+if (saved) { cache[idx] = saved; render(currentFromHourly(saved.data, LOCATIONS[idx]), LOCATIONS[idx]); }
+}
 loadWeather();
 }
 }
@@ -2534,24 +2616,52 @@ renderExtended(entry.data, LOCATIONS[currentLoc]);
 }
 
 let loadsInFlight = 0;
+let refreshing = false; // true while a refresh runs behind data already on screen
 async function loadWeather() {
 // Remember WHICH venue this request is for — the user may switch venue while it loads
 const idx = currentLoc;
+const loc = LOCATIONS[idx];
 loadsInFlight++;
 const btn = document.getElementById('refresh-btn');
 btn.disabled = true;
-btn.textContent = '↻ Loading…';
+btn.classList.add('is-loading'); btn.setAttribute('aria-busy', 'true');
 document.getElementById('error-box').style.display = 'none';
+// Speed: if this venue is already on screen (saved or earlier forecast), leave it there
+// and refresh quietly behind it instead of blanking the page.
+const showing = !!cache[idx];
+refreshing = showing;
+updateFreshness();
+if (!showing) {
 document.getElementById('status-banner').className = 'status-banner loading';
 document.getElementById('status-text').innerHTML = '<span class="spinner"></span> Loading weather data…';
 document.getElementById('ext-status').className = 'status-banner loading';
 document.getElementById('ext-status').innerHTML = '<div class="status-dot" aria-hidden="true"></div><span><span class="spinner"></span> Loading extended outlook…</span>';
+}
+const urls = forecastUrls(idx);
+const extP = fetchJSON(urls.ext); // starts now, in parallel
+extP.catch(() => {});             // handled below; avoid an unhandled-rejection warning
 try {
-const data = await fetchWeather(idx);
+const data = await fetchJSON(urls.live);
+// Days 8–16: use them if they've already arrived, otherwise fill in when they do
+let extDaily = null;
+await Promise.race([extP.then(e => { extDaily = e.daily; }, () => {}), Promise.resolve()]);
+if (extDaily) data.daily = extDaily; else data._extPending = true;
 cache[idx] = { data, at: Date.now() };
+if (!data._extPending) saveForecast(idx, data);
+if (idx === currentLoc) render(data, loc);
+if (data._extPending) {
+extP.then(e => {
+data.daily = e.daily; delete data._extPending;
 saveForecast(idx, data);
-// Only draw it if the user is still looking at that venue
-if (idx === currentLoc) render(data, LOCATIONS[idx]);
+if (idx === currentLoc && cache[idx] && cache[idx].data === data) render(data, loc);
+}).catch(err => {
+delete data._extPending;
+if (idx === currentLoc) {
+document.getElementById('ext-status').className = 'status-banner caution';
+document.getElementById('ext-status').innerHTML = `<div class="status-dot" aria-hidden="true"></div><span>Days 8–16 unavailable (${esc(err.message)}) — tap Refresh to retry</span>`;
+}
+});
+}
 } catch(err) {
 if (idx !== currentLoc) return; // a newer request owns the screen now
 const box = document.getElementById('error-box');
@@ -2562,7 +2672,7 @@ if (fallback) {
 cache[idx] = fallback;
 const t = new Date(fallback.at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
 box.textContent = `Couldn't refresh (${err.message}). Showing the last forecast saved on this device, from ${t} — tap Refresh to try again.`;
-render(currentFromHourly(fallback.data, LOCATIONS[idx]), LOCATIONS[idx]);
+render(currentFromHourly(fallback.data, loc), loc);
 return;
 }
 box.textContent = `Could not load weather data: ${err.message}. Check your signal and tap Refresh to try again.`;
@@ -2573,8 +2683,10 @@ document.getElementById('ext-status').innerHTML = '<div class="status-dot" aria-
 } finally {
 // Always re-enable the button once nothing is loading, even if something above threw
 if (--loadsInFlight === 0) {
+refreshing = false;
 btn.disabled = false;
-btn.textContent = '↻ Refresh';
+btn.classList.remove('is-loading'); btn.removeAttribute('aria-busy');
+updateFreshness();
 }
 }
 }
@@ -2613,7 +2725,22 @@ currentLoc = byName >= 0 ? byName : 0; // (older saves stored a list position; t
 applyTheme(store.get('theme', 'dark'));
 applyCrewLimits();
 updateClock();
+// Speed: show the last forecast saved on this phone straight away (if under 12 h old),
+// then fetch fresh data behind it.
+{
+const saved = loadSavedForecast(currentLoc);
+if (saved) {
+cache[currentLoc] = saved;
+render(currentFromHourly(saved.data, LOCATIONS[currentLoc]), LOCATIONS[currentLoc]);
+}
+}
 loadWeather();
+
+// Speed: keep the page, logo, icons and fonts on the phone so repeat visits open instantly
+// (needs sw.js uploaded next to index.html; skipped when opened as a local file)
+if ('serviceWorker' in navigator && /^https:|^http:\/\/(localhost|127\.0\.0\.1)/.test(location.href)) {
+window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
