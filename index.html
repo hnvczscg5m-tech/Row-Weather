@@ -195,7 +195,7 @@ border-radius:6px;cursor:pointer;transition:all .2s}
 .tide-seg-btn.active{background:var(--accent2);color:#fff}
 .tide-chart-label{font-size:12px;color:var(--muted);margin-bottom:6px}
 .tide-chart-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
-#tide-canvas{display:block;height:240px}
+#tide-canvas{display:block;height:240px;touch-action:pan-y;cursor:crosshair}
 
 .wind-graph-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 8px 8px;margin-bottom:4px}
 .wind-graph-legend{display:flex;gap:18px;flex-wrap:wrap;padding:0 8px 10px;font-size:11px;color:var(--muted)}
@@ -560,6 +560,21 @@ display:inline-flex;align-items:center;gap:8px}
 .install-btn:hover{color:var(--text);border-color:var(--accent2)}
 .install-btn[hidden]{display:none}
 
+
+/* ===== Course map ===== */
+.cm-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px}
+.cm-map{position:relative;overflow:hidden;border-radius:6px;background:var(--panel2);width:100%}
+.cm-tiles{position:absolute;inset:0;filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.92) saturate(.7)}
+[data-theme="sun"] .cm-tiles{filter:none}
+.cm-tiles img{position:absolute;width:256px;height:256px;max-width:none;display:block;-webkit-user-drag:none;user-select:none}
+.cm-map svg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.cm-zoom{position:absolute;right:8px;bottom:26px;display:flex;flex-direction:column;gap:6px}
+.cm-zoom button{width:38px;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:20px;line-height:1;cursor:pointer}
+.cm-zoom button:disabled{opacity:.35}
+.cm-attr{position:absolute;right:0;bottom:0;font-size:9px;padding:2px 6px;background:rgba(255,255,255,.75);color:#222;border-top-left-radius:4px}
+.cm-attr a{color:#222}
+.cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5}
+.cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
 /* ===== Collapsible sections (tap a heading) ===== */
 .coll > .section-title{cursor:pointer;-webkit-user-select:none;user-select:none;min-height:32px;-webkit-tap-highlight-color:transparent;border-radius:4px}
 .coll > .section-title::before{content:'';flex:0 0 auto;width:7px;height:7px;margin:0 2px 0 3px;
@@ -727,6 +742,9 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <!-- Rowing wind: wind relative to the crew's heading -->
 <div id="rowing-wind" class="coll" data-sec="rowing-wind"></div>
 
+<!-- Course map: the course drawn on a real map -->
+<div id="course-map" class="coll" data-sec="course-map"></div>
+
 <!-- Live station readings -->
 <div id="obs-section" class="coll" data-sec="live-obs"></div>
 
@@ -878,6 +896,9 @@ Install Weatherow app</button>
 //   source      where the bearing came from (shown on tap) — keep this when you change it
 //   presets     optional extra headings, e.g. training routes: [{ label: 'Upriver', bearing: 120 }]
 //   raceLabel / reverseLabel  optional names for the two direction buttons (e.g. 'Downstream' / 'Return')
+//   length      course length in metres for the Course Map (default 2000)
+//   mid         [lat, lon] of the MIDDLE of the course for the Course Map (default: the venue's lat/lon).
+//               To move a course line that's drawn in the wrong spot, set this to the mid-course point from Google Maps.
 // The readable compass point (N, NNE…) is worked out from the bearing automatically.
 // Adding a venue = add one entry with lat/lon/tz and a course; everything else follows.
 const LOCATIONS = [
@@ -888,6 +909,7 @@ course: {
   raceLabel: 'Outbound', reverseLabel: 'Return',
   description: 'Christchurch to Scotch training course (≈750 m one way, ≈1.5 km out and back) along the western shore of Freshwater Bay: outbound south from the Christchurch turn mark to the Scotch turn mark (near The Esplanade jetty), then return north. Turn marks are temporary or coach buoys. For other training routes, use the heading selector.',
   source: 'Freshwater Bay course map (Christchurch to Scotch) supplied by a local coach: drawn legs measure 188°. The real western shoreline on Google satellite runs 185.5°. (The map legend says ≈193°, which doesn\'t match its own drawing.)',
+  length: 750,
   presets: [] // add other named training routes here, e.g. { label: 'Upriver leg', bearing: 120 }
 },
 lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
@@ -996,6 +1018,7 @@ name: "Lake Burley Griffin, ACT", short: "Lake Burley Griffin", icon: "icons/lak
 course: {
   bearing: 63, status: 'approximate',
   description: 'Yarramundi Reach 1,800 m course: start at the Scrivener Dam end (west), finish toward Black Mountain / Acacia Inlet — crews race east-northeast. Rowing ACT uses reverse traffic flows during regattas.',
+  length: 1800, mid: [-35.2925, 149.0840], // mid-course is a best estimate (Yarramundi Reach) — check on the Course Map
   source: 'Racing direction: NCA "Watercraft Safety — Traffic Flow Guide" (boats go to the Start/Scrivener Dam in lane 1 and travel down the course away from Government House); Rowing ACT ("travel North, from Start to Finish"). Bearing: Google Maps axis of Yarramundi Reach ≈ 063° (±10°, the reach has bays). The stylised NCA guide suggests 024–043°, so verify on a zoomed satellite view.',
   presets: []
 },
@@ -1235,6 +1258,122 @@ const deg = RowingWind.norm(Math.atan2(x, -y) * 180 / Math.PI);
 setHeading('custom', Math.round(deg / 5) * 5 % 360);
 }
 
+
+// ── COURSE MAP ────────────────────────────────────────────────────────────
+// The course drawn on OpenStreetMap: a line of the course's length, through its mid-point, on its bearing.
+// Positions come from course.mid (or the venue's lat/lon) — see the notes above LOCATIONS.
+const cmState = { key: '', zoomAdj: 0, loc: null };
+const CM_TILE = (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+function cmProject(lat, lon, z) {
+const n = 256 * Math.pow(2, z), r = lat * Math.PI / 180;
+return { x: (lon + 180) / 360 * n, y: (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n };
+}
+function cmOffset(lat, lon, bearing, metres) {
+const b = bearing * Math.PI / 180;
+return [lat + metres * Math.cos(b) / 111320, lon + metres * Math.sin(b) / (111320 * Math.cos(lat * Math.PI / 180))];
+}
+function cmZoom(d) { cmState.zoomAdj = Math.max(-3, Math.min(2, cmState.zoomAdj + d)); renderCourseMap(); }
+function renderCourseMap() {
+const box = document.getElementById('course-map');
+const loc = rwState.loc || LOCATIONS[currentLoc];
+if (!box || !loc) return;
+if (cmState.loc !== loc) { cmState.loc = loc; cmState.zoomAdj = 0; cmState.key = ''; }
+const course = loc.course || {};
+const hasLine = RowingWind.isNum(course.bearing);
+if (!box.querySelector('.cm-panel')) {
+box.innerHTML = `<div class="section-title">Course Map</div>
+<div class="cm-panel"><div class="cm-map" id="cm-map"><div class="cm-tiles" id="cm-tiles"></div><svg id="cm-svg" aria-hidden="true"></svg>
+<div class="cm-zoom"><button type="button" id="cm-in" onclick="cmZoom(1)" aria-label="Zoom in">+</button><button type="button" id="cm-out" onclick="cmZoom(-1)" aria-label="Zoom out">−</button></div>
+<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
+<div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div></div>`;
+cmState.key = '';
+}
+const mapEl = document.getElementById('cm-map');
+const W = mapEl.clientWidth;
+if (!W) return; // folded away — drawn when it opens
+const H = Math.round(Math.min(420, Math.max(220, W * 0.7)));
+mapEl.style.height = H + 'px';
+const [mlat, mlon] = course.mid || [loc.lat, loc.lon];
+const len = course.length || 2000;
+const mpp0 = 156543.03392 * Math.cos(mlat * Math.PI / 180);
+let z = 17;
+while (z > 3 && len / (mpp0 / Math.pow(2, z)) > 0.62 * Math.min(W, H)) z--;
+z = Math.max(3, Math.min(18, z + cmState.zoomAdj));
+document.getElementById('cm-in').disabled = z >= 18 || cmState.zoomAdj >= 2;
+document.getElementById('cm-out').disabled = cmState.zoomAdj <= -3;
+const mpp = mpp0 / Math.pow(2, z);
+const c = cmProject(mlat, mlon, z);
+const ox = c.x - W / 2, oy = c.y - H / 2; // world pixel at the map's top-left
+const px = (lat, lon) => { const p = cmProject(lat, lon, z); return [p.x - ox, p.y - oy]; };
+
+// Tiles: only rebuilt when the venue, zoom or size changes (not on every wind update)
+const key = [loc.short, z, W, H].join('|');
+if (key !== cmState.key) {
+cmState.key = key;
+const n = Math.pow(2, z), imgs = [];
+for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++)
+for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) {
+if (ty < 0 || ty >= n) continue;
+imgs.push(`<img alt="" loading="lazy" decoding="async" src="${CM_TILE(z, ((tx % n) + n) % n, ty)}" style="left:${Math.round(tx * 256 - ox)}px;top:${Math.round(ty * 256 - oy)}px" onerror="this.style.display='none'">`);
+}
+document.getElementById('cm-tiles').innerHTML = imgs.join('');
+}
+
+// Overlay
+const ink = '#0b1726', line = '#ff7a00';
+const pill = (x, y, text, anchor = 'middle') => {
+const w = text.length * 6.4 + 12;
+const x0 = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
+return `<rect x="${x0.toFixed(1)}" y="${(y - 9).toFixed(1)}" width="${w.toFixed(1)}" height="18" rx="9" fill="#fff" stroke="${ink}" stroke-width="1"/>
+<text x="${(x0 + w / 2).toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="11" font-weight="700" fill="${ink}">${esc(text)}</text>`;
+};
+let g = '';
+if (hasLine) {
+const twoWay = !!course.reverseLabel;
+const [sx, sy] = px(...cmOffset(mlat, mlon, course.bearing, -len / 2));
+const [fx, fy] = px(...cmOffset(mlat, mlon, course.bearing, len / 2));
+const L = Math.hypot(fx - sx, fy - sy) || 1, ux = (fx - sx) / L, uy = (fy - sy) / L; // unit vector start → finish
+const head = (x, y, dx, dy) => `<path d="M${(x + dx * 9).toFixed(1)} ${(y + dy * 9).toFixed(1)} L${(x - dx * 5 - dy * 8).toFixed(1)} ${(y - dy * 5 + dx * 8).toFixed(1)} L${(x - dx * 5 + dy * 8).toFixed(1)} ${(y - dy * 5 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+g += `<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${ink}" stroke-width="8" stroke-linecap="round"/>
+<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${line}" stroke-width="4.5" stroke-linecap="round"/>`;
+if (len >= 1000) for (let m = 500; m < len; m += 500) { // 500 m marks
+const tx = sx + ux * L * m / len, ty = sy + uy * L * m / len;
+g += `<line x1="${(tx - uy * 7).toFixed(1)}" y1="${(ty + ux * 7).toFixed(1)}" x2="${(tx + uy * 7).toFixed(1)}" y2="${(ty - ux * 7).toFixed(1)}" stroke="${ink}" stroke-width="2.5"/>`;
+}
+g += head(fx, fy, ux, uy);
+if (twoWay) g += head(sx, sy, -ux, -uy);
+else g += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
+// End labels sit just beyond each end, kept inside the map
+const lab = (x, y, dx, dy, text) => pill(Math.max(34, Math.min(W - 34, x + dx * 26)), Math.max(48, Math.min(H - 34, y + dy * 26)), text);
+if (!twoWay) g += lab(sx, sy, -ux, -uy, 'Start') + lab(fx, fy, ux, uy, 'Finish');
+}
+// North arrow (top-right)
+g += `<g transform="translate(${W - 24} 28)"><circle r="16" fill="#fff" stroke="${ink}" stroke-width="1"/><path d="M0 -11 L5 4 L0 1 L-5 4Z" fill="${ink}"/><text y="13" text-anchor="middle" font-family="Barlow, sans-serif" font-size="8" font-weight="700" fill="${ink}">N</text></g>`;
+// Wind (top-left): live reading if there is one, otherwise the forecast for now
+const w = (rwState.loc === loc && rwState.live && RowingWind.isNum(rwState.live.speed)) ? rwState.live : (rwState.loc === loc ? rwState.fc : null);
+if (w && RowingWind.isNum(w.speed)) {
+const calm = w.speed < 2 || !RowingWind.isNum(w.dir);
+const text = calm ? 'Wind calm' : `${w.dirTxt || deg2comp(w.dir)} ${Math.round(w.speed)} km/h`;
+const bw = text.length * 6.4 + (calm ? 14 : 36);
+g += `<g transform="translate(8 14)"><rect width="${bw.toFixed(1)}" height="28" rx="14" fill="#fff" stroke="${ink}" stroke-width="1"/>
+${calm ? '' : `<g transform="translate(16 14) rotate(${(w.dir + 180) % 360})"><path d="M0 -9 L5 3 L1.6 1.5 L1.6 9 L-1.6 9 L-1.6 1.5 L-5 3Z" fill="#0077b6"/></g>`}
+<text x="${calm ? 8 : 30}" y="18.5" font-family="Barlow, sans-serif" font-size="11.5" font-weight="700" fill="${ink}">${esc(text)}</text></g>`;
+}
+// Scale bar (bottom-left)
+const barM = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].find(m => m / mpp >= 46) || 20000;
+const barPx = barM / mpp;
+g += `<g transform="translate(10 ${H - 12})"><rect x="-4" y="-17" width="${(barPx + 8).toFixed(1)}" height="23" rx="4" fill="#fff" opacity=".85"/>
+<path d="M0 -4 V0 H${barPx.toFixed(1)} V-4" fill="none" stroke="${ink}" stroke-width="2"/>
+<text x="${(barPx / 2).toFixed(1)}" y="-6" text-anchor="middle" font-family="Barlow, sans-serif" font-size="10" font-weight="700" fill="${ink}">${barM >= 1000 ? barM / 1000 + ' km' : barM + ' m'}</text></g>`;
+const svg = document.getElementById('cm-svg');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+svg.innerHTML = g;
+
+document.getElementById('cm-note').textContent = !hasLine ? 'No fixed course direction set for this venue.'
+: `${(len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m')} course on ${deg3(course.bearing)}${course.reverseLabel ? ', rowed both ways' : ', arrow = racing direction'}. The line's position is indicative — check it against the satellite view.`;
+document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
+}
+
 // ── ROWING WIND PANEL ─────────────────────────────────────────────────────
 // rwState is filled by render() (forecast) and renderObservations() (live)
 let rwState = { loc: null, fc: null, hourly: null, hIdx: 0, daily: null, live: null };
@@ -1277,6 +1416,7 @@ ${arrow(secondary, false)}${arrow(primary, true)}</svg>`;
 }
 
 function renderRowingWind() {
+try { renderCourseMap(); } catch (e) { console.warn('course map', e); }
 const el = document.getElementById('rowing-wind');
 const { loc, fc, hourly: h, hIdx } = rwState;
 if (!el || !loc) return;
@@ -1463,7 +1603,7 @@ let tideRangeDays = 5; // default: 5-day (matches photo)
 let tideLocRef = null;
 
 function setTideRange(days) {
-tideRangeDays = days;
+tideRangeDays = days; tideTrackMs = null;
 ['1','3','5'].forEach(d =>
 document.getElementById('tide-seg-'+d)?.classList.toggle('active', +d === days));
 drawTideChart();
@@ -1520,11 +1660,12 @@ sec.innerHTML = `
 <button class="tide-seg-btn ${tideRangeDays===3?'active':''}" id="tide-seg-3" onclick="setTideRange(3)">3 days</button>
 <button class="tide-seg-btn ${tideRangeDays===5?'active':''}" id="tide-seg-5" onclick="setTideRange(5)">5 days</button>
 </div>
-<div class="tide-chart-label">Tide Height</div>
+<div class="tide-chart-label">Tide Height <span style="opacity:.75">· slide along the graph to read any time</span></div>
 <div class="tide-chart-scroll"><canvas id="tide-canvas"></canvas></div>
 <div style="font-size:10px;color:var(--muted);margin-top:8px">Harmonic prediction above Chart Datum (ACD) · approximate — use live gauge for launch decisions</div>
 </div>`;
 
+bindTideTrack(document.getElementById('tide-canvas'));
 drawTideChart();
 }
 
@@ -1548,9 +1689,12 @@ const pts = [];
 for (let ms = start; ms <= end; ms += step) pts.push({ms, h: tideHeight(ms)});
 
 // layout: ~per-day width so multi-day scrolls horizontally
-const dayW = days === 1 ? 320 : days === 3 ? 230 : 200;
+// The whole range fits the widget's width (no sideways scrolling), so a finger can slide along it
 const padL = 40, padR = 16, padT = 30, padB = 34;
-const plotW = dayW * days;
+const avail = canvas.parentElement.clientWidth;
+if (!avail) return; // section is folded away — drawn again when it opens
+const plotW = Math.max(220, avail - padL - padR);
+const dayW = plotW / days;
 const cssW = padL + padR + plotW;
 const plotH = 150;
 const cssH = padT + plotH + padB;
@@ -1606,7 +1750,8 @@ ctx.fillText(dd.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/
 ctx.fillStyle = K.muted;
 ctx.font = '11px "Barlow Condensed", sans-serif';
 const wd = ctx.measureText(dd.toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'})).width;
-ctx.fillText(dd.toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'Australia/Perth'}), cx+6+wd+16, 4);
+const dateTxt = dd.toLocaleDateString('en-AU', dayW >= 96 ? {day:'numeric',month:'short',timeZone:'Australia/Perth'} : {day:'numeric',timeZone:'Australia/Perth'});
+ctx.fillText(dateTxt, cx+6+wd+(dayW >= 96 ? 16 : 12), 4);
 }
 }
 
@@ -1641,7 +1786,8 @@ ctx.beginPath(); ctx.moveTo(nx, padT-6); ctx.lineTo(nx, padT+plotH); ctx.stroke(
 ctx.beginPath(); ctx.arc(nx, y(nh), 6, 0, 2*Math.PI);
 ctx.fillStyle = '#fff'; ctx.fill();
 ctx.strokeStyle = K.tide; ctx.lineWidth = 2; ctx.stroke();
-// current reading pill
+// current reading pill (the slide tracker's pill takes its place while tracking)
+if (tideTrackMs === null) {
 const lbl = `${fmtPerthTime(now)} ${nh.toFixed(2)} m`;
 ctx.font = '700 11px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width;
@@ -1652,6 +1798,49 @@ ctx.fillRect(px, padT-2, tw+16, 18);
 ctx.fillStyle = K.text; ctx.textAlign='left'; ctx.textBaseline='top';
 ctx.fillText(lbl, px+8, padT+1);
 }
+}
+
+// slide tracker: the time and height under the finger
+tideGeom = { start, end, padL, plotW };
+if (tideTrackMs !== null) {
+const tms = Math.max(start, Math.min(end, tideTrackMs));
+const tx = x(tms), th = tideHeight(tms);
+const rising = tideHeight(tms + 5*60000) > th;
+ctx.strokeStyle = K.text; ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(tx, padT-6); ctx.lineTo(tx, padT+plotH); ctx.stroke();
+ctx.beginPath(); ctx.arc(tx, y(th), 7, 0, 2*Math.PI);
+ctx.fillStyle = '#fff'; ctx.fill();
+ctx.strokeStyle = K.accent; ctx.lineWidth = 3; ctx.stroke();
+const day = new Date(tms).toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'});
+const lbl = `${day} ${fmtPerthTime(tms)} · ${th.toFixed(2)} m · ${rising ? 'rising' : 'falling'}`;
+ctx.font = '700 12px "Barlow Condensed", sans-serif';
+const tw = ctx.measureText(lbl).width;
+let px = tx - (tw+16)/2;
+px = Math.max(2, Math.min(px, cssW-2-(tw+16)));
+ctx.fillStyle = K.pill; ctx.fillRect(px, padT-4, tw+16, 20);
+ctx.strokeStyle = K.accent; ctx.lineWidth = 1; ctx.strokeRect(px+.5, padT-3.5, tw+15, 19);
+ctx.fillStyle = K.text; ctx.textAlign='left'; ctx.textBaseline='top';
+ctx.fillText(lbl, px+8, padT);
+}
+}
+
+// Slide (or hover) along the tide graph to read the time and height at any point
+let tideTrackMs = null, tideGeom = null, tideTrackTimer = null;
+function bindTideTrack(canvas) {
+const at = e => {
+if (!tideGeom) return;
+const px = e.clientX - canvas.getBoundingClientRect().left;
+const f = Math.max(0, Math.min(1, (px - tideGeom.padL) / tideGeom.plotW));
+tideTrackMs = Math.round((tideGeom.start + f * (tideGeom.end - tideGeom.start)) / 60000) * 60000;
+clearTimeout(tideTrackTimer);
+drawTideChart();
+};
+const release = ms => { clearTimeout(tideTrackTimer); tideTrackTimer = setTimeout(() => { tideTrackMs = null; drawTideChart(); }, ms); };
+canvas.addEventListener('pointerdown', e => { try { canvas.setPointerCapture(e.pointerId); } catch {} at(e); });
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.pressure > 0 || e.buttons) at(e); });
+canvas.addEventListener('pointerup', () => release(4000));     // reading stays a moment, then "now" returns
+canvas.addEventListener('pointercancel', () => release(4000));
+canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') release(0); });
 }
 function fmtPerthTime(ms){return new Date(ms).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Australia/Perth'});}
 
@@ -2679,6 +2868,7 @@ if (!entry) return;
 if (currentView === 'live') {
 if (lastHourly) renderWindGraph(lastHourly, lastHIdx);
 drawTideChart();
+renderCourseMap();
 } else {
 renderExtended(entry.data, LOCATIONS[currentLoc]);
 }
