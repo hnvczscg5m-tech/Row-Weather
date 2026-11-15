@@ -574,6 +574,10 @@ display:inline-flex;align-items:center;gap:8px}
 .cm-attr{position:absolute;right:0;bottom:0;font-size:9px;padding:2px 6px;background:rgba(255,255,255,.75);color:#222;border-top-left-radius:4px}
 .cm-attr a{color:#222}
 .cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5}
+.cm-map.adjusting{touch-action:none;cursor:grab;outline:2px dashed var(--accent);outline-offset:-2px}
+.cm-adjust{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--muted)}
+.cm-adjust button{min-height:32px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font:inherit;cursor:pointer}
+.cm-adjust button[hidden]{display:none}
 .cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
 /* ===== Collapsible sections (tap a heading) ===== */
 .coll > .section-title{cursor:pointer;-webkit-user-select:none;user-select:none;min-height:32px;-webkit-tap-highlight-color:transparent;border-radius:4px}
@@ -909,7 +913,7 @@ course: {
   raceLabel: 'Outbound', reverseLabel: 'Return',
   description: 'Christchurch to Scotch training course (≈750 m one way, ≈1.5 km out and back) along the western shore of Freshwater Bay: outbound south from the Christchurch turn mark to the Scotch turn mark (near The Esplanade jetty), then return north. Turn marks are temporary or coach buoys. For other training routes, use the heading selector.',
   source: 'Freshwater Bay course map (Christchurch to Scotch) supplied by a local coach: drawn legs measure 188°. The real western shoreline on Google satellite runs 185.5°. (The map legend says ≈193°, which doesn\'t match its own drawing.)',
-  length: 750,
+  length: 750, mid: [-31.9943, 115.7740], // from the coach's arrow drawn on the Course Map (western shore of the bay)
   presets: [] // add other named training routes here, e.g. { label: 'Upriver leg', bearing: 120 }
 },
 lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
@@ -926,6 +930,7 @@ course: {
   raceLabel: 'Downstream', reverseLabel: 'Return',
   description: 'Two 2,000 m courses on Blackwall Reach, rowed both ways: downstream from the Point Walter navigation spit post to the East Fremantle Yacht Club (western end), and the return course back to Point Walter. The main navigation channel runs between them — keep clear.',
   source: 'Course map supplied by a local coach (rough, north-up). Bearing measured along both drawn courses: downstream 203–205°, return 023–025°.',
+  mid: [-32.0207, 115.7794], // from the coach's arrow drawn on the Course Map (≈890 m east of the first estimate)
   presets: []
 },
 lat: -32.0200, lon: 115.7700, tz: "Australia/Perth", tidal: true, // approximate mid-course — check
@@ -940,6 +945,7 @@ name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion
 course: {
   bearing: 42, status: 'verified',
   description: '2,000 m, 8-lane course running SW → NE alongside Tonkin Highway; crews race north-east to the finish tower at the north-eastern end.',
+  mid: [-32.1141, 115.9878], // ESTIMATE: mid-course ≈1 km south-west of the regatta centre pin, from the coach's arrow on Google Maps — check on the Course Map
   source: 'Finish tower location confirmed by a local coach (Google Maps pin). Bearing measured from the map along the lake axis and shoreline (41–42°, ±2°).',
   presets: []
 },
@@ -953,6 +959,7 @@ name: "Sydney International Regatta Centre, Penrith", short: "Sydney SIRC", icon
 course: {
   bearing: 274, status: 'verified',
   description: '2,300 m Competition Lake running east → west; crews race west (274°), with the finish tower on the north bank at the western end.',
+  mid: [-33.7250, 150.6832], // from the coach's arrow drawn on the Course Map (≈1.1 km east, ≈290 m south of the first estimate)
   source: 'Racing direction: Rowing NSW regatta programmes (lane 1 on the southern bank, on the left looking from start to finish). Bearing measured from Google Maps along both shorelines (274.0° and 273.9°, ±1°).',
   presets: []
 },
@@ -966,6 +973,7 @@ name: "Lake Nagambie, Victoria", short: "Lake Nagambie", icon: "icons/lake_nagam
 course: {
   bearing: 256, status: 'approximate',
   description: '2,000 m course along the southern shore, running ENE → WSW: start at the eastern end (near the freeway), finish tower at the western end beside the Regatta Centre boat park.',
+  mid: [-36.7868, 145.1413], // ESTIMATE from the Nagambie Waterways maps: mid-course ≈1.1 km west of High Street, level with Goulburn Street — check on the Course Map
   source: 'Google Maps: straight southern shoreline beside the finish end measures 256° (the course was excavated along this shore). Rowing Victoria "Competition Traffic Flow 2000m" map: course parallel to the shore, racing west; its north arrow suggests ~250°. Direction also matches the 2017 Masters programme ("launch facing west, the direction to the Judges Tower"). Estimated ±4°.',
   presets: []
 },
@@ -977,9 +985,9 @@ obsStation: { name: "Shepparton Airport", dist: "~40 km", json: "https://www.bom
 {
 name: "Lake Barrington, Tasmania", short: "Lake Barrington", icon: "icons/lake_barrington.png", state: "TAS",
 course: {
-  bearing: 206, status: 'approximate',
+  bearing: 208, status: 'approximate',
   description: '2,000 m course at the southern end of the lake: start pontoon at the north-eastern end, finish tower (by the boat ramp and Davies Bay) at the south-western end — crews race south-southwest.',
-  source: 'Rowing Tasmania "Notice to recreational boats" map (500 m upstream (SW) of finish, 500 m downstream (NE) of start; its N arrow gives ~201°). Google Maps: centreline of the course stretch 208° (shores 202–214°). ARC programmes 1997/2003 also describe start → finish as southerly. Estimated ±5°.',
+  source: 'Rowing Tasmania "Notice to recreational boats" map (500 m upstream (SW) of finish, 500 m downstream (NE) of start; its N arrow gives ~201°). Google Maps: centreline of the course stretch 208° (shores 202–214°). ARC programmes 1997/2003 also describe start → finish as southerly. Two arrows drawn along the course on Google satellite by a local coach measure 210–211°. Set to the centreline, 208° (±4°).',
   presets: []
 },
 lat: -41.3650, lon: 146.2300, tz: "Australia/Hobart", tidal: false,
@@ -1005,6 +1013,7 @@ name: "West Lakes, South Australia", short: "West Lakes", icon: "icons/west_lake
 course: {
   bearing: 351, status: 'verified',
   description: 'A.M. Ramsay Regatta Course: the straight southern channel of West Lakes, from Trimmer Parade (Tennyson) north past Footy Park. Start pontoon at the southern end, Judges Tower at the northern end — crews race north-northwest.',
+  mid: [-34.8844, 138.4885], // from the coach's arrow drawn on the Course Map (≈1.4 km south of the first estimate)
   source: 'Racing direction: Office for Recreation, Sport & Racing course fact sheet. Bearing measured from Google Maps along both banks of the course channel (350.6° and 351.5°, ±1°).',
   presets: []
 },
@@ -1016,10 +1025,10 @@ obsStation: { name: "Adelaide West Terrace", dist: "~13 km", json: "https://www.
 {
 name: "Lake Burley Griffin, ACT", short: "Lake Burley Griffin", icon: "icons/lake_burley_griffin.png", state: "ACT",
 course: {
-  bearing: 63, status: 'approximate',
-  description: 'Yarramundi Reach 1,800 m course: start at the Scrivener Dam end (west), finish toward Black Mountain / Acacia Inlet — crews race east-northeast. Rowing ACT uses reverse traffic flows during regattas.',
+  bearing: 30, status: 'approximate',
+  description: 'Yarramundi Reach 1,800 m course, along the north-western side of Weston Park: start at the Scrivener Dam / Government House end (south-west), finish toward Acacia Inlet — crews race north-northeast. Rowing ACT uses reverse traffic flows during regattas.',
   length: 1800, mid: [-35.2925, 149.0840], // mid-course is a best estimate (Yarramundi Reach) — check on the Course Map
-  source: 'Racing direction: NCA "Watercraft Safety — Traffic Flow Guide" (boats go to the Start/Scrivener Dam in lane 1 and travel down the course away from Government House); Rowing ACT ("travel North, from Start to Finish"). Bearing: Google Maps axis of Yarramundi Reach ≈ 063° (±10°, the reach has bays). The stylised NCA guide suggests 024–043°, so verify on a zoomed satellite view.',
+  source: 'Racing direction: NCA "Watercraft Safety — Traffic Flow Guide" (boats go to the Start/Scrivener Dam in lane 1 and travel down the course away from Government House); Rowing ACT ("travel North, from Start to Finish"). Bearing ≈ 030° (±10°): the NCA guide\'s course drawing (map turned so west is up) gives ≈ 031°, and the axis of Yarramundi Reach on Google satellite measures 024–038°. An earlier 063° estimate was measured on the wrong stretch of water. Needs confirming on the Course Map.',
   presets: []
 },
 lat: -35.2930, lon: 149.1200, tz: "Australia/Sydney", tidal: false,
@@ -1272,6 +1281,52 @@ function cmOffset(lat, lon, bearing, metres) {
 const b = bearing * Math.PI / 180;
 return [lat + metres * Math.cos(b) / 111320, lon + metres * Math.sin(b) / (111320 * Math.cos(lat * Math.PI / 180))];
 }
+function cmUnproject(x, y, z) {
+const n = 256 * Math.pow(2, z);
+return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180];
+}
+// Where the course line sits: a position set on this phone with "Adjust line", else course.mid, else the venue's lat/lon
+const cmKey = loc => 'mid.' + loc.short.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+function cmMid(loc) {
+const m = /^(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(store.get(cmKey(loc), ''));
+return m ? [+m[1], +m[2]] : ((loc.course && loc.course.mid) || [loc.lat, loc.lon]);
+}
+function cmToggleAdjust() { cmState.adjust = !cmState.adjust; renderCourseMap(); }
+function cmResetMid() { try { localStorage.removeItem('rowwx.' + cmKey(cmState.loc)); } catch {} renderCourseMap(); }
+async function cmCopy() {
+const lines = LOCATIONS.filter(l => store.get(cmKey(l), '')).map(l => `${l.short}: ${store.get(cmKey(l), '')}`);
+const text = 'Weatherow course positions\n' + lines.join('\n');
+const btn = document.getElementById('cm-copy');
+try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied ✓'; }
+catch { window.prompt('Copy these positions:', text.replace(/\n/g, ' | ')); }
+setTimeout(() => { btn.textContent = 'Copy positions'; }, 2000);
+}
+function cmBindDrag(mapEl) {
+let d = null;
+const tiles = () => document.getElementById('cm-tiles');
+mapEl.addEventListener('pointerdown', e => {
+if (!cmState.adjust || e.target.closest('button, a')) return;
+d = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
+try { mapEl.setPointerCapture(e.pointerId); } catch {}
+});
+mapEl.addEventListener('pointermove', e => {
+if (!d) return;
+d.dx = e.clientX - d.x; d.dy = e.clientY - d.y;
+tiles().style.transform = `translate(${d.dx}px,${d.dy}px)`; // the map slides under the line
+});
+const end = () => {
+if (!d) return;
+const { dx, dy } = d; d = null;
+tiles().style.transform = '';
+if (!dx && !dy) return;
+const v = cmState.view; // centre moves the opposite way to the drag
+const [lat, lon] = cmUnproject(v.cx - dx, v.cy - dy, v.z);
+store.set(cmKey(cmState.loc), `${lat.toFixed(5)},${lon.toFixed(5)}`);
+renderCourseMap();
+};
+mapEl.addEventListener('pointerup', end);
+mapEl.addEventListener('pointercancel', end);
+}
 function cmZoom(d) { cmState.zoomAdj = Math.max(-3, Math.min(2, cmState.zoomAdj + d)); renderCourseMap(); }
 function renderCourseMap() {
 const box = document.getElementById('course-map');
@@ -1285,7 +1340,12 @@ box.innerHTML = `<div class="section-title">Course Map</div>
 <div class="cm-panel"><div class="cm-map" id="cm-map"><div class="cm-tiles" id="cm-tiles"></div><svg id="cm-svg" aria-hidden="true"></svg>
 <div class="cm-zoom"><button type="button" id="cm-in" onclick="cmZoom(1)" aria-label="Zoom in">+</button><button type="button" id="cm-out" onclick="cmZoom(-1)" aria-label="Zoom out">−</button></div>
 <div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
-<div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div></div>`;
+<div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div>
+<div class="cm-adjust"><button type="button" id="cm-adj" onclick="cmToggleAdjust()">Adjust line</button>
+<button type="button" id="cm-reset" onclick="cmResetMid()" hidden>Reset</button>
+<button type="button" id="cm-copy" onclick="cmCopy()" hidden>Copy positions</button>
+<span id="cm-pos"></span></div></div>`;
+cmBindDrag(document.getElementById('cm-map'));
 cmState.key = '';
 }
 const mapEl = document.getElementById('cm-map');
@@ -1293,7 +1353,7 @@ const W = mapEl.clientWidth;
 if (!W) return; // folded away — drawn when it opens
 const H = Math.round(Math.min(420, Math.max(220, W * 0.7)));
 mapEl.style.height = H + 'px';
-const [mlat, mlon] = course.mid || [loc.lat, loc.lon];
+const [mlat, mlon] = cmMid(loc);
 const len = course.length || 2000;
 const mpp0 = 156543.03392 * Math.cos(mlat * Math.PI / 180);
 let z = 17;
@@ -1303,11 +1363,12 @@ document.getElementById('cm-in').disabled = z >= 18 || cmState.zoomAdj >= 2;
 document.getElementById('cm-out').disabled = cmState.zoomAdj <= -3;
 const mpp = mpp0 / Math.pow(2, z);
 const c = cmProject(mlat, mlon, z);
+cmState.view = { cx: c.x, cy: c.y, z };
 const ox = c.x - W / 2, oy = c.y - H / 2; // world pixel at the map's top-left
 const px = (lat, lon) => { const p = cmProject(lat, lon, z); return [p.x - ox, p.y - oy]; };
 
 // Tiles: only rebuilt when the venue, zoom or size changes (not on every wind update)
-const key = [loc.short, z, W, H].join('|');
+const key = [loc.short, z, W, H, mlat, mlon].join('|');
 if (key !== cmState.key) {
 cmState.key = key;
 const n = Math.pow(2, z), imgs = [];
@@ -1333,7 +1394,7 @@ const twoWay = !!course.reverseLabel;
 const [sx, sy] = px(...cmOffset(mlat, mlon, course.bearing, -len / 2));
 const [fx, fy] = px(...cmOffset(mlat, mlon, course.bearing, len / 2));
 const L = Math.hypot(fx - sx, fy - sy) || 1, ux = (fx - sx) / L, uy = (fy - sy) / L; // unit vector start → finish
-const head = (x, y, dx, dy) => `<path d="M${(x + dx * 9).toFixed(1)} ${(y + dy * 9).toFixed(1)} L${(x - dx * 5 - dy * 8).toFixed(1)} ${(y - dy * 5 + dx * 8).toFixed(1)} L${(x - dx * 5 + dy * 8).toFixed(1)} ${(y - dy * 5 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+const head = (x, y, dx, dy) => `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x - dx * 14 - dy * 8).toFixed(1)} ${(y - dy * 14 + dx * 8).toFixed(1)} L${(x - dx * 14 + dy * 8).toFixed(1)} ${(y - dy * 14 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
 g += `<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${ink}" stroke-width="8" stroke-linecap="round"/>
 <line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${line}" stroke-width="4.5" stroke-linecap="round"/>`;
 if (len >= 1000) for (let m = 500; m < len; m += 500) { // 500 m marks
@@ -1371,6 +1432,12 @@ svg.innerHTML = g;
 
 document.getElementById('cm-note').textContent = !hasLine ? 'No fixed course direction set for this venue.'
 : `${(len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m')} course on ${deg3(course.bearing)}${course.reverseLabel ? ', rowed both ways' : ', arrow = racing direction'}. The line's position is indicative — check it against the satellite view.`;
+const moved = !!store.get(cmKey(loc), '');
+mapEl.classList.toggle('adjusting', !!cmState.adjust);
+document.getElementById('cm-adj').textContent = cmState.adjust ? 'Done' : 'Adjust line';
+document.getElementById('cm-reset').hidden = !(cmState.adjust && moved);
+document.getElementById('cm-copy').hidden = !(cmState.adjust && LOCATIONS.some(l => store.get(cmKey(l), '')));
+document.getElementById('cm-pos').textContent = cmState.adjust ? `Drag the map until the line sits on the course. Mid-point ${mlat.toFixed(5)}, ${mlon.toFixed(5)}` : '';
 document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
 }
 
