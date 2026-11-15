@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Weatherow · Australian Rowing Venues</title>
+<!-- Installable web app: opens full screen from the home screen, like an app -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Weatherow">
+<meta name="theme-color" content="#08121f">
 <!-- Set the saved theme before anything draws (no flash of the wrong theme or ribbon),
      and start downloading the one ribbon this theme and screen size will use. -->
 <script>try{var sun=localStorage.getItem('rowwx.theme')==='sun';if(sun)document.documentElement.setAttribute('data-theme','sun');
@@ -538,6 +547,25 @@ animation:spin .9s linear infinite}
 @media (prefers-reduced-motion:reduce){.ribbon-refresh.is-loading::after{animation:none;border-color:rgba(255,255,255,.9)}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
+/* ===== Installed-app mode + install button ===== */
+/* Full-screen (installed) app: keep a navy strip behind the status bar so the white
+   clock/battery stay readable in both Sun mode and Night mode */
+@media (display-mode: standalone){
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#08121f;z-index:500}
+}
+.install-row{display:flex;justify-content:center;padding:4px 14px 0}
+.install-btn{min-height:44px;padding:0 16px;border:1px solid var(--border);background:transparent;color:var(--muted);
+border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;cursor:pointer;
+display:inline-flex;align-items:center;gap:8px}
+.install-btn:hover{color:var(--text);border-color:var(--accent2)}
+.install-btn[hidden]{display:none}
+.install-steps{list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:10px;margin:4px 0 12px}
+.install-steps li{counter-increment:st;display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:start;font-size:15px;line-height:1.45}
+.install-steps li::before{content:counter(st);width:32px;height:32px;border-radius:50%;background:var(--accent2);color:#fff;
+display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px}
+.install-note{font-size:13px;color:var(--muted);line-height:1.5}
+.share-glyph{display:inline-block;width:1.1em;height:1.1em;vertical-align:-0.2em}
+
 /* ===== Weather condition icon system (NEW) ===== */
 .wx-ico{display:inline-flex;align-items:center;justify-content:center;
 width:1em;height:1em;vertical-align:-0.18em;line-height:0}
@@ -797,6 +825,25 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </details>
 </div>
 
+</div>
+
+<div class="install-row">
+<button type="button" class="install-btn" id="install-btn" onclick="installApp()" hidden>
+<svg class="share-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 8v6M9 11l3 3 3-3"/></svg>
+Install Weatherow app</button>
+</div>
+
+<div class="sheet-backdrop" id="install-sheet" hidden onclick="if(event.target===this)closeInstallSheet()">
+<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="install-title">
+<div class="sheet-head">
+<div>
+<div class="sheet-title" id="install-title">Install Weatherow</div>
+<div class="sheet-note">Adds Weatherow to your home screen. It then opens full screen, like an app, with no browser bars.</div>
+</div>
+<button type="button" class="sheet-close" onclick="closeInstallSheet()" aria-label="Close">✕</button>
+</div>
+<div id="install-body"></div>
+</div>
 </div>
 
 <footer>Weatherow · IGSSA Rowing · Australian rowing venues · Open-Meteo CC BY 4.0</footer>
@@ -2715,6 +2762,57 @@ setInterval(() => { if (!document.hidden) loadWeather(); }, REFRESH_MS);
 document.addEventListener('visibilitychange', () => {
 if (!document.hidden && !isFresh(currentLoc)) loadWeather();
 });
+
+
+// ── INSTALL AS AN APP ─────────────────────────────────────────────────────
+// Android/desktop Chrome & Edge offer a real install prompt; iPhone/iPad need Share → Add to Home Screen.
+let deferredInstall = null;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function updateInstallButton() {
+document.getElementById('install-btn').hidden = isStandalone(); // already installed → hide
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; updateInstallButton(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; closeInstallSheet(); updateInstallButton(); });
+async function installApp() {
+if (deferredInstall) {
+deferredInstall.prompt();
+try { await deferredInstall.userChoice; } catch {}
+deferredInstall = null;
+return;
+}
+openInstallSheet();
+}
+const SHARE_SVG = '<svg class="share-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+function openInstallSheet() {
+const body = document.getElementById('install-body');
+if (isIOS()) {
+body.innerHTML = `<ol class="install-steps">
+<li><span>Tap the <b>Share</b> button ${SHARE_SVG}. In Safari it's in the toolbar; in Chrome or Brave it's in the address bar (or under <b>⋯</b>).</span></li>
+<li><span>Scroll down and tap <b>Add to Home Screen</b>.</span></li>
+<li><span>Check <b>Open as Web App</b> is on (if shown), then tap <b>Add</b>.</span></li>
+</ol>
+<p class="install-note">Then open Weatherow from its home-screen icon — it runs full screen, opens instantly and remembers your venue, limits and theme.</p>`;
+} else {
+body.innerHTML = `<ol class="install-steps">
+<li><span>Open your browser's menu (<b>⋮</b> or <b>⋯</b>).</span></li>
+<li><span>Tap <b>Install app</b> or <b>Add to Home screen</b>.</span></li>
+<li><span>Confirm with <b>Install</b> / <b>Add</b>.</span></li>
+</ol>
+<p class="install-note">On a computer, Chrome and Edge also show an install icon at the right of the address bar.</p>`;
+}
+const sheet = document.getElementById('install-sheet');
+sheet.hidden = false;
+sheet.querySelector('.sheet-close').focus();
+}
+function closeInstallSheet() {
+const sheet = document.getElementById('install-sheet');
+if (!sheet || sheet.hidden) return;
+sheet.hidden = true;
+document.getElementById('install-btn').focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInstallSheet(); });
+updateInstallButton();
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 {
