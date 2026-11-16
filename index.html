@@ -462,18 +462,43 @@ details[open] > summary::after{transform:rotate(180deg)}
 
 /* ===== Rowing wind panel ===== */
 .rw-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
-.rw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.rw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .rw-course{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rw-course-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600}
-.rw-body{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:center}
-.rw-dial{width:160px;height:160px;cursor:crosshair;touch-action:manipulation;display:block}
-.rw-stats{min-width:0;max-width:560px}
-.rw-class{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.15;margin-bottom:6px}
+.rw-class{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.15;margin-bottom:8px}
+.rw-boats{display:flex;gap:4px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rw-boats::-webkit-scrollbar{display:none}
+.rw-boat-btn{flex:1 0 auto;min-width:40px;min-height:40px;padding:0 6px;border:1px solid var(--border);background:var(--panel2);color:var(--text);
+border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
+.rw-boat-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.rw-body{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
+.rw-dial{width:200px;height:200px;cursor:crosshair;touch-action:manipulation;display:block}
+.rw-boat{transform-origin:0 0;transition:transform .2s ease}
+.rw-boat-art{animation:rwIn .18s ease}
+@keyframes rwIn{from{opacity:.25}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.rw-boat{transition:none}.rw-boat-art{animation:none}}
+.rw-stats{min-width:0;max-width:420px}
+.rw-badge{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;
+padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted);margin-bottom:8px;white-space:nowrap}
+.rw-badge-live{color:var(--green);border-color:var(--green)}
+.rw-badge-hour{color:var(--accent);border-color:var(--accent)}
+.rw-comp{margin-bottom:9px}
+.rw-comp-t{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:var(--muted)}
+.rw-comp-v{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.1}
+.rw-comp-v small{font-family:'Barlow',sans-serif;font-size:13px;font-weight:600}
+.rw-bar{height:3px;border-radius:2px;background:var(--border);margin-top:4px;overflow:hidden}
+.rw-bar i{display:block;height:100%;border-radius:2px;background:var(--muted)}
+.rw-kb-head{background:var(--orange)!important}.rw-kb-tail{background:var(--green)!important}.rw-kb-cross{background:var(--accent)!important}
+.rw-back{min-height:36px;padding:0 10px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;
+font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;cursor:pointer}
 .rw-hint{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:6px}
-.rw-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0;border-bottom:1px solid var(--border)}
+.rw-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px solid var(--border)}
+.rw-body + .rw-row{margin-top:8px;border-top:1px solid var(--border)}
 .rw-row span:first-child{color:var(--muted)}
 .rw-row span:last-child{font-weight:600;text-align:right}
 .rw-src{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+.rw-insight{margin-top:10px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 6px 6px 0;font-size:13px;line-height:1.45}
+.rw-insight-t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
 .rw-k-head{color:var(--orange)}
 .rw-k-tail{color:var(--green)}
 .rw-k-cross{color:var(--accent)}
@@ -483,14 +508,18 @@ details[open] > summary::after{transform:rotate(180deg)}
 border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
 .rw-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
 .rw-btn:disabled{opacity:.4;cursor:default}
+.rw-reset{font-size:19px;padding:0 11px}
 .rw-select{min-height:44px;padding:0 10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);
-border-radius:8px;font-family:'Barlow',sans-serif;font-size:15px;flex:1;min-width:150px;max-width:280px}
+border-radius:8px;font-family:'Barlow',sans-serif;font-size:15px;flex:1;min-width:130px;max-width:280px}
 .rw-nudge{display:flex;gap:4px}
 .rw-sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 0 6px;
 font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600}
 .rw-legend{font-family:'Barlow',sans-serif;font-size:11px;font-weight:400;color:var(--muted)}
 .rw-hours{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
-.rw-hour{flex:0 0 112px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 9px}
+.rw-hour{flex:0 0 112px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 9px;
+text-align:left;color:var(--text);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rw-hour.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:rgba(0,180,216,.08)}
+.rw-hour:focus-visible,.rw-boat-btn:focus-visible,.rw-back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rw-hour-t{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
 .rw-hour-w{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:3px;margin:2px 0}
 .rw-hour-c{font-size:13px;font-weight:600;line-height:1.25;min-height:2.5em}
@@ -499,14 +528,21 @@ details.rw-about{margin-top:10px}
 details.rw-about > summary{min-height:40px;padding:0;font-size:14px}
 details.rw-about p{font-size:13px;color:var(--muted);line-height:1.55;margin:4px 0 8px}
 details.rw-about strong{color:var(--text)}
+details.rw-compare{margin-top:6px}
+.rw-cmp{width:100%;border-collapse:collapse;font-size:13px;margin:2px 0 4px}
+.rw-cmp th,.rw-cmp td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;font-weight:600}
+.rw-cmp th{color:var(--muted);font-weight:400}
+.rw-cmp tbody th,.rw-cmp thead th:first-child{text-align:left}
+.rw-cmp thead th{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:var(--text)}
 .daily-course{font-size:10px;margin-top:4px;font-weight:600}
 @media(max-width:480px){
-.rw-body{grid-template-columns:120px 1fr;gap:10px}
-.rw-dial{width:120px;height:120px}
-.rw-class{font-size:20px}
+.rw-body{grid-template-columns:150px 1fr;gap:10px}
+.rw-dial{width:150px;height:150px}
+.rw-class{font-size:21px}
+.rw-comp-v{font-size:21px}
 .rw-row{font-size:13px}
 }
-@media(max-width:360px){.rw-body{grid-template-columns:1fr}.rw-dial{margin:0 auto}}
+@media(max-width:340px){.rw-body{grid-template-columns:1fr}.rw-dial{margin:0 auto}}
 
 /* ===== Header ribbon (day / night artwork) =====
    The ribbon artwork sits in the middle of a 2172×724 transparent PNG. The box below shows
@@ -724,11 +760,14 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </div>
 
 <!-- Panel order: live check → course wind → what's coming → reference -->
-<!-- Live station readings -->
-<div id="obs-section" class="coll" data-sec="live-obs"></div>
-
 <!-- Rowing wind: wind relative to the crew's heading -->
 <div id="rowing-wind" class="coll" data-sec="rowing-wind"></div>
+
+<!-- Course map: the course drawn on a real map -->
+<div id="course-map" class="coll" data-sec="course-map"></div>
+
+<!-- Live station readings -->
+<div id="obs-section" class="coll" data-sec="live-obs"></div>
 
 <section class="coll" data-sec="next-12">
 <div class="section-title">Next 12 Hours</div>
@@ -754,24 +793,6 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </div>
 <div class="wind-graph-scroll">
 <canvas id="wind-canvas"></canvas>
-</div>
-</div>
-</section>
-
-<!-- 4. Lightning -->
-<section class="coll" data-sec="lightning">
-<div class="section-title">Lightning</div>
-<div class="cm-panel" style="margin-bottom:8px">
-<div class="lx-map" id="lx-map"><iframe id="lx-frame" title="Live lightning strike map (Blitzortung.org)" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
-<div class="cm-foot"><span>Live strikes from the Blitzortung.org volunteer network, about 300 km around the venue. New strikes flash as they arrive and fade with age. Coverage in Australia is patchy, so an empty map is not proof of no lightning.</span></div>
-</div>
-<div class="lightning-bar">
-<div class="lightning-bar-left">
-<span>Open a full-screen map</span>
-</div>
-<div class="lightning-links">
-<a class="btn btn-outline" id="blitz-link" href="#" target="_blank" rel="noopener">Blitzortung</a>
-<a class="btn btn-outline" id="bom-link" href="#" target="_blank" rel="noopener">BOM Radar</a>
 </div>
 </div>
 </section>
@@ -811,8 +832,23 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </div>
 </section>
 
-<!-- Course map: the course drawn on a real map -->
-<div id="course-map" class="coll" data-sec="course-map"></div>
+<!-- 4. Lightning -->
+<section class="coll" data-sec="lightning">
+<div class="section-title">Lightning</div>
+<div class="cm-panel" style="margin-bottom:8px">
+<div class="lx-map" id="lx-map"><iframe id="lx-frame" title="Live lightning strike map (Blitzortung.org)" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+<div class="cm-foot"><span>This section moves to the top and opens when a thunderstorm is forecast at the venue now or within 3 hours. Live strikes from the Blitzortung.org volunteer network, about 300 km around the venue. New strikes flash as they arrive and fade with age. Coverage in Australia is patchy, so an empty map is not proof of no lightning.</span></div>
+</div>
+<div class="lightning-bar">
+<div class="lightning-bar-left">
+<span>Open a full-screen map</span>
+</div>
+<div class="lightning-links">
+<a class="btn btn-outline" id="blitz-link" href="#" target="_blank" rel="noopener">Blitzortung</a>
+<a class="btn btn-outline" id="bom-link" href="#" target="_blank" rel="noopener">BOM Radar</a>
+</div>
+</div>
+</section>
 
 <details class="about-data">
 <summary>About the Data</summary>
@@ -1244,12 +1280,12 @@ const ch = getHeadingChoice(loc), b = loc.course?.bearing, has = RowingWind.isNu
 if (ch.mode === 'race' && has) return { bearing: b, label: loc.course.raceLabel || 'Racing direction (start → finish)' };
 if (ch.mode === 'reverse' && has) return { bearing: RowingWind.norm(b + 180), label: loc.course.reverseLabel || 'Reverse (finish → start)' };
 if ((ch.mode === 'custom' || ch.mode === 'preset') && RowingWind.isNum(ch.bearing))
-return { bearing: RowingWind.norm(ch.bearing), label: ch.label || 'Your heading' };
+return { bearing: RowingWind.norm(ch.bearing + (ch.rev ? 180 : 0)), label: ch.label || 'Your heading' }; // rev = rowing the reciprocal
 return null;
 }
-function setHeading(mode, bearing, label) {
+function setHeading(mode, bearing, label, rev) {
 const loc = LOCATIONS[currentLoc];
-store.set(headingKey(loc), JSON.stringify({ mode, bearing: bearing ?? null, label: label || null }));
+store.set(headingKey(loc), JSON.stringify({ mode, bearing: bearing ?? null, label: label || null, rev: !!rev }));
 renderRowingWind();
 applyCourseLabels();
 }
@@ -1258,7 +1294,7 @@ const loc = LOCATIONS[currentLoc], ch = getHeadingChoice(loc), hd = effectiveHea
 if (!hd) return;
 if (ch.mode === 'race') return setHeading('reverse');
 if (ch.mode === 'reverse') return setHeading('race');
-setHeading('custom', RowingWind.norm(hd.bearing + 180));
+setHeading(ch.mode, ch.bearing, ch.label, !ch.rev); // custom / preset: flip a flag, the stored outbound heading is untouched
 }
 function nudgeHeading(delta) {
 const hd = effectiveHeading(LOCATIONS[currentLoc]);
@@ -1404,14 +1440,15 @@ document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&m
 }
 
 
-// Storm risk above Low: the Lightning section opens itself and moves to the top, under the cards.
+// Thunderstorm in the forecast now or within 3 hours (or CAPE at the "clear the water" level):
+// the Lightning section opens itself and moves to the top, under the cards.
 // When the risk drops back it returns to its usual place and to however you had it folded.
 let lxAlert = ''; // '' = normal · 'open' = raised by a storm alert · 'dismissed' = folded by hand during the alert
 function placeLightning(alert) {
 const sec = document.querySelector('[data-sec="lightning"]');
 if (!sec) return;
 const want = alert ? (lxAlert || 'open') : '';
-const before = document.getElementById(alert ? 'obs-section' : 'tide-section');
+const before = alert ? document.getElementById('rowing-wind') : document.querySelector('#panel-live > details.about-data');
 if (sec.nextElementSibling !== before) before.parentNode.insertBefore(sec, before);
 if (want !== lxAlert || sec.classList.contains('lx-alert') !== !!alert) {
 lxAlert = want;
@@ -1579,7 +1616,54 @@ const fmtCross = c => Math.abs(c.cross) < 0.5 ? 'None' : `${Math.round(Math.abs(
 const fmtWind = (speed, dir, dirTxt) => !RowingWind.isNum(speed) ? '—' :
 speed < 2 ? 'Calm' : `${RowingWind.isNum(dir) ? `${dirTxt || deg2comp(dir)} (${deg3(dir)})` : (dirTxt || '—')} · ${Math.round(speed)} km/h`;
 
-function rwDialSVG(heading, primary, secondary, kind) {
+// ── Boat classes (overhead drawings) ──────────────────────────────────────
+// n = rowers · scull = two oars each · cox = coxswain (drawn in the stern) · len = hull length in metres.
+// Sweep rig is the standard one: stroke seat on stroke side (port), alternating forward, bow seat on bow side.
+const RW_BOATS = {
+'8+': { name: 'Coxed eight', n: 8, scull: false, cox: true, len: 17.5 },
+'4+': { name: 'Coxed four', n: 4, scull: false, cox: true, len: 13.7 },
+'4−': { name: 'Coxless four', n: 4, scull: false, cox: false, len: 12.8 },
+'4x': { name: 'Quad scull', n: 4, scull: true, cox: false, len: 12.8 },
+'2−': { name: 'Coxless pair', n: 2, scull: false, cox: false, len: 10.0 },
+'2x': { name: 'Double scull', n: 2, scull: true, cox: false, len: 10.0 },
+'1x': { name: 'Single scull', n: 1, scull: true, cox: false, len: 8.2 }
+};
+let rwBoat = RW_BOATS[store.get('boat', '8+')] ? store.get('boat', '8+') : '8+';
+let rwSel = null;      // forecast hour shown on the dial (index into the hourly data), or null = live / now
+let rwAngle = null;    // boat rotation actually drawn (unbounded, so it always turns the short way)
+function setBoat(cls) { if (!RW_BOATS[cls]) return; rwBoat = cls; store.set('boat', cls); renderRowingWind(); }
+function rwSelectHour(i) { rwSel = (i === null || i === rwState.hIdx) ? null : i; renderRowingWind(); }
+
+// Boat drawn bow-up around (0,0); the dial rotates it to the heading. Rowers sit bow-ward of their oar
+// (they face the stern); the cox sits in the stern facing the bow.
+function rwBoatSVG(cls) {
+const b = RW_BOATS[cls], f = v => v.toFixed(1);
+const u = Math.min(76 / b.len, 8), L = b.len * u, half = L / 2; // drawing units per metre
+const w = b.n >= 4 ? 3.1 : b.n === 2 ? 2.7 : 2.4;                // half-beam, widened a little so it reads
+const hull = `M0 ${f(-half)} C${f(w * 0.95)} ${f(-half * 0.45)} ${f(w)} ${f(half * 0.4)} 0.9 ${f(half - 0.6)} L-0.9 ${f(half - 0.6)} C${f(-w)} ${f(half * 0.4)} ${f(-w * 0.95)} ${f(-half * 0.45)} 0 ${f(-half)}Z`;
+const sp = 1.42 * u, coxGap = b.cox ? 1.3 * u : 0, span = (b.n - 1) * sp + coxGap, y1 = -span / 2;
+const spread = Math.max(w + 2.2, (b.scull ? 0.8 : 0.85) * u), out = (b.scull ? 1.98 : 2.55) * u;
+const bl = Math.max(3, 0.55 * u), bw = Math.max(1.4, 0.24 * u), rx = Math.max(1.5, 0.3 * u), hr = Math.max(0.9, 0.17 * u);
+let g = '', oars = '';
+for (let k = 1; k <= b.n; k++) {
+const y = y1 + (k - 1) * sp, oy = y + 0.45 * u; // seat k (1 = bow); the oar crosses just stern-ward of the body
+const sides = b.scull ? [-1, 1] : [(b.n - k) % 2 === 0 ? -1 : 1]; // −1 = port (stroke side), +1 = starboard (bow side)
+for (const s of sides) {
+const pin = s * spread, tip = s * (spread + out), hand = b.scull ? s * 0.5 : -s * 0.9;
+oars += `<path d="M${f(s * w * 0.85)} ${f(oy - 0.42 * u)} L${f(pin)} ${f(oy)} L${f(s * w * 0.85)} ${f(oy + 0.3 * u)}" fill="none" stroke="var(--text)" stroke-width="0.6" opacity=".7"/>
+<line class="rw-oar" x1="${f(hand)}" y1="${f(oy)}" x2="${f(tip - s * bl)}" y2="${f(oy)}" stroke="var(--text)" stroke-width="0.8" stroke-linecap="round"/>
+<rect x="${f(Math.min(tip, tip - s * bl))}" y="${f(oy - bw / 2)}" width="${f(bl)}" height="${f(bw)}" rx="0.5" fill="var(--tide)" stroke="var(--text)" stroke-width="0.35"/>`;
+}
+g += `<g class="rw-rower"><ellipse cx="0" cy="${f(y)}" rx="${f(rx)}" ry="${f(rx * 0.52)}" fill="var(--text)" opacity=".5"/><circle cx="0" cy="${f(y)}" r="${f(hr)}" fill="var(--text)"/></g>`;
+}
+const cox = b.cox ? `<g class="rw-cox"><ellipse cx="0" cy="${f(y1 + span)}" rx="${f(rx * 0.75)}" ry="${f(rx * 0.42)}" fill="var(--accent)" opacity=".55"/><circle cx="0" cy="${f(y1 + span)}" r="${f(hr * 0.9)}" fill="var(--accent)"/></g>
+<line x1="0" y1="${f(half - 0.6)}" x2="0" y2="${f(half + 1.8)}" stroke="var(--text)" stroke-width="0.8"/>` : '';
+return `<path d="${hull}" fill="rgba(0,180,216,.12)" stroke="var(--text)" stroke-width="1.1" stroke-linejoin="round"/>
+<circle cx="0" cy="${f(-half)}" r="0.9" fill="var(--text)"/>${oars}${g}${cox}
+<polyline points="-3.6,${f(-half - 2.2)} 0,${f(-half - 6.4)} 3.6,${f(-half - 2.2)}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+
+function rwDialSVG(heading, primary, secondary, kind, label) {
 const C = 80, pt = (deg, r) => [C + r * Math.sin(deg * Math.PI / 180), C - r * Math.cos(deg * Math.PI / 180)];
 const ticks = [0, 45, 90, 135, 180, 225, 270, 315].map(d => {
 const [x1, y1] = pt(d, 60), [x2, y2] = pt(d, d % 90 ? 64 : 66);
@@ -1589,26 +1673,95 @@ const labels = [['N', 0], ['E', 90], ['S', 180], ['W', 270]].map(([t, d]) => {
 const [x, y] = pt(d, 74);
 return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="var(--muted)" font-family="Barlow Condensed, sans-serif">${t}</text>`;
 }).join('');
-// Wind arrow: starts outside where the wind comes FROM, points across toward where it blows
+// Wind arrow: sits at the rim on the side the wind comes FROM and points inward, the way the air is moving.
+// A faint dashed line carries the airflow on across the dial, underneath the boat.
+const usable = w => w && RowingWind.isNum(w.dir) && RowingWind.isNum(w.speed) && w.speed >= 2;
+const flow = usable(primary) ? (() => { const [x1, y1] = pt(primary.dir, 46), [x2, y2] = pt(primary.dir + 180, 58);
+return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${RW_KIND_VAR[kind] || 'var(--accent)'}" stroke-width="1.2" stroke-dasharray="2 4" opacity=".4"/>`; })() : '';
 const arrow = (w, solid) => {
-if (!w || !RowingWind.isNum(w.dir) || !RowingWind.isNum(w.speed) || w.speed < 2) return '';
-const [x1, y1] = pt(w.dir, 70), [x2, y2] = pt(w.dir, 22);
+if (!usable(w)) return '';
+const [x1, y1] = pt(w.dir, 62), [x2, y2] = pt(w.dir, solid ? 54 : 52);
 const col = solid ? (RW_KIND_VAR[kind] || 'var(--accent)') : 'var(--muted)';
-const a = (w.dir + 180) * Math.PI / 180, hx = Math.sin(a), hy = -Math.cos(a);
-const head = `${x2 + hx * 9},${y2 + hy * 9} ${x2 - hy * 5},${y2 + hx * 5} ${x2 + hy * 5},${y2 - hx * 5}`;
-return `<g opacity="${solid ? 1 : 0.65}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${solid ? 3.5 : 2}" stroke-linecap="round"${solid ? '' : ' stroke-dasharray="4 4"'}/>
+const a = (w.dir + 180) * Math.PI / 180, hx = Math.sin(a), hy = -Math.cos(a), k = solid ? 1 : 0.7;
+const head = `${x2 + hx * 9 * k},${y2 + hy * 9 * k} ${x2 - hy * 5.5 * k},${y2 + hx * 5.5 * k} ${x2 + hy * 5.5 * k},${y2 - hx * 5.5 * k}`;
+return `<g opacity="${solid ? 1 : 0.6}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${solid ? 4 : 2}" stroke-linecap="round"${solid ? '' : ' stroke-dasharray="3 3"'}/>
 <polygon points="${head}" fill="${col}"/></g>`;
 };
-// Boat: hull along the heading, bow arrow showing direction of travel
-const boat = RowingWind.isNum(heading) ? `<g transform="rotate(${heading} ${C} ${C})">
-<path d="M80 34 C85 52 85 108 80 124 C75 108 75 52 80 34 Z" fill="var(--panel2)" stroke="var(--text)" stroke-width="1.5"/>
-<line x1="70" y1="78" x2="90" y2="78" stroke="var(--text)" stroke-width="1.5"/><line x1="70" y1="92" x2="90" y2="92" stroke="var(--text)" stroke-width="1.5"/>
-<polygon points="80,14 74,27 86,27" fill="var(--accent)"/></g>` :
-`<text x="80" y="80" text-anchor="middle" dominant-baseline="central" font-size="11" fill="var(--muted)">Tap to set</text>`;
-return `<svg class="rw-dial" viewBox="0 0 160 160" role="img" onclick="dialPick(event)"
-aria-label="Course and wind diagram. Tap the dial to set the direction your crew is rowing.">
-<circle cx="80" cy="80" r="62" fill="none" stroke="var(--border)" stroke-width="1.5"/>${ticks}${labels}${boat}
+// Boat: turns the short way from where it was last drawn (animated in CSS; off for reduced motion)
+let boat;
+if (RowingWind.isNum(heading)) {
+const from = rwAngle === null ? heading : rwAngle;
+rwAngle = from + (((heading - from) % 360) + 540) % 360 - 180;
+boat = `<g id="rw-boat" class="rw-boat" data-to="${rwAngle}" style="transform:rotate(${from}deg)">
+<line x1="-58" y1="0" x2="-30" y2="0" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 3" opacity=".45"/>
+<line x1="30" y1="0" x2="58" y2="0" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 3" opacity=".45"/>
+<g class="rw-boat-art">${rwBoatSVG(rwBoat)}</g></g>`;
+} else {
+boat = `<text x="80" y="80" text-anchor="middle" dominant-baseline="central" font-size="11" fill="var(--muted)">Tap to set</text>`;
+}
+return `<svg class="rw-dial" viewBox="-4 -4 168 168" role="img" onclick="dialPick(event)" aria-label="${esc(label)}">
+<circle cx="80" cy="80" r="62" fill="none" stroke="var(--border)" stroke-width="1.5"/>${ticks}${labels}${flow}
+<g transform="translate(80 80)">${boat}</g>
 ${arrow(secondary, false)}${arrow(primary, true)}</svg>`;
+}
+
+// Headline wording. Thresholds are in one place so they can be tuned; they describe the wind only.
+const RW_WORDS = {
+variable: 4,        // below this (km/h) the wind is too light to give a direction: "Light variable wind"
+light: 10,          // below this: "Light …"
+strong: 25,         // at or above this: "Strong …"  (between light and strong: no strength word)
+pureAngle: 15,      // within this many degrees of dead ahead/astern or dead abeam: a pure head/tail/cross wind
+mostlyAngle: 40     // up to this many degrees off the bow/stern: "Predominantly headwind/tailwind"
+};
+function rwDescribe(c) {
+if (!c) return null;
+if (c.speed < 2) return { kind: 'calm', text: 'Calm' };
+if (c.speed < RW_WORDS.variable) return { kind: 'calm', text: 'Light variable wind' };
+const H = Math.abs(c.head), X = Math.abs(c.cross);
+const along = c.head > 0 ? 'headwind' : 'tailwind', side = c.cross > 0 ? 'right' : 'left';
+const off = Math.atan2(X, H) * 180 / Math.PI; // 0 = straight along the boat, 90 = straight across
+const S = c.speed < RW_WORDS.light ? 'Light ' : c.speed >= RW_WORDS.strong ? 'Strong ' : '';
+const cap = t => t[0].toUpperCase() + t.slice(1);
+const alongKind = c.head > 0 ? 'head' : 'tail';
+if (off <= RW_WORDS.pureAngle) return { kind: alongKind, text: cap(`${S}${along}`) };
+if (off >= 90 - RW_WORDS.pureAngle) return { kind: 'cross', text: cap(`${S}${side} crosswind`) };
+if (off <= RW_WORDS.mostlyAngle) return { kind: alongKind, text: `Predominantly ${along}` };
+return X >= H ? { kind: 'cross', text: cap(`${side} crosswind with ${along}`) }
+: { kind: alongKind, text: cap(`${along} with ${side} crosswind`) };
+}
+
+// One short coaching note per boat class and dominant wind. Fixed wording, chosen by simple rules —
+// it describes what the wind tends to do, never whether it is safe to row.
+const RW_INSIGHT = {
+'8+': { head: 'Headwind slows the run between strokes. Hold rhythm and length; the coxswain can keep calls simple.',
+tail: 'Tailwind can make the boat feel quicker than it is. Keep the rhythm steady and finishes clean.',
+cross: 'Crosswind may affect boat set and steering. The coxswain should watch course alignment.' },
+'4+': { head: 'Headwind adds resistance through the drive. Keep rhythm and length rather than rushing the slide.',
+tail: 'Tailwind can shorten the feel of the stroke. Stay patient and keep finishes clean.',
+cross: 'Crosswind may push the bow off line. The coxswain should watch alignment and steer early.' },
+'4−': { head: 'Maintain rhythm and length as headwind resistance increases.',
+tail: 'Tailwind can make the rate creep up. Keep the rhythm steady and controlled.',
+cross: 'Crosswind may affect steering without a coxswain. The steersperson should check the line often.' },
+'4x': { head: 'Headwind adds load at the catch. Keep the rhythm together and blades clear on the recovery.',
+tail: 'Tailwind may lift the rate. Stay together and keep the blade work clean.',
+cross: 'Monitor balance and blade clearance in crosswind conditions.' },
+'2−': { head: 'Headwind magnifies small timing differences. Keep length and match the catch.',
+tail: 'Tailwind can make the boat feel light. Keep technique consistent and finishes together.',
+cross: 'Crosswind may affect balance and directional control. Keep technical execution consistent.' },
+'2x': { head: 'Headwind adds load through the drive. Keep the rhythm together and stay long.',
+tail: 'Tailwind may change the feel of boat speed. Keep rhythm and technique consistent.',
+cross: 'Crosswind may affect balance and steering. Keep blade heights even and check the line often.' },
+'1x': { head: 'Headwind makes each stroke heavier. Stay relaxed, keep length and avoid over-reaching.',
+tail: 'Tailwind can make the boat feel lively. Keep the recovery controlled and finishes clean.',
+cross: 'Expect more noticeable steering and balance corrections, particularly in exposed water.' }
+};
+function rwInsight(cls, c) {
+if (!c) return '';
+if (c.speed < RW_WORDS.variable) return 'Very little wind. Expect minimal effect on boat run or steering.';
+const kind = Math.abs(c.cross) >= Math.abs(c.head) ? 'cross' : (c.head > 0 ? 'head' : 'tail');
+let t = RW_INSIGHT[cls][kind];
+if (kind !== 'cross' && Math.abs(c.cross) >= 8) t += ` Some ${c.cross > 0 ? 'right' : 'left'} crosswind as well.`;
+return t;
 }
 
 function renderRowingWind() {
@@ -1616,6 +1769,8 @@ try { renderCourseMap(); renderWindMap(); } catch (e) { console.warn('course map
 const el = document.getElementById('rowing-wind');
 const { loc, fc, hourly: h, hIdx } = rwState;
 if (!el || !loc) return;
+if (rwState.selLoc !== loc) { rwState.selLoc = loc; rwSel = null; rwAngle = null; } // forecast-hour pick never carries between venues
+if (rwSel !== null && (!h || rwSel <= hIdx || rwSel >= h.time.length)) rwSel = null; // that hour has passed
 const course = loc.course || { bearing: null, status: 'unknown' };
 const st = COURSE_STATUS[course.status] || COURSE_STATUS.unknown;
 const hd = effectiveHeading(loc);
@@ -1623,13 +1778,25 @@ const heading = hd ? hd.bearing : null;
 const ch = getHeadingChoice(loc);
 const hasRace = RowingWind.isNum(course.bearing);
 
-// Live station reading if we have one for this venue, otherwise the forecast for now
+// What the dial shows: a forecast hour the user tapped, else the live station reading, else the forecast for now
 const live = rwState.live && rwState.live.loc === loc && RowingWind.isNum(rwState.live.speed) ? rwState.live : null;
-const primary = live ? { ...live, src: `Live · BOM ${live.station}` } : (fc ? { ...fc, src: 'Forecast · now' } : null);
-const secondary = live && fc ? { ...fc, src: 'Forecast · now' } : null;
+let primary, secondary = null, mode;
+if (rwSel !== null) {
+mode = 'hour';
+primary = { speed: h.wind_speed_10m[rwSel], dir: h.wind_direction_10m[rwSel], src: `Forecast for ${fmtLocalIso(h.time[rwSel])} (${new Date(h.time[rwSel].slice(0, 10) + 'T12:00').toLocaleDateString('en-AU', { weekday: 'short' })}) · Open-Meteo` };
+} else if (live) {
+mode = 'live';
+primary = { ...live, src: `Live observation · BOM ${live.station}${live.when ? ' · ' + live.when : ''}` };
+secondary = fc ? { ...fc } : null;
+} else {
+mode = 'now';
+primary = fc ? { ...fc, src: 'Forecast for now · Open-Meteo (no live station reading available)' } : null;
+}
+const badge = mode === 'hour' ? `FORECAST · ${fmtLocalIso(h.time[rwSel]).toUpperCase()}` : mode === 'live' ? 'LIVE OBSERVATION' : 'FORECAST · NOW';
 const a = primary ? RowingWind.analyse(primary.dir, primary.speed, heading) : null;
 const b = secondary ? RowingWind.analyse(secondary.dir, secondary.speed, heading) : null;
-const kind = a?.cls.kind || 'calm';
+const desc = a ? rwDescribe(a.comps) : null;
+const kind = desc?.kind || 'calm';
 
 // Heading controls
 const pts = COMPASS16.map((c, i) => ({ c, d: i * 22.5 }));
@@ -1639,24 +1806,55 @@ const options = (onPoint || !RowingWind.isNum(heading) ? '' : `<option value="" 
 pts.map(p => `<option value="${p.d}"${onPoint && Math.abs(p.d - heading) < 0.01 ? ' selected' : ''}>${p.c} · ${compassLong(p.d)} (${deg3(p.d)})</option>`).join('');
 const presets = (course.presets || []).map((p, i) =>
 `<button type="button" class="rw-btn${ch.mode === 'preset' && ch.label === p.label ? ' active' : ''}" onclick="pickPreset(${i})">${esc(p.label)}</button>`).join('');
+const outbound = ch.mode === 'race' || ((ch.mode === 'custom' || ch.mode === 'preset') && !ch.rev);
+const returning = ch.mode === 'reverse' || ((ch.mode === 'custom' || ch.mode === 'preset') && !!ch.rev);
 
-const statLine = (title, value, cls = '') => `<div class="rw-row"><span>${title}</span><span class="${cls}">${value}</span></div>`;
-let stats;
+// Component blocks: the bar is that component as a share of the total wind speed (the two are not added together)
+const comp = (title, value, note, mag, k) => `<div class="rw-comp">
+<div class="rw-comp-t">${title}</div>
+<div class="rw-comp-v rw-k-${k}">${value}${note ? ` <small>${note}</small>` : ''}</div>
+<div class="rw-bar" aria-hidden="true"><i class="rw-kb-${k}" style="width:${Math.max(0, Math.min(100, a && a.comps.speed ? mag / a.comps.speed * 100 : 0)).toFixed(0)}%"></i></div>
+</div>`;
+let headline, stats, rows = '';
+const statLine = (title, value) => `<div class="rw-row"><span>${title}</span><span>${value}</span></div>`;
 if (!hd) {
-stats = `<div class="rw-class rw-k-calm">Set your heading</div>
-<div class="rw-hint">${course.status === 'none' ? 'There is no fixed course here' : 'The racing direction for this venue isn’t confirmed yet'} —
-pick the direction your crew is rowing below, or tap the dial.</div>
-${primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : ''}`;
+headline = `<div class="rw-class rw-k-calm">Set your heading</div>`;
+stats = `<div class="rw-hint">${course.status === 'none' ? 'There is no fixed course here' : 'The racing direction for this venue isn’t confirmed yet'} —
+pick the direction your crew is rowing below, or tap the dial.</div>`;
+rows = primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : '';
 } else {
-stats = `<div class="rw-class rw-k-${kind}">${a ? a.cls.label : 'No wind data'}</div>
-${statLine('Crew heading', `${compassLong(heading)} (${deg3(heading)})`)}
-${primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : ''}
-${a ? statLine('Head / tail', fmtHead(a.comps), `rw-k-${a.comps.head > 0.5 ? 'head' : a.comps.head < -0.5 ? 'tail' : 'calm'}`) : ''}
-${a ? statLine('Crosswind', fmtCross(a.comps), Math.abs(a.comps.cross) >= 0.5 ? 'rw-k-cross' : '') : ''}
-<div class="rw-src">${primary ? esc(primary.src) : ''}${b ? ` · Forecast now: ${b.cls.label.toLowerCase()} (${fmtWind(secondary.speed, secondary.dir)})` : ''}</div>`;
+headline = `<div class="rw-class rw-k-${kind}">${desc ? desc.text : 'No wind data'}</div>`;
+if (a) {
+const c = a.comps, H = Math.abs(c.head), X = Math.abs(c.cross);
+stats = comp(H < 0.5 ? 'HEAD / TAIL' : c.head > 0 ? 'HEADWIND' : 'TAILWIND', H < 0.5 ? 'None' : `${Math.round(H)} km/h`, '', H, H < 0.5 ? 'calm' : c.head > 0 ? 'head' : 'tail') +
+comp('CROSSWIND', X < 0.5 ? 'None' : `${Math.round(X)} km/h`, X < 0.5 ? '' : `from ${c.cross > 0 ? 'right' : 'left'}`, X, X < 0.5 ? 'calm' : 'cross');
+} else stats = `<div class="rw-hint">No wind reading to analyse yet.</div>`;
+rows = statLine('Crew heading', `${compassLong(heading)} (${deg3(heading)})`) +
+(primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : '');
+}
+const src = `<div class="rw-src">${primary ? esc(primary.src) : ''}${b ? ` · Forecast for now: ${rwDescribe(b.comps).text.toLowerCase()} (${fmtWind(secondary.speed, secondary.dir)})` : ''}</div>`;
+const insight = hd && a ? `<div class="rw-insight"><span class="rw-insight-t">Rowing insight · ${rwBoat}</span>${esc(rwInsight(rwBoat, a.comps))}</div>` : '';
+
+// Compare the two directions for the wind on the dial (folded away by default)
+let compare = '';
+if (hd && primary) {
+const rev = RowingWind.analyse(primary.dir, primary.speed, RowingWind.norm(heading + 180));
+if (a && rev) {
+const alongTxt = c => Math.abs(c.head) < 0.5 ? 'None' : `${c.head > 0 ? 'Head' : 'Tail'} ${Math.round(Math.abs(c.head))}`;
+const crossTxt = c => Math.abs(c.cross) < 0.5 ? 'None' : `${c.cross > 0 ? 'Right' : 'Left'} ${Math.round(Math.abs(c.cross))}`;
+const names = hasRace && (ch.mode === 'race' || ch.mode === 'reverse')
+? (ch.mode === 'race' ? [course.raceLabel || 'Race direction', course.reverseLabel || 'Reverse'] : [course.reverseLabel || 'Reverse', course.raceLabel || 'Race direction'])
+: ['This heading', 'Opposite way'];
+compare = `<details class="rw-about rw-compare"${rwState.cmpOpen ? ' open' : ''} ontoggle="rwState.cmpOpen=this.open"><summary>Compare Directions</summary>
+<table class="rw-cmp"><thead><tr><th></th><th>${esc(names[0])}</th><th>${esc(names[1])}</th></tr></thead><tbody>
+<tr><th>Heading</th><td>${deg3(heading)}</td><td>${deg3(heading + 180)}</td></tr>
+<tr><th>Along course</th><td>${alongTxt(a.comps)}</td><td>${alongTxt(rev.comps)}</td></tr>
+<tr><th>Crosswind</th><td>${crossTxt(a.comps)}</td><td>${crossTxt(rev.comps)}</td></tr>
+</tbody></table><p>km/h, for the wind shown on the dial.</p></details>`;
+}
 }
 
-// Next 12 hours, analysed against the same heading
+// Next 12 hours against the same heading — tap a card to put that hour on the dial
 let hours = '';
 if (h && hd) {
 const cards = [];
@@ -1664,16 +1862,23 @@ for (let i = hIdx; i < Math.min(hIdx + 12, h.time.length); i++) {
 const r = RowingWind.analyse(h.wind_direction_10m[i], h.wind_speed_10m[i], heading);
 if (!r) continue;
 const t = i === hIdx ? 'Now' : fmtLocalIso(h.time[i]);
-cards.push(`<div class="rw-hour">
+const on = i === hIdx ? rwSel === null : rwSel === i;
+cards.push(`<button type="button" class="rw-hour${on ? ' sel' : ''}" aria-pressed="${on}" onclick="rwSelectHour(${i === hIdx ? 'null' : i})">
 <div class="rw-hour-t">${t}</div>
 <div class="rw-hour-w">${windArrowSVG(h.wind_direction_10m[i], h.wind_speed_10m[i])} ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
 <div class="rw-hour-c rw-k-${r.cls.kind}">${r.cls.plain}</div>
 <div class="rw-hour-n">${r.cls.kind === 'calm' ? '—' : `${r.comps.head >= 0 ? 'Head' : 'Tail'} ${Math.round(Math.abs(r.comps.head))} · X ${Math.round(Math.abs(r.comps.cross))}`}</div>
-</div>`);
+<div class="rw-bar" aria-hidden="true"><i class="rw-kb-${r.cls.kind}" style="width:${Math.min(100, h.wind_speed_10m[i] / 40 * 100).toFixed(0)}%"></i></div>
+</button>`);
 }
-hours = cards.length ? `<div class="rw-sub">Through the Day <span class="rw-legend">Same heading · km/h · X = crosswind</span></div>
-<div class="rw-hours">${cards.join('')}</div>` : '';
+hours = cards.length ? `<div class="rw-sub">Through the Day <span class="rw-legend">Tap an hour · km/h · X = crosswind</span></div>
+<div class="rw-hours" id="rw-hours">${cards.join('')}</div>` : '';
 }
+
+const boatSel = `<div class="rw-boats" role="radiogroup" aria-label="Boat class">${Object.keys(RW_BOATS).map(k =>
+`<button type="button" role="radio" aria-checked="${k === rwBoat}" aria-label="${k} — ${RW_BOATS[k].name}" class="rw-boat-btn${k === rwBoat ? ' active' : ''}" onclick="setBoat('${k}')">${k}</button>`).join('')}</div>`;
+const dialLabel = `Compass. ${RW_BOATS[rwBoat].name}${RowingWind.isNum(heading) ? ` heading ${compassLong(heading)}, ${Math.round(heading)} degrees` : ', heading not set'}. ${primary && RowingWind.isNum(primary.speed) ? (primary.speed < 2 ? 'Calm.' : `Wind from ${primary.dirTxt || (RowingWind.isNum(primary.dir) ? deg2comp(primary.dir) : 'unknown direction')} at ${Math.round(primary.speed)} kilometres per hour${desc ? ': ' + desc.text.toLowerCase() : ''}.`) : 'No wind data.'} Tap the dial to set the direction your crew is rowing.`;
+const keepScroll = document.getElementById('rw-hours')?.scrollLeft || 0;
 
 el.innerHTML = `<div class="section-title">Rowing Wind</div>
 <div class="rw-panel">
@@ -1683,24 +1888,38 @@ el.innerHTML = `<div class="section-title">Rowing Wind</div>
 ${course.status === 'none' ? '' : `<span class="chip ${st.chip}">${st.text}</span>`}
 </div>
 </div>
+${headline}
+${boatSel}
 <div class="rw-body">
-${rwDialSVG(heading, primary, secondary, kind)}
-<div class="rw-stats">${stats}</div>
+${rwDialSVG(heading, primary, secondary, kind, dialLabel)}
+<div class="rw-stats">
+<div class="rw-badge rw-badge-${mode}"><span aria-hidden="true">${mode === 'live' ? '●' : '◷'}</span> ${badge}</div>
+${stats}
+${mode === 'hour' ? `<button type="button" class="rw-back" onclick="rwSelectHour(null)">← Back to ${live ? 'live' : 'now'}</button>` : ''}
 </div>
+</div>
+${rows}${src}
+${insight}
 <div class="rw-controls" role="group" aria-label="Crew heading">
 ${hasRace ? `<button type="button" class="rw-btn${ch.mode === 'race' ? ' active' : ''}" onclick="setHeading('race')">${esc(course.raceLabel || 'Race direction')}</button>` : ''}
-<button type="button" class="rw-btn${ch.mode === 'reverse' ? ' active' : ''}" onclick="reverseHeading()"${hd ? '' : ' disabled'}>⇄ ${esc(hasRace && course.reverseLabel ? course.reverseLabel : 'Reverse')}</button>
+<button type="button" class="rw-btn${returning ? ' active' : ''}" aria-pressed="${returning}" onclick="reverseHeading()"${hd ? '' : ' disabled'}>⇄ ${esc(hasRace && course.reverseLabel ? course.reverseLabel : 'Reverse')}</button>
 ${presets}
 <select class="rw-select" aria-label="Heading" onchange="pickHeadingFromSelect(this)">${options}</select>
-<span class="rw-nudge"><button type="button" class="rw-btn" onclick="nudgeHeading(-5)" aria-label="Turn heading 5 degrees left">−5°</button><button type="button" class="rw-btn" onclick="nudgeHeading(5)" aria-label="Turn heading 5 degrees right">+5°</button></span>
+<span class="rw-nudge"><button type="button" class="rw-btn" onclick="nudgeHeading(-5)" aria-label="Turn heading 5 degrees left">−5°</button><button type="button" class="rw-btn" onclick="nudgeHeading(5)" aria-label="Turn heading 5 degrees right">+5°</button>${hasRace && ch.mode !== 'race' ? `<button type="button" class="rw-btn rw-reset" onclick="setHeading('race')" aria-label="Reset to the course bearing, ${deg3(course.bearing)}" title="Reset to the course bearing">↺</button>` : ''}</span>
 </div>
+${compare}
 ${hours}
-<details class="rw-about"><summary>About This Course</summary>
+<details class="rw-about"${rwState.aboutOpen ? ' open' : ''} ontoggle="rwState.aboutOpen=this.open"><summary>About This Course</summary>
 <p>${esc(course.description || '')}</p>
 ${course.source ? `<p><strong>Source:</strong> ${esc(course.source)}</p>` : ''}
-<p>Left and right are relative to the direction of travel (the way the boat is moving, not the way rowers face). Headwind and crosswind components are calculated from the wind vector; these labels describe the wind's direction only, not whether conditions are safe to row.</p>
+<p>Left and right are relative to the direction of travel (the way the boat is moving, not the way rowers face). Headwind and crosswind components are calculated from the wind vector; these labels describe the wind's direction only, not whether conditions are safe to row. The 4+ is drawn stern-coxed.</p>
 </details>
 </div>`;
+const rail = document.getElementById('rw-hours');
+if (rail) rail.scrollLeft = keepScroll;
+// Let the boat turn to its new heading (CSS transition; instant when reduced motion is on)
+const bg = document.getElementById('rw-boat');
+if (bg) requestAnimationFrame(() => { bg.style.transform = `rotate(${bg.dataset.to}deg)`; });
 }
 
 // Short course-relative labels on the summary tile, hourly cards and 7-day cards
@@ -2454,7 +2673,7 @@ async function renderObservations(loc) {
  </div>`;
 
  // Feed the live wind into the status banner — it uses whichever is worse
- rwState.live = { loc, speed: spd, dir: dirDeg, dirTxt: String(dirTxt).toUpperCase() === 'CALM' ? 'Calm' : dirTxt, station: onlyOne && wObs === obs ? stn.name : wStn.name };
+ rwState.live = { loc, speed: spd, dir: dirDeg, dirTxt: String(dirTxt).toUpperCase() === 'CALM' ? 'Calm' : dirTxt, station: onlyOne && wObs === obs ? stn.name : wStn.name, when };
  if (rwState.loc === loc) renderRowingWind();
 
  if (lastForecast && lastForecast.loc === loc) {
@@ -2809,7 +3028,7 @@ setR('r-uv', uv!==null?uvI.label:'—', uvI.cls);
 setR('r-heat', `${temp}°C`, heat);
 document.getElementById('r-heat-sub').textContent =
 `Feels ${feels}° · ${humid}% humidity${heat==='ok' ? '' : ` · ${heat==='danger'?'high':'moderate'} heat risk`}`;
-placeLightning(isStorm || cI.cls !== 'ok');
+placeLightning(isStorm || [1, 2, 3].some(k => STORM_CODES.includes(h.weathercode?.[hIdx + k])));
 
 renderDaylight(data, loc);
 updateFreshness();
@@ -3259,6 +3478,11 @@ if (!store.get('foldDefaults', '')) {
 ['wind-map', 'course-map', 'lightning'].forEach(k => collapsedSecs.add(k));
 store.set('collapsed', JSON.stringify([...collapsedSecs]));
 store.set('foldDefaults', '1');
+}
+if (!store.get('foldDefaults2', '')) { // Course Map now sits near the top, so it starts open
+collapsedSecs.delete('course-map');
+store.set('collapsed', JSON.stringify([...collapsedSecs]));
+store.set('foldDefaults2', '1');
 }
 const isFolded = box => collapsedSecs.has(box.dataset.sec) && !(box.dataset.sec === 'lightning' && lxAlert === 'open');
 function decorateColl(box) {
