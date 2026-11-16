@@ -574,11 +574,23 @@ display:inline-flex;align-items:center;gap:8px}
 .cm-attr{position:absolute;right:0;bottom:0;font-size:9px;padding:2px 6px;background:rgba(255,255,255,.75);color:#222;border-top-left-radius:4px}
 .cm-attr a{color:#222}
 .cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5}
-.cm-map.adjusting{touch-action:none;cursor:grab;outline:2px dashed var(--accent);outline-offset:-2px}
-.cm-adjust{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--muted)}
-.cm-adjust button{min-height:32px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font:inherit;cursor:pointer}
-.cm-adjust button[hidden]{display:none}
 .cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
+
+/* ===== Lightning live map ===== */
+.lx-map{position:relative;border-radius:6px;overflow:hidden;background:var(--panel2);height:300px}
+.lx-map iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+@media(min-width:600px){.lx-map{height:380px}}
+/* ===== Wind map ===== */
+.wm-map canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wm-time{position:absolute;left:8px;top:8px;background:#fff;color:#0b1726;border:1px solid #0b1726;border-radius:14px;padding:4px 11px;font-size:12px;font-weight:700;max-width:calc(100% - 16px)}
+.wm-time[hidden],.wm-load[hidden],.wm-controls[hidden],.wm-legend[hidden]{display:none}
+.wm-load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-height:44px;padding:0 18px;border-radius:22px;border:1px solid var(--border);background:var(--panel);color:var(--text);font:600 15px 'Barlow Condensed',sans-serif;letter-spacing:.3px;cursor:pointer;white-space:nowrap}
+.wm-controls{display:flex;align-items:center;gap:10px;margin-top:10px}
+.wm-controls button{flex:0 0 44px;height:44px;border-radius:22px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;cursor:pointer}
+.wm-controls input{flex:1;min-width:0;height:44px;accent-color:var(--accent)}
+.wm-legend{margin-top:6px}
+.wm-ramp{height:8px;border-radius:4px}
+.wm-ticks{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px}
 /* ===== Collapsible sections (tap a heading) ===== */
 .coll > .section-title{cursor:pointer;-webkit-user-select:none;user-select:none;min-height:32px;-webkit-tap-highlight-color:transparent;border-radius:4px}
 .coll > .section-title::before{content:'';flex:0 0 auto;width:7px;height:7px;margin:0 2px 0 3px;
@@ -773,6 +785,32 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </div>
 </section>
 
+<!-- Regional wind map: forecast wind speed / gusts and direction over the surrounding area -->
+<section class="coll" data-sec="wind-map">
+<div class="section-title">
+<span style="flex:0 0 auto;white-space:nowrap">Wind Map</span>
+<span style="flex:0 0 auto;display:flex;gap:6px;order:2">
+<button type="button" class="range-btn active" id="wm-mode-speed" onclick="wmMode('speed')">Speed</button>
+<button type="button" class="range-btn" id="wm-mode-gust" onclick="wmMode('gust')">Gusts</button>
+</span>
+</div>
+<div class="cm-panel">
+<div class="cm-map wm-map" id="wm-map">
+<div class="cm-tiles" id="wm-tiles"></div>
+<canvas id="wm-canvas"></canvas>
+<div class="wm-time" id="wm-time" hidden></div>
+<button type="button" class="wm-load" id="wm-load" onclick="wmLoad()">Show wind map</button>
+<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+</div>
+<div class="wm-controls" id="wm-controls" hidden>
+<button type="button" id="wm-play" onclick="wmPlay()" aria-label="Play forecast">▶</button>
+<input type="range" id="wm-slider" min="0" max="47" step="1" value="0" oninput="wmSeek(+this.value)" aria-label="Forecast time">
+</div>
+<div class="wm-legend" id="wm-legend" hidden><div class="wm-ramp" id="wm-ramp"></div><div class="wm-ticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50+ km/h</span></div></div>
+<div class="cm-foot"><span>Forecast wind over the surrounding region for the next 48 hours. Arrows point the way the wind is blowing. This is a regional picture — the forecast model can't show differences across a single course.</span></div>
+</div>
+</section>
+
 <section class="coll" data-sec="next-12">
 <div class="section-title">Next 12 Hours</div>
 <div class="hourly-scroll">
@@ -783,9 +821,13 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <!-- 4. Lightning -->
 <section class="coll" data-sec="lightning">
 <div class="section-title">Lightning</div>
+<div class="cm-panel" style="margin-bottom:8px">
+<div class="lx-map" id="lx-map"><iframe id="lx-frame" title="Live lightning strike map (Blitzortung.org)" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+<div class="cm-foot"><span>Live strikes from the Blitzortung.org volunteer network, about 300 km around the venue. New strikes flash as they arrive and fade with age. Coverage in Australia is patchy, so an empty map is not proof of no lightning.</span></div>
+</div>
 <div class="lightning-bar">
 <div class="lightning-bar-left">
-<span>Live strike maps — check before launching if storms are about</span>
+<span>Open a full-screen map</span>
 </div>
 <div class="lightning-links">
 <a class="btn btn-outline" id="blitz-link" href="#" target="_blank" rel="noopener">Blitzortung</a>
@@ -808,7 +850,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="details-body about-text">
 <p><strong>Verdicts:</strong> GO / CAUTION / OFF WATER use the limits selected above (Seniors or Novices). Day verdicts use each day's strongest forecast wind and gusts, which usually come in the afternoon.</p>
 <p><strong>Lightning / CAPE:</strong> CAPE above 1000 J/kg = clear the water. Use the Blitzortung button for live strike maps.</p>
-<p><strong>Tides:</strong> Approximate harmonic prediction for the Fremantle gauge (~4 km from Freshwater Bay) — check against BOM tide tables. All other venues are freshwater.</p>
+<p><strong>Tides:</strong> Forecast sea level off Fremantle from Open-Meteo's ocean model (tide plus weather effects), shown relative to mean sea level. It is a model forecast, not the official tide table — check BOM tide tables for anything critical. All other venues are freshwater.</p>
 <p><strong>Wind:</strong> Forecast from Open-Meteo. Live observations from the nearest BOM station (named above); the status banner uses whichever of forecast or live wind is worse.</p>
 <p><strong>Daylight:</strong> First and last light are civil twilight (sun 6° below the horizon), calculated in the page.</p>
 <p>Data: <a href="https://open-meteo.com" target="_blank" rel="noopener" style="color:var(--accent)">Open-Meteo</a> · Auto-refreshes every 10 min while open.</p>
@@ -909,14 +951,15 @@ const LOCATIONS = [
 {
 name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA",
 course: {
-  bearing: 188, status: 'approximate',
+  bearing: 192, status: 'verified',
   raceLabel: 'Outbound', reverseLabel: 'Return',
   description: 'Christchurch to Scotch training course (≈750 m one way, ≈1.5 km out and back) along the western shore of Freshwater Bay: outbound south from the Christchurch turn mark to the Scotch turn mark (near The Esplanade jetty), then return north. Turn marks are temporary or coach buoys. For other training routes, use the heading selector.',
-  source: 'Freshwater Bay course map (Christchurch to Scotch) supplied by a local coach: drawn legs measure 188°. The real western shoreline on Google satellite runs 185.5°. (The map legend says ≈193°, which doesn\'t match its own drawing.)',
-  length: 750, mid: [-31.9943, 115.7740], // from the coach's arrow drawn on the Course Map (western shore of the bay)
+  source: 'Freshwater Bay course map (Christchurch to Scotch) supplied by a local coach: drawn legs measure 188°. The real western shoreline on Google satellite runs 185.5°. (The map legend says ≈193°, which doesn\'t match its own drawing.) Final: start and finish positions pinned on Google Maps by a local coach (-31.99009, 115.77441 → -31.99666, 115.77277: 192.0°, 746 m).',
+  mid: [-31.99337, 115.77359], // midway between the coach's start and finish pins
+  length: 750,
   presets: [] // add other named training routes here, e.g. { label: 'Upriver leg', bearing: 120 }
 },
-lat: -31.9910, lon: 115.7670, tz: "Australia/Perth", tidal: true,
+lat: -31.9934, lon: 115.7736, tz: "Australia/Perth", tidal: true,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.99;x=115.77;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-31.99&lon=115.77&zoom=9",
 obsStation: { name: "Swanbourne", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
@@ -926,16 +969,16 @@ tideDist: "~4 km"
 {
 name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA",
 course: {
-  bearing: 204, status: 'approximate',
+  bearing: 212, status: 'verified',
   raceLabel: 'Downstream', reverseLabel: 'Return',
   description: 'Two 2,000 m courses on Blackwall Reach, rowed both ways: downstream from the Point Walter navigation spit post to the East Fremantle Yacht Club (western end), and the return course back to Point Walter. The main navigation channel runs between them — keep clear.',
-  source: 'Course map supplied by a local coach (rough, north-up). Bearing measured along both drawn courses: downstream 203–205°, return 023–025°.',
-  mid: [-32.0207, 115.7794], // from the coach's arrow drawn on the Course Map (≈890 m east of the first estimate)
+  source: 'Course map supplied by a local coach (rough, north-up). Bearing measured along both drawn courses: downstream 203–205°, return 023–025°. Final: start and finish positions pinned on Google Maps by a local coach (downstream -32.01244, 115.78460 → -32.02724, 115.77366: 212.1°, 1,941 m).',
+  mid: [-32.01984, 115.77913], // midway between the coach's start and finish pins
   presets: []
 },
-lat: -32.0200, lon: 115.7700, tz: "Australia/Perth", tidal: true, // approximate mid-course — check
-blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.02;x=115.77;z=9;d=2;dl=2;dc=0;",
-bom: "https://weather.bom.gov.au/map/wind?lat=-32.02&lon=115.77&zoom=9",
+lat: -32.0198, lon: 115.7791, tz: "Australia/Perth", tidal: true, // approximate mid-course — check
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.02;x=115.78;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-32.02&lon=115.78&zoom=9",
 obsStation: { name: "Swanbourne", dist: "~6 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94614.json" },
 windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.09091.json" },
 tideDist: "~3 km"
@@ -945,8 +988,8 @@ name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion
 course: {
   bearing: 42, status: 'verified',
   description: '2,000 m, 8-lane course running SW → NE alongside Tonkin Highway; crews race north-east to the finish tower at the north-eastern end.',
-  mid: [-32.1141, 115.9878], // ESTIMATE: mid-course ≈1 km south-west of the regatta centre pin, from the coach's arrow on Google Maps — check on the Course Map
-  source: 'Finish tower location confirmed by a local coach (Google Maps pin). Bearing measured from the map along the lake axis and shoreline (41–42°, ±2°).',
+  source: 'Finish tower location confirmed by a local coach (Google Maps pin). Bearing measured from the map along the lake axis and shoreline (41–42°, ±2°). Final: start and finish positions pinned on Google Maps by a local coach (-32.11456, 115.98859 → -32.10113, 116.00299: 042.3°, 2,017 m).',
+  mid: [-32.10784, 115.99579], // midway between the coach's start and finish pins
   presets: []
 },
 lat: -32.1078, lon: 115.9958, tz: "Australia/Perth", tidal: false, // regatta centre (was ~5 km south)
@@ -963,7 +1006,7 @@ course: {
   source: 'Racing direction: Rowing NSW regatta programmes (lane 1 on the southern bank, on the left looking from start to finish). Bearing measured from Google Maps along both shorelines (274.0° and 273.9°, ±1°).',
   presets: []
 },
-lat: -33.7224, lon: 150.6712, tz: "Australia/Sydney", tidal: false, // on the competition lake (was ~4 km south, in Penrith)
+lat: -33.7250, lon: 150.6832, tz: "Australia/Sydney", tidal: false, // on the competition lake (was ~4 km south, in Penrith)
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-33.72;x=150.67;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-33.72&lon=150.67&zoom=9",
 obsStation: { name: "Penrith Lakes AWS", dist: "~2 km", json: "https://www.bom.gov.au/fwo/IDN60801/IDN60801.94759.json" }
@@ -971,39 +1014,41 @@ obsStation: { name: "Penrith Lakes AWS", dist: "~2 km", json: "https://www.bom.g
 {
 name: "Lake Nagambie, Victoria", short: "Lake Nagambie", icon: "icons/lake_nagambie.png", state: "VIC",
 course: {
-  bearing: 256, status: 'approximate',
+  bearing: 253, status: 'verified',
   description: '2,000 m course along the southern shore, running ENE → WSW: start at the eastern end (near the freeway), finish tower at the western end beside the Regatta Centre boat park.',
-  mid: [-36.7868, 145.1413], // ESTIMATE from the Nagambie Waterways maps: mid-course ≈1.1 km west of High Street, level with Goulburn Street — check on the Course Map
-  source: 'Google Maps: straight southern shoreline beside the finish end measures 256° (the course was excavated along this shore). Rowing Victoria "Competition Traffic Flow 2000m" map: course parallel to the shore, racing west; its north arrow suggests ~250°. Direction also matches the 2017 Masters programme ("launch facing west, the direction to the Judges Tower"). Estimated ±4°.',
+  source: 'Google Maps: straight southern shoreline beside the finish end measures 256° (the course was excavated along this shore). Rowing Victoria "Competition Traffic Flow 2000m" map: course parallel to the shore, racing west; its north arrow suggests ~250°. Direction also matches the 2017 Masters programme ("launch facing west, the direction to the Judges Tower"). Estimated ±4°. Final: start and finish positions pinned on Google Maps by a local coach (-36.78347, 145.15090 → -36.78849, 145.13030: 253.1°, 1,918 m).',
+  mid: [-36.78598, 145.1406], // midway between the coach's start and finish pins
   presets: []
 },
-lat: -36.7850, lon: 145.1700, tz: "Australia/Melbourne", tidal: false,
-blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-36.79;x=145.17;z=9;d=2;dl=2;dc=0;",
-bom: "https://weather.bom.gov.au/map/wind?lat=-36.79&lon=145.17&zoom=9",
+lat: -36.7860, lon: 145.1406, tz: "Australia/Melbourne", tidal: false,
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-36.79;x=145.14;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-36.79&lon=145.14&zoom=9",
 obsStation: { name: "Shepparton Airport", dist: "~40 km", json: "https://www.bom.gov.au/fwo/IDV60801/IDV60801.94875.json" }
 },
 {
 name: "Lake Barrington, Tasmania", short: "Lake Barrington", icon: "icons/lake_barrington.png", state: "TAS",
 course: {
-  bearing: 208, status: 'approximate',
+  bearing: 210, status: 'verified',
   description: '2,000 m course at the southern end of the lake: start pontoon at the north-eastern end, finish tower (by the boat ramp and Davies Bay) at the south-western end — crews race south-southwest.',
-  source: 'Rowing Tasmania "Notice to recreational boats" map (500 m upstream (SW) of finish, 500 m downstream (NE) of start; its N arrow gives ~201°). Google Maps: centreline of the course stretch 208° (shores 202–214°). ARC programmes 1997/2003 also describe start → finish as southerly. Two arrows drawn along the course on Google satellite by a local coach measure 210–211°. Set to the centreline, 208° (±4°).',
+  source: 'Rowing Tasmania "Notice to recreational boats" map (500 m upstream (SW) of finish, 500 m downstream (NE) of start; its N arrow gives ~201°). Google Maps: centreline of the course stretch 208° (shores 202–214°). ARC programmes 1997/2003 also describe start → finish as southerly. Two arrows drawn along the course on Google satellite by a local coach measure 210–211°. Start and finish line positions pinned on Google Maps by a local coach (-41.41131, 146.18863 → -41.42695, 146.17638): 210.4°, 2,017 m.',
+  mid: [-41.41913, 146.18250], // midway between the coach's start and finish pins
   presets: []
 },
-lat: -41.3650, lon: 146.2300, tz: "Australia/Hobart", tidal: false,
-blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-41.37;x=146.23;z=9;d=2;dl=2;dc=0;",
-bom: "https://weather.bom.gov.au/map/wind?lat=-41.37&lon=146.23&zoom=9",
+lat: -41.4191, lon: 146.1825, tz: "Australia/Hobart", tidal: false,
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-41.42;x=146.18;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-41.42&lon=146.18&zoom=9",
 obsStation: { name: "Sheffield School Farm", dist: "~8 km", json: "https://www.bom.gov.au/fwo/IDT60801/IDT60801.94955.json" }
 },
 {
 name: "Wyaralong Dam, Queensland", short: "Wyaralong Dam", icon: "icons/wyaralong_dam.png", state: "QLD",
 course: {
-  bearing: 0, status: 'approximate',
-  description: '2,000 m, 10-lane course running south → north; start at the southern end, finish at the northern end beside the QSRC boating area on the eastern shore.',
-  source: 'QSRC course traffic map (start south, finish north; drawn on north-up Google satellite imagery) — 000°. Cross-checked on Google Maps: the centreline of the course arm runs 002° overall, though the arm bends ±10° along its length. Estimated ±5°.',
+  bearing: 355, status: 'verified',
+  description: '2,000 m, 10-lane course running south → north (355°); start at the southern end, finish at the northern end beside the QSRC boating area on the eastern shore.',
+  source: 'QSRC course traffic map (start south, finish north; drawn on north-up Google satellite imagery) — 000°. Cross-checked on Google Maps: the centreline of the course arm runs 002° overall, though the arm bends ±10° along its length. Start and finish line positions pinned on Google Maps by a local coach (-27.93203, 152.88331 → -27.91382, 152.88159): 355.2°, 2,025 m.',
+  mid: [-27.92293, 152.88245], // midway between the coach's start and finish pins
   presets: []
 },
-lat: -27.9150, lon: 152.8850, tz: "Australia/Brisbane", tidal: false,
+lat: -27.9229, lon: 152.8825, tz: "Australia/Brisbane", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-27.92;x=152.89;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-27.92&lon=152.89&zoom=9",
 obsStation: { name: "Beaudesert AWS", dist: "~12 km", json: "https://www.bom.gov.au/fwo/IDQ60801/IDQ60801.95575.json" }
@@ -1017,7 +1062,7 @@ course: {
   source: 'Racing direction: Office for Recreation, Sport & Racing course fact sheet. Bearing measured from Google Maps along both banks of the course channel (350.6° and 351.5°, ±1°).',
   presets: []
 },
-lat: -34.8720, lon: 138.4890, tz: "Australia/Adelaide", tidal: false,
+lat: -34.8844, lon: 138.4885, tz: "Australia/Adelaide", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-34.87;x=138.49;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-34.87&lon=138.49&zoom=9",
 obsStation: { name: "Adelaide West Terrace", dist: "~13 km", json: "https://www.bom.gov.au/fwo/IDS60801/IDS60801.94648.json" }
@@ -1027,13 +1072,13 @@ name: "Lake Burley Griffin, ACT", short: "Lake Burley Griffin", icon: "icons/lak
 course: {
   bearing: 30, status: 'approximate',
   description: 'Yarramundi Reach 1,800 m course, along the north-western side of Weston Park: start at the Scrivener Dam / Government House end (south-west), finish toward Acacia Inlet — crews race north-northeast. Rowing ACT uses reverse traffic flows during regattas.',
-  length: 1800, mid: [-35.2925, 149.0840], // mid-course is a best estimate (Yarramundi Reach) — check on the Course Map
+  length: 1800, mid: [-35.2925, 149.0840], midApprox: true, // mid-course is a best estimate (Yarramundi Reach) — check on the Course Map
   source: 'Racing direction: NCA "Watercraft Safety — Traffic Flow Guide" (boats go to the Start/Scrivener Dam in lane 1 and travel down the course away from Government House); Rowing ACT ("travel North, from Start to Finish"). Bearing ≈ 030° (±10°): the NCA guide\'s course drawing (map turned so west is up) gives ≈ 031°, and the axis of Yarramundi Reach on Google satellite measures 024–038°. An earlier 063° estimate was measured on the wrong stretch of water. Needs confirming on the Course Map.',
   presets: []
 },
-lat: -35.2930, lon: 149.1200, tz: "Australia/Sydney", tidal: false,
-blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-35.29;x=149.12;z=9;d=2;dl=2;dc=0;",
-bom: "https://weather.bom.gov.au/map/wind?lat=-35.29&lon=149.12&zoom=9",
+lat: -35.2925, lon: 149.0840, tz: "Australia/Sydney", tidal: false,
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-35.29;x=149.08;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-35.29&lon=149.08&zoom=9",
 obsStation: { name: "Canberra Airport", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDN60801/IDN60801.94926.json" }
 }
 ];
@@ -1054,11 +1099,11 @@ return CORS_PROXY + encodeURIComponent(rawUrl);
 
 // ── SAFETY THRESHOLDS (single source of truth) ────────────────────────────
 // Change a limit here and every banner, card, chart and table follows.
-// Wind limits per crew level. NOTE: the Novices numbers are placeholders —
-// set them to your club / association policy.
+// Wind limits per crew level. Novices: caution from 12 km/h, off water from 20 km/h (gusts 20 / 30),
+// chosen by the coordinator (Nov 2026). Change them here if your club / association policy differs.
 const CREW_LIMITS = {
 senior: { label: 'Seniors', wind: { caution: 20, danger: 30 }, gust: { caution: 30, danger: 40 } },
-novice: { label: 'Novices', wind: { caution: 15, danger: 25 }, gust: { caution: 25, danger: 35 } }
+novice: { label: 'Novices', wind: { caution: 12, danger: 20 }, gust: { caution: 20, danger: 30 } }
 };
 const THRESHOLDS = {
 wind: { ...CREW_LIMITS.senior.wind }, // km/h sustained — swapped by setCrewLevel()
@@ -1285,48 +1330,7 @@ function cmUnproject(x, y, z) {
 const n = 256 * Math.pow(2, z);
 return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180];
 }
-// Where the course line sits: a position set on this phone with "Adjust line", else course.mid, else the venue's lat/lon
-const cmKey = loc => 'mid.' + loc.short.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-function cmMid(loc) {
-const m = /^(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(store.get(cmKey(loc), ''));
-return m ? [+m[1], +m[2]] : ((loc.course && loc.course.mid) || [loc.lat, loc.lon]);
-}
-function cmToggleAdjust() { cmState.adjust = !cmState.adjust; renderCourseMap(); }
-function cmResetMid() { try { localStorage.removeItem('rowwx.' + cmKey(cmState.loc)); } catch {} renderCourseMap(); }
-async function cmCopy() {
-const lines = LOCATIONS.filter(l => store.get(cmKey(l), '')).map(l => `${l.short}: ${store.get(cmKey(l), '')}`);
-const text = 'Weatherow course positions\n' + lines.join('\n');
-const btn = document.getElementById('cm-copy');
-try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied ✓'; }
-catch { window.prompt('Copy these positions:', text.replace(/\n/g, ' | ')); }
-setTimeout(() => { btn.textContent = 'Copy positions'; }, 2000);
-}
-function cmBindDrag(mapEl) {
-let d = null;
-const tiles = () => document.getElementById('cm-tiles');
-mapEl.addEventListener('pointerdown', e => {
-if (!cmState.adjust || e.target.closest('button, a')) return;
-d = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
-try { mapEl.setPointerCapture(e.pointerId); } catch {}
-});
-mapEl.addEventListener('pointermove', e => {
-if (!d) return;
-d.dx = e.clientX - d.x; d.dy = e.clientY - d.y;
-tiles().style.transform = `translate(${d.dx}px,${d.dy}px)`; // the map slides under the line
-});
-const end = () => {
-if (!d) return;
-const { dx, dy } = d; d = null;
-tiles().style.transform = '';
-if (!dx && !dy) return;
-const v = cmState.view; // centre moves the opposite way to the drag
-const [lat, lon] = cmUnproject(v.cx - dx, v.cy - dy, v.z);
-store.set(cmKey(cmState.loc), `${lat.toFixed(5)},${lon.toFixed(5)}`);
-renderCourseMap();
-};
-mapEl.addEventListener('pointerup', end);
-mapEl.addEventListener('pointercancel', end);
-}
+const cmMid = loc => (loc.course && loc.course.mid) || [loc.lat, loc.lon];
 function cmZoom(d) { cmState.zoomAdj = Math.max(-3, Math.min(2, cmState.zoomAdj + d)); renderCourseMap(); }
 function renderCourseMap() {
 const box = document.getElementById('course-map');
@@ -1340,12 +1344,7 @@ box.innerHTML = `<div class="section-title">Course Map</div>
 <div class="cm-panel"><div class="cm-map" id="cm-map"><div class="cm-tiles" id="cm-tiles"></div><svg id="cm-svg" aria-hidden="true"></svg>
 <div class="cm-zoom"><button type="button" id="cm-in" onclick="cmZoom(1)" aria-label="Zoom in">+</button><button type="button" id="cm-out" onclick="cmZoom(-1)" aria-label="Zoom out">−</button></div>
 <div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
-<div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div>
-<div class="cm-adjust"><button type="button" id="cm-adj" onclick="cmToggleAdjust()">Adjust line</button>
-<button type="button" id="cm-reset" onclick="cmResetMid()" hidden>Reset</button>
-<button type="button" id="cm-copy" onclick="cmCopy()" hidden>Copy positions</button>
-<span id="cm-pos"></span></div></div>`;
-cmBindDrag(document.getElementById('cm-map'));
+<div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div></div>`;
 cmState.key = '';
 }
 const mapEl = document.getElementById('cm-map');
@@ -1431,14 +1430,158 @@ svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 svg.innerHTML = g;
 
 document.getElementById('cm-note').textContent = !hasLine ? 'No fixed course direction set for this venue.'
-: `${(len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m')} course on ${deg3(course.bearing)}${course.reverseLabel ? ', rowed both ways' : ', arrow = racing direction'}. The line's position is indicative — check it against the satellite view.`;
-const moved = !!store.get(cmKey(loc), '');
-mapEl.classList.toggle('adjusting', !!cmState.adjust);
-document.getElementById('cm-adj').textContent = cmState.adjust ? 'Done' : 'Adjust line';
-document.getElementById('cm-reset').hidden = !(cmState.adjust && moved);
-document.getElementById('cm-copy').hidden = !(cmState.adjust && LOCATIONS.some(l => store.get(cmKey(l), '')));
-document.getElementById('cm-pos').textContent = cmState.adjust ? `Drag the map until the line sits on the course. Mid-point ${mlat.toFixed(5)}, ${mlon.toFixed(5)}` : '';
+: `${(len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m')} course on ${deg3(course.bearing)}${course.reverseLabel ? ', rowed both ways' : ', arrow = racing direction'}.${course.midApprox ? ' The line\'s position here is an estimate.' : ''}`;
 document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
+}
+
+
+// ── LIGHTNING LIVE MAP ────────────────────────────────────────────────────
+// Blitzortung.org's own embeddable live map (their documented iframe), centred on the venue.
+// Loaded only while the Lightning section is open; folding the section away disconnects it.
+function renderLightningMap() {
+const frame = document.getElementById('lx-frame'), loc = LOCATIONS[currentLoc];
+if (!frame || !loc) return;
+const open = !frame.closest('.coll').classList.contains('collapsed');
+const url = open ? `https://map.blitzortung.org/index.php?interactive=0&NavigationControl=0&FullScreenControl=0&Cookies=0&InfoDiv=0&MenuButtonDiv=0&ScaleControl=1&LinksCheckboxChecked=0&Advertisment=0&venue=${currentLoc}#7/${loc.lat.toFixed(2)}/${loc.lon.toFixed(2)}` : 'about:blank';
+if (frame.dataset.url !== url) { frame.dataset.url = url; frame.src = url; }
+}
+
+// ── WIND MAP (regional) ───────────────────────────────────────────────────
+// A grid of forecast points around the venue (one Open-Meteo request, only when "Show wind map" is tapped),
+// drawn as a colour field + arrows over OpenStreetMap, with a 48-hour time slider.
+const WM_COLS = 7, WM_ROWS = 6, WM_ZOOM = 9, WM_HOURS = 48, WM_KEEP_MS = 60 * 60000;
+const WM_STOPS = [[0,[66,133,201]],[10,[58,178,172]],[20,[112,196,84]],[30,[243,209,62]],[40,[244,140,44]],[50,[224,62,52]],[65,[150,44,140]]];
+const wm = { loc: null, data: null, mode: 'speed', idx: 0, timer: null, key: '', view: null, cache: {}, loading: false };
+function wmColour(v) {
+for (let i = 1; i < WM_STOPS.length; i++) if (v <= WM_STOPS[i][0]) {
+const [a, ca] = WM_STOPS[i - 1], [b, cb] = WM_STOPS[i], f = (v - a) / (b - a);
+return [0, 1, 2].map(k => Math.round(ca[k] + (cb[k] - ca[k]) * f));
+}
+return WM_STOPS[WM_STOPS.length - 1][1];
+}
+function wmMode(m) {
+wm.mode = m;
+document.getElementById('wm-mode-speed').classList.toggle('active', m === 'speed');
+document.getElementById('wm-mode-gust').classList.toggle('active', m === 'gust');
+wmDraw();
+}
+function wmStop() { clearInterval(wm.timer); wm.timer = null; const b = document.getElementById('wm-play'); if (b) { b.textContent = '▶'; b.setAttribute('aria-label', 'Play forecast'); } }
+function wmPlay() {
+if (wm.timer) return wmStop();
+const b = document.getElementById('wm-play'); b.textContent = '❚❚'; b.setAttribute('aria-label', 'Pause');
+wm.timer = setInterval(() => wmSeek((wm.idx + 1) % wm.data.times.length), 550);
+}
+function wmSeek(i) { wm.idx = i; document.getElementById('wm-slider').value = i; wmDraw(); }
+function renderWindMap() {
+const mapEl = document.getElementById('wm-map');
+const loc = LOCATIONS[currentLoc];
+if (!mapEl || !loc) return;
+if (wm.loc !== loc) { // venue changed: use a recent saved grid for it, or wait for a tap
+wmStop(); wm.loc = loc; wm.idx = 0; wm.key = '';
+const c = wm.cache[loc.short];
+wm.data = c && Date.now() - c.at < WM_KEEP_MS ? c : null;
+}
+const W = mapEl.clientWidth;
+if (!W) return; // folded away
+const H = Math.round(Math.min(460, Math.max(240, W * 0.8)));
+mapEl.style.height = H + 'px';
+const c = cmProject(loc.lat, loc.lon, WM_ZOOM);
+const ox = c.x - W / 2, oy = c.y - H / 2;
+wm.view = { W, H, ox, oy };
+const key = [loc.short, W, H].join('|');
+if (key !== wm.key) {
+wm.key = key;
+const n = Math.pow(2, WM_ZOOM), imgs = [];
+for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++)
+for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++)
+imgs.push(`<img alt="" loading="lazy" decoding="async" src="${CM_TILE(WM_ZOOM, ((tx % n) + n) % n, ty)}" style="left:${Math.round(tx * 256 - ox)}px;top:${Math.round(ty * 256 - oy)}px" onerror="this.style.display='none'">`);
+document.getElementById('wm-tiles').innerHTML = imgs.join('');
+}
+const has = !!wm.data;
+document.getElementById('wm-load').hidden = has;
+['wm-controls', 'wm-legend', 'wm-time'].forEach(id => { document.getElementById(id).hidden = !has; });
+document.getElementById('wm-ramp').style.background = `linear-gradient(90deg,${WM_STOPS.filter(s => s[0] <= 50).map(s => `rgb(${s[1]}) ${s[0] * 2}%`).join(',')})`;
+if (has) { document.getElementById('wm-slider').max = wm.data.times.length - 1; document.getElementById('wm-slider').value = wm.idx; }
+wmDraw();
+}
+async function wmLoad() {
+const loc = LOCATIONS[currentLoc], v = wm.view, btn = document.getElementById('wm-load');
+if (!v || wm.loading) return;
+wm.loading = true; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Loading wind map…';
+try {
+// Grid spans the visible map: rows top (north) → bottom, columns west → east
+const [latN, lonW] = cmUnproject(v.ox, v.oy, WM_ZOOM), [latS, lonE] = cmUnproject(v.ox + v.W, v.oy + v.H, WM_ZOOM);
+const lats = [], lons = [];
+for (let r = 0; r < WM_ROWS; r++) for (let c = 0; c < WM_COLS; c++) {
+lats.push((latN + (latS - latN) * r / (WM_ROWS - 1)).toFixed(3));
+lons.push((lonW + (lonE - lonW) * c / (WM_COLS - 1)).toFixed(3));
+}
+const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=kmh&forecast_days=3&timeformat=unixtime`;
+let res = await fetchJSON(url);
+if (!Array.isArray(res)) res = [res];
+if (res.length !== WM_ROWS * WM_COLS) throw new Error('unexpected reply');
+const t = res[0].hourly.time;
+let i0 = t.findIndex(s => s * 1000 >= Date.now() - 30 * 60000);
+if (i0 < 0) i0 = 0;
+const i1 = Math.min(t.length, i0 + WM_HOURS);
+const data = { at: Date.now(), latN, latS, lonW, lonE, times: t.slice(i0, i1).map(s => s * 1000),
+pts: res.map(p => ({ s: p.hourly.wind_speed_10m.slice(i0, i1), g: p.hourly.wind_gusts_10m.slice(i0, i1), d: p.hourly.wind_direction_10m.slice(i0, i1) })) };
+wm.cache[loc.short] = data;
+if (LOCATIONS[currentLoc] === loc) { wm.data = data; wm.idx = 0; }
+} catch (err) {
+btn.textContent = `Couldn't load (${err.message}) — tap to retry`;
+} finally {
+wm.loading = false; btn.disabled = false;
+if (wm.data) btn.textContent = 'Show wind map';
+renderWindMap();
+}
+}
+function wmDraw() {
+const canvas = document.getElementById('wm-canvas'), v = wm.view, d = wm.data;
+if (!canvas || !v) return;
+const dpr = window.devicePixelRatio || 1;
+canvas.width = v.W * dpr; canvas.height = v.H * dpr;
+const ctx = canvas.getContext('2d');
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ctx.clearRect(0, 0, v.W, v.H);
+const loc = wm.loc;
+if (d) {
+const i = Math.min(wm.idx, d.times.length - 1), gust = wm.mode === 'gust';
+// per grid point: value to colour by, and the wind as east/north components (so directions blend properly)
+const node = d.pts.map(p => { const sp = p.s[i] || 0, r = (p.d[i] || 0) * Math.PI / 180; return { val: gust ? (p.g[i] ?? sp) : sp, u: -sp * Math.sin(r), n: -sp * Math.cos(r) }; });
+const sample = (x, y) => {
+const [lat, lon] = cmUnproject(v.ox + x, v.oy + y, WM_ZOOM);
+const gx = Math.max(0, Math.min(WM_COLS - 1, (lon - d.lonW) / (d.lonE - d.lonW) * (WM_COLS - 1)));
+const gy = Math.max(0, Math.min(WM_ROWS - 1, (lat - d.latN) / (d.latS - d.latN) * (WM_ROWS - 1)));
+const c0 = Math.min(WM_COLS - 2, Math.floor(gx)), r0 = Math.min(WM_ROWS - 2, Math.floor(gy)), fx = gx - c0, fy = gy - r0;
+const a = node[r0 * WM_COLS + c0], b = node[r0 * WM_COLS + c0 + 1], c = node[(r0 + 1) * WM_COLS + c0], e = node[(r0 + 1) * WM_COLS + c0 + 1];
+const mix = k => (a[k] * (1 - fx) + b[k] * fx) * (1 - fy) + (c[k] * (1 - fx) + e[k] * fx) * fy;
+return { val: mix('val'), u: mix('u'), n: mix('n') };
+};
+const CELL = 8;
+ctx.globalAlpha = 0.58;
+for (let y = 0; y < v.H; y += CELL) for (let x = 0; x < v.W; x += CELL) {
+ctx.fillStyle = `rgb(${wmColour(sample(x + CELL / 2, y + CELL / 2).val)})`;
+ctx.fillRect(x, y, CELL, CELL);
+}
+ctx.globalAlpha = 1;
+const STEP = 40;
+for (let y = STEP / 2 + 26; y < v.H - 14; y += STEP) for (let x = STEP / 2; x < v.W; x += STEP) {
+const p = sample(x, y), sp = Math.hypot(p.u, p.n);
+if (sp < 1) continue;
+const len = 9 + Math.min(8, sp / 5);
+ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(p.u, p.n)); // 0 = blowing toward north (up)
+ctx.beginPath(); ctx.moveTo(0, -len); ctx.lineTo(5, -len + 8); ctx.lineTo(1.6, -len + 6.5); ctx.lineTo(1.6, len); ctx.lineTo(-1.6, len); ctx.lineTo(-1.6, -len + 6.5); ctx.lineTo(-5, -len + 8); ctx.closePath();
+ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(11,23,38,.75)'; ctx.lineWidth = 1; ctx.fill(); ctx.stroke();
+ctx.restore();
+}
+const here = sample(v.W / 2, v.H / 2), hs = Math.hypot(here.u, here.n);
+const when = new Date(d.times[i]).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: loc.tz });
+document.getElementById('wm-time').textContent = `${when} · ${gust ? 'gusts' : 'wind'} ${Math.round(here.val)} km/h${hs >= 2 ? ' ' + deg2comp((Math.atan2(-here.u, -here.n) * 180 / Math.PI + 360) % 360) : ''} at ${loc.short}`;
+}
+// venue marker
+ctx.beginPath(); ctx.arc(v.W / 2, v.H / 2, 6, 0, 2 * Math.PI);
+ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#0b1726'; ctx.lineWidth = 2.5; ctx.stroke();
 }
 
 // ── ROWING WIND PANEL ─────────────────────────────────────────────────────
@@ -1483,7 +1626,7 @@ ${arrow(secondary, false)}${arrow(primary, true)}</svg>`;
 }
 
 function renderRowingWind() {
-try { renderCourseMap(); } catch (e) { console.warn('course map', e); }
+try { renderCourseMap(); renderWindMap(); } catch (e) { console.warn('course map', e); }
 const el = document.getElementById('rowing-wind');
 const { loc, fc, hourly: h, hIdx } = rwState;
 if (!el || !loc) return;
@@ -1619,33 +1762,50 @@ function gustCls(g) { return level(g, THRESHOLDS.gust); }
 const above = (v, t) => v > t.danger ? 'danger' : v > t.caution ? 'warn' : 'ok';
 const tempCls = t => above(t, THRESHOLDS.temp);
 
-// ── TIDAL HARMONICS (Fremantle) ───────────────────────────────────────────
-const HARMONICS = [
-{amp:0.250, phase:200.0, period:12.4206},
-{amp:0.100, phase:235.0, period:12.0000},
-{amp:0.052, phase:185.0, period:12.6584},
-{amp:0.028, phase:240.0, period:11.9673},
-{amp:0.140, phase:110.0, period:23.9345},
-{amp:0.100, phase: 95.0, period:25.8193},
-{amp:0.045, phase:108.0, period:24.0659},
-{amp:0.018, phase: 80.0, period:26.8684},
-{amp:0.010, phase: 50.0, period:327.860},
-];
-const MSL = 0.78;
-// NOTE: these constants and the formula below are approximate. The phase is
-// measured from 1 Jan 1970 without each constituent's astronomical argument
-// (V0+u) or nodal factor (f), so times can drift from reality. Check against
-// BOM's published Fremantle tide tables before relying on them.
-
-// Returns the unrounded height — round only when displaying. (Rounding here
-// made neighbouring samples equal at the top/bottom of a tide, so the strict
-// peak test below missed high and low waters.)
-function tideHeight(ms) {
-const t = ms / 3600000;
-let h = MSL;
-for (const c of HARMONICS) h += c.amp * Math.cos(2*Math.PI*t/c.period - c.phase*Math.PI/180);
-return h;
+// ── TIDES: forecast sea level off Fremantle (Open-Meteo Marine) ───────────
+// Hourly sea level (tide + weather effects) relative to mean sea level, from a forecast ocean model.
+// Replaces the old built-in formula, which did not match the published Fremantle tables.
+const TIDE_URL = 'https://marine-api.open-meteo.com/v1/marine?latitude=-32.05&longitude=115.70&hourly=sea_level_height_msl&timeformat=unixtime&past_days=1&forecast_days=7&cell_selection=sea';
+const TIDE_KEEP_MS = 3 * 3600000;
+let tideData = null, tideLoading = false, tideError = '';
+const tideEnd = d => d.t0 + (d.h.length - 1) * 3600000;
+try { // last saved copy, if it still reaches at least 6 h ahead
+const d = JSON.parse(store.get('tide', 'null'));
+if (d && Array.isArray(d.h) && d.h.length > 24 && tideEnd(d) > Date.now() + 6 * 3600000) tideData = d;
+} catch {}
+async function loadTides(force) {
+if (tideLoading) return;
+if (!force && tideData && Date.now() - tideData.at < TIDE_KEEP_MS && tideEnd(tideData) > Date.now() + 6 * 3600000) return;
+tideLoading = true;
+try {
+const r = await fetchJSON(TIDE_URL);
+const t = r.hourly.time, raw = r.hourly.sea_level_height_msl;
+let n = raw.length;
+while (n && raw[n - 1] == null) n--; // drop empty hours at the end
+const h = raw.slice(0, n);
+if (h.length < 25 || h.some(v => typeof v !== 'number')) throw new Error('no tide data');
+tideData = { at: Date.now(), t0: t[0] * 1000, h };
+tideError = '';
+store.set('tide', JSON.stringify(tideData));
+} catch (err) {
+tideError = err.message || 'failed';
+} finally {
+tideLoading = false;
+const loc = LOCATIONS[currentLoc];
+if (loc.tidal) renderTides(loc);
 }
+}
+// Height at any moment: a smooth curve through the hourly values (null outside the data)
+function tideHeight(ms) {
+const d = tideData;
+if (!d) return null;
+const f = (ms - d.t0) / 3600000, n = d.h.length;
+if (f < 0 || f > n - 1) return null;
+const i = Math.min(n - 2, Math.floor(f)), u = f - i;
+const p0 = d.h[Math.max(0, i - 1)], p1 = d.h[i], p2 = d.h[i + 1], p3 = d.h[Math.min(n - 1, i + 2)];
+return 0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u * u * u);
+}
+const fmtTideH = h => h == null ? '—' : (h < 0 ? '−' : '+') + Math.abs(h).toFixed(2);
 
 // Next high & low after now (for the countdown cards)
 function nextExtrema() {
@@ -1653,7 +1813,9 @@ const now = Date.now();
 const samples = [];
 for (let dt = 0; dt <= 36*60; dt += 5) { // look 36h ahead
 const ms = now + dt*60000;
-samples.push({ms, h: tideHeight(ms)});
+const h = tideHeight(ms);
+if (h === null) break;
+samples.push({ms, h});
 }
 let nextHigh = null, nextLow = null;
 for (let i = 1; i < samples.length-1; i++) {
@@ -1691,6 +1853,15 @@ sec.innerHTML = `<div class="tide-freshwater"><strong style="color:var(--text)">
 return;
 }
 tideLocRef = loc;
+if (!tideData) {
+sec.innerHTML = `<div class="section-title">Tides · Fremantle (${loc.short})</div>
+<div class="tide-widget"><div class="obs-pending">${tideError
+? `Couldn't load tide data (${esc(tideError)}). <button type="button" class="btn btn-outline" style="margin-left:8px" onclick="tideError='';renderTides(LOCATIONS[currentLoc])">Retry</button>`
+: '<span class="spinner"></span> Loading tide data…'}</div></div>`;
+if (!tideError) loadTides();
+return;
+}
+loadTides(); // refreshes in the background when the saved copy is older than 3 hours
 
 const {nextHigh, nextLow} = nextExtrema();
 const fmt = fmtPerthTime;
@@ -1701,7 +1872,7 @@ const lowCard = nextLow ? `
 <div class="tide-next-info">
 <div class="tide-next-label">Next Low</div>
 <div class="tide-next-time">${untilStr(nextLow.ms)}</div>
-<div class="tide-next-label">${nextLow.h.toFixed(2)} m · ${fmt(nextLow.ms)}</div>
+<div class="tide-next-label">${fmtTideH(nextLow.h)} m · ${fmt(nextLow.ms)}</div>
 </div>
 </div>` : '';
 const highCard = nextHigh ? `
@@ -1710,16 +1881,16 @@ const highCard = nextHigh ? `
 <div class="tide-next-info">
 <div class="tide-next-label">Next High</div>
 <div class="tide-next-time">${untilStr(nextHigh.ms)}</div>
-<div class="tide-next-label">${nextHigh.h.toFixed(2)} m · ${fmt(nextHigh.ms)}</div>
+<div class="tide-next-label">${fmtTideH(nextHigh.h)} m · ${fmt(nextHigh.ms)}</div>
 </div>
 </div>` : '';
 
 sec.innerHTML = `
-<div class="section-title">Tidal Predictions · Fremantle Gauge (${loc.short})</div>
+<div class="section-title">Tides · Fremantle (${loc.short})</div>
 <div class="tide-widget">
 <div class="tide-header">
-<div class="tide-title">Fremantle Gauge${loc.tideDist ? ` — ${loc.tideDist} from venue` : ''}</div>
-<div class="tide-note">Now: <strong style="color:var(--tide)">${tideHeight(Date.now()).toFixed(2)} m</strong> ACD</div>
+<div class="tide-title">Sea Level off Fremantle${loc.tideDist ? ` — ${loc.tideDist} from venue` : ''}</div>
+<div class="tide-note">Now: <strong style="color:var(--tide)">${fmtTideH(tideHeight(Date.now()))} m</strong> vs mean sea level</div>
 </div>
 <div class="tide-next">${lowCard}${highCard}</div>
 <div class="tide-range-seg">
@@ -1729,7 +1900,7 @@ sec.innerHTML = `
 </div>
 <div class="tide-chart-label">Tide Height <span style="opacity:.75">· slide along the graph to read any time</span></div>
 <div class="tide-chart-scroll"><canvas id="tide-canvas"></canvas></div>
-<div style="font-size:10px;color:var(--muted);margin-top:8px">Harmonic prediction above Chart Datum (ACD) · approximate — use live gauge for launch decisions</div>
+<div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5">Forecast sea level (tide plus weather effects) from an ocean model, shown above (+) or below (−) mean sea level. Heights use a different zero from the official tables, and times in the river run later than at Fremantle. Not for navigation — check official tide tables for anything critical.</div>
 </div>`;
 
 bindTideTrack(document.getElementById('tide-canvas'));
@@ -1753,11 +1924,12 @@ const end = start + days*DAY;
 // sample the curve every 10 min
 const step = 10*60000;
 const pts = [];
-for (let ms = start; ms <= end; ms += step) pts.push({ms, h: tideHeight(ms)});
+for (let ms = start; ms <= end; ms += step) { const h = tideHeight(ms); if (h !== null) pts.push({ms, h}); }
+if (pts.length < 2) return;
 
 // layout: ~per-day width so multi-day scrolls horizontally
 // The whole range fits the widget's width (no sideways scrolling), so a finger can slide along it
-const padL = 40, padR = 16, padT = 30, padB = 34;
+const padL = 50, padR = 16, padT = 30, padB = 34;
 const avail = canvas.parentElement.clientWidth;
 if (!avail) return; // section is folded away — drawn again when it opens
 const plotW = Math.max(220, avail - padL - padR);
@@ -1785,15 +1957,15 @@ const range = Math.max(0.1, hi-lo);
 const x = ms => padL + ((ms-start)/(end-start))*plotW;
 const y = h => padT + plotH - ((h-lo)/range)*plotH;
 
-// horizontal gridlines + labels (0.5 m steps)
+// horizontal gridlines + labels (0.2 m steps, relative to mean sea level)
 ctx.font = '11px Barlow, sans-serif';
 ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-for (let g = Math.ceil(lo/0.5)*0.5; g <= hi; g += 0.5) {
+for (let g = Math.ceil(lo/0.2 - 1e-9)*0.2; g <= hi + 1e-9; g += 0.2) {
 const yy = y(g);
 ctx.strokeStyle = K.grid; ctx.lineWidth = 1;
 ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cssW-padR, yy); ctx.stroke();
 // pill label
-const lbl = g.toFixed(1)+' m';
+const lbl = (Math.abs(g) < 0.05 ? '0.0' : (g < 0 ? '−' : '+') + Math.abs(g).toFixed(1)) + ' m';
 ctx.fillStyle = K.pill;
 const tw = ctx.measureText(lbl).width;
 ctx.fillRect(2, yy-9, tw+10, 18);
@@ -1847,7 +2019,7 @@ ctx.beginPath(); ctx.moveTo(padL, yMax); ctx.lineTo(cssW-padR, yMax); ctx.stroke
 
 // "now" vertical line + dot
 if (now >= start && now <= end) {
-const nx = x(now), nh = tideHeight(now);
+const nx = x(now), nh = tideHeight(now) ?? pts[0].h;
 ctx.strokeStyle = K.nowLine; ctx.lineWidth = 1;
 ctx.beginPath(); ctx.moveTo(nx, padT-6); ctx.lineTo(nx, padT+plotH); ctx.stroke();
 ctx.beginPath(); ctx.arc(nx, y(nh), 6, 0, 2*Math.PI);
@@ -1855,7 +2027,7 @@ ctx.fillStyle = '#fff'; ctx.fill();
 ctx.strokeStyle = K.tide; ctx.lineWidth = 2; ctx.stroke();
 // current reading pill (the slide tracker's pill takes its place while tracking)
 if (tideTrackMs === null) {
-const lbl = `${fmtPerthTime(now)} ${nh.toFixed(2)} m`;
+const lbl = `${fmtPerthTime(now)} ${fmtTideH(nh)} m`;
 ctx.font = '700 11px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width;
 let px = nx - (tw+16)/2;
@@ -1870,16 +2042,16 @@ ctx.fillText(lbl, px+8, padT+1);
 // slide tracker: the time and height under the finger
 tideGeom = { start, end, padL, plotW };
 if (tideTrackMs !== null) {
-const tms = Math.max(start, Math.min(end, tideTrackMs));
-const tx = x(tms), th = tideHeight(tms);
-const rising = tideHeight(tms + 5*60000) > th;
+const tms = Math.max(pts[0].ms, Math.min(pts[pts.length-1].ms, tideTrackMs));
+const tx = x(tms), th = tideHeight(tms) ?? pts[0].h;
+const rising = (tideHeight(tms + 5*60000) ?? th) >= th && (tideHeight(tms - 5*60000) ?? th) <= th;
 ctx.strokeStyle = K.text; ctx.lineWidth = 1;
 ctx.beginPath(); ctx.moveTo(tx, padT-6); ctx.lineTo(tx, padT+plotH); ctx.stroke();
 ctx.beginPath(); ctx.arc(tx, y(th), 7, 0, 2*Math.PI);
 ctx.fillStyle = '#fff'; ctx.fill();
 ctx.strokeStyle = K.accent; ctx.lineWidth = 3; ctx.stroke();
 const day = new Date(tms).toLocaleDateString('en-AU',{weekday:'short',timeZone:'Australia/Perth'});
-const lbl = `${day} ${fmtPerthTime(tms)} · ${th.toFixed(2)} m · ${rising ? 'rising' : 'falling'}`;
+const lbl = `${day} ${fmtPerthTime(tms)} · ${fmtTideH(th)} m · ${rising ? 'rising' : 'falling'}`;
 ctx.font = '700 12px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width;
 let px = tx - (tw+16)/2;
@@ -2176,13 +2348,31 @@ const num = v => (typeof v === 'number' && Number.isFinite(v)) ? v : null;
 const showNum = v => v === null ? '—' : Math.round(v);
 let obsRequestId = 0; // bumps on every call, so a slow response for an old venue is ignored
 
+// BOM files each station under a state "product" code: capital-city stations sit in ...60901 (Canberra: IDN60903),
+// regional ones in ...60801. If the listed feed has nothing, the same station is tried under the other codes.
+function bomFeedCandidates(url) {
+ const m = /\/(ID[A-Z])(\d{5})\/\1\2\.(\d+)\.json$/.exec(url);
+ if (!m) return [url];
+ const codes = [m[2], ...['60801', '60901', ...(m[1] === 'IDN' ? ['60903'] : [])].filter(c => c !== m[2])];
+ return codes.map(c => url.replace(/\/ID[A-Z]\d{5}\/ID[A-Z]\d{5}\./, `/${m[1]}${c}/${m[1]}${c}.`));
+}
+const bomFeedOk = {}; // station feed that last worked, so later refreshes go straight to it
 async function fetchBomLatest(url, label) {
- const res = await fetchWithTimeout(bomObsUrl(url));
+ const tries = bomFeedOk[url] ? [bomFeedOk[url]] : bomFeedCandidates(url);
+ let lastErr;
+ for (const u of tries) {
+ try {
+ const res = await fetchWithTimeout(bomObsUrl(u), 15000);
  if (!res.ok) throw new Error(`HTTP ${res.status} (${label})`);
  const json = await res.json();
  const row = json?.observations?.data?.[0];
  if (!row) throw new Error(`no readings (${label})`);
+ bomFeedOk[url] = u;
  return row;
+ } catch (err) { lastErr = err; }
+ }
+ delete bomFeedOk[url];
+ throw lastErr;
 }
 
 async function renderObservations(loc) {
@@ -2218,9 +2408,17 @@ async function renderObservations(loc) {
 
  try {
  // Fetch both stations in parallel — or just one if they're the same feed
- const [obs, wObs] = sameStation
- ? await fetchBomLatest(stn.json, stn.name).then(o => [o, o])
- : await Promise.all([fetchBomLatest(stn.json, stn.name), fetchBomLatest(wStn.json, wStn.name)]);
+ // If only one of two stations answers, its readings are used for everything rather than showing nothing.
+ let obs, wObs, onlyOne = '';
+ if (sameStation) { obs = wObs = await fetchBomLatest(stn.json, stn.name); }
+ else {
+ const [a, b] = await Promise.allSettled([fetchBomLatest(stn.json, stn.name), fetchBomLatest(wStn.json, wStn.name)]);
+ if (a.status === 'rejected' && b.status === 'rejected') throw b.reason;
+ obs = a.status === 'fulfilled' ? a.value : b.value;
+ wObs = b.status === 'fulfilled' ? b.value : a.value;
+ if (a.status === 'rejected') onlyOne = `${stn.name} isn't reporting — all readings are from ${wStn.name}.`;
+ if (b.status === 'rejected') onlyOne = `${wStn.name} isn't reporting — wind is from ${stn.name} instead.`;
+ }
 
  // User switched venue (or a newer refresh started) while we were waiting
  if (myId !== obsRequestId) return;
@@ -2254,7 +2452,7 @@ async function renderObservations(loc) {
  sec.innerHTML = `
  <div class="section-title">${heading}</div>
  <div class="obs-widget">
- <div class="obs-source">${stations}</div>
+ <div class="obs-source">${stations}${onlyOne ? `<br><span style="color:var(--yellow)">${esc(onlyOne)}</span>` : ''}</div>
  <div class="obs-head">
  <div class="obs-title"><span class="obs-live-dot"></span>Live</div>
  <div class="obs-time">${timeLine}</div>
@@ -2270,7 +2468,7 @@ async function renderObservations(loc) {
  </div>`;
 
  // Feed the live wind into the status banner — it uses whichever is worse
- rwState.live = { loc, speed: spd, dir: dirDeg, dirTxt: String(dirTxt).toUpperCase() === 'CALM' ? 'Calm' : dirTxt, station: wStn.name };
+ rwState.live = { loc, speed: spd, dir: dirDeg, dirTxt: String(dirTxt).toUpperCase() === 'CALM' ? 'Calm' : dirTxt, station: onlyOne && wObs === obs ? stn.name : wStn.name };
  if (rwState.loc === loc) renderRowingWind();
 
  if (lastForecast && lastForecast.loc === loc) {
@@ -2595,6 +2793,7 @@ lastForecast = {loc, wind, gust, code, cape, uv};
 updateStatusBanner(loc, lastForecast, null);
 
 document.getElementById('blitz-link').href = loc.blitz;
+renderLightningMap();
 document.getElementById('bom-link').href = loc.bom;
 
 const setR = (id, val, cls) => {
@@ -2936,6 +3135,7 @@ if (currentView === 'live') {
 if (lastHourly) renderWindGraph(lastHourly, lastHIdx);
 drawTideChart();
 renderCourseMap();
+renderWindMap();
 } else {
 renderExtended(entry.data, LOCATIONS[currentLoc]);
 }
@@ -3109,6 +3309,7 @@ const key = box.dataset.sec;
 if (collapsedSecs.has(key)) collapsedSecs.delete(key); else collapsedSecs.add(key);
 store.set('collapsed', JSON.stringify([...collapsedSecs]));
 decorateColl(box);
+renderLightningMap();
 if (!collapsedSecs.has(key)) requestAnimationFrame(redrawCharts); // charts need their width back
 }
 document.querySelectorAll('.coll').forEach(box => {
