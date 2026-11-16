@@ -426,13 +426,13 @@ border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font
 .sun-toggle[aria-pressed="true"]{background:var(--accent2);color:#fff;border-color:var(--accent2)}
 
 /* ===== Daylight ===== */
-.daylight{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.daylight{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:12px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:5px 4px}
 .daylight:empty{display:none}
-.dl-cell{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;min-width:0}
-.dl-label{font-size:12px;color:var(--muted)}
-.dl-time{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;white-space:nowrap}
-.dl-note{grid-column:1/-1;font-size:12px;color:var(--muted)}
-@media(max-width:420px){.dl-time{font-size:16px}.dl-cell{padding:7px 7px}}
+.dl-cell{padding:0 6px;min-width:0;text-align:center;line-height:1.25}
+.dl-cell + .dl-cell{border-left:1px solid var(--border)}
+.dl-label{font-size:10px;color:var(--muted);white-space:nowrap}
+.dl-time{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;white-space:nowrap}
+.dl-note{grid-column:1/-1;font-size:10px;color:var(--muted);text-align:center;padding-top:3px}
 
 /* ===== Collapsible sections ===== */
 details.more-details,details.about-data{margin:0 0 14px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
@@ -577,6 +577,8 @@ display:inline-flex;align-items:center;gap:8px}
 .cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
 
 /* ===== Lightning live map ===== */
+.lx-alert > .section-title{color:var(--yellow)}
+.lx-alert > .section-title::after{background:var(--yellow)}
 .lx-map{position:relative;border-radius:6px;overflow:hidden;background:var(--panel2);height:300px}
 .lx-map iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 @media(min-width:600px){.lx-map{height:380px}}
@@ -715,54 +717,25 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="risk-grid">
 <div class="risk-item"><span class="risk-icon" id="ri-wind"></span><div class="risk-info"><div class="risk-name">Wind</div><div class="risk-value" id="r-wind">—</div><div class="risk-sub" id="r-wind-sub">—</div></div></div>
 <div class="risk-item"><span class="risk-icon" id="ri-gust"></span><div class="risk-info"><div class="risk-name">Gusts</div><div class="risk-value" id="r-gust">—</div><div class="risk-sub" id="r-gust-sub">—</div></div></div>
-<div class="risk-item"><span class="risk-icon" id="ri-storm"></span><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div><div class="risk-sub" id="r-storm-sub">—</div></div></div>
-<div class="risk-item"><span class="risk-icon" id="ri-rain"></span><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div><div class="risk-sub">Next 6 hours</div></div></div>
-<div class="risk-item"><span class="risk-icon" id="ri-uv"></span><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div><div class="risk-sub">Right now</div></div></div>
-<div class="risk-item"><span class="risk-icon" id="ri-heat"></span><div class="risk-info"><div class="risk-name">Temperature</div><div class="risk-value" id="r-heat">—</div><div class="risk-sub" id="r-heat-sub">—</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div><div class="risk-sub" id="r-storm-sub">—</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div><div class="risk-sub" id="r-rain-sub">Next 6 hours</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div><div class="risk-sub">Right now</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">Temperature</div><div class="risk-value" id="r-heat">—</div><div class="risk-sub" id="r-heat-sub">—</div></div></div>
 </div>
 
-<details class="more-details">
-<summary>More Details</summary>
-<div class="details-body">
-<div class="grid-top">
-<div class="metric-card" id="card-humid">
-<div class="metric-icon" id="mi-humid"></div>
-<div class="metric-label">Humidity</div>
-<div class="metric-value" id="cur-humid">—<span class="unit">%</span></div>
-<div class="metric-sub" id="humid-sub">—</div>
-</div>
-<div class="metric-card" id="card-rain">
-<div class="metric-icon" id="mi-rain"></div>
-<div class="metric-label">Rain (Last Hour)</div>
-<div class="metric-value" id="cur-rain">—<span class="unit">mm</span></div>
-<div class="metric-sub" id="rain-sub">—</div>
-</div>
-<div class="metric-card" id="card-uv">
-<div class="metric-icon" id="mi-uv"></div>
-<div class="metric-label">UV Scale</div>
-<div class="metric-value" id="cur-uv" style="font-size:22px">—</div>
-<div class="bar-track"><div class="bar-fill" id="uv-bar" style="width:0%"></div></div>
-<div class="bar-label"><span>Low</span><span>Extreme</span></div>
-</div>
-<div class="metric-card" id="card-cape">
-<div class="metric-icon" id="mi-cape"></div>
-<div class="metric-label">Lightning Risk (CAPE)</div>
-<div class="metric-value" id="cur-cape" style="font-size:20px">—</div>
-<div class="bar-track"><div class="bar-fill" id="cape-bar" style="width:0%"></div></div>
-<div class="bar-label"><span>None</span><span>Extreme</span></div>
-</div>
-</div>
-</div>
-</details>
+<!-- Panel order: live check → course wind → what's coming → reference -->
+<!-- Live station readings -->
+<div id="obs-section" class="coll" data-sec="live-obs"></div>
 
 <!-- Rowing wind: wind relative to the crew's heading -->
 <div id="rowing-wind" class="coll" data-sec="rowing-wind"></div>
 
-<!-- Course map: the course drawn on a real map -->
-<div id="course-map" class="coll" data-sec="course-map"></div>
-
-<!-- Live station readings -->
-<div id="obs-section" class="coll" data-sec="live-obs"></div>
+<section class="coll" data-sec="next-12">
+<div class="section-title">Next 12 Hours</div>
+<div class="hourly-scroll">
+<div class="hourly-row" id="hourly-row"></div>
+</div>
+</section>
 
 <!-- 3. Wind graph -->
 <section class="coll" data-sec="wind-tracker">
@@ -782,39 +755,6 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="wind-graph-scroll">
 <canvas id="wind-canvas"></canvas>
 </div>
-</div>
-</section>
-
-<!-- Regional wind map: forecast wind speed / gusts and direction over the surrounding area -->
-<section class="coll" data-sec="wind-map">
-<div class="section-title">
-<span style="flex:0 0 auto;white-space:nowrap">Wind Map</span>
-<span style="flex:0 0 auto;display:flex;gap:6px;order:2">
-<button type="button" class="range-btn active" id="wm-mode-speed" onclick="wmMode('speed')">Speed</button>
-<button type="button" class="range-btn" id="wm-mode-gust" onclick="wmMode('gust')">Gusts</button>
-</span>
-</div>
-<div class="cm-panel">
-<div class="cm-map wm-map" id="wm-map">
-<div class="cm-tiles" id="wm-tiles"></div>
-<canvas id="wm-canvas"></canvas>
-<div class="wm-time" id="wm-time" hidden></div>
-<button type="button" class="wm-load" id="wm-load" onclick="wmLoad()">Show wind map</button>
-<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
-</div>
-<div class="wm-controls" id="wm-controls" hidden>
-<button type="button" id="wm-play" onclick="wmPlay()" aria-label="Play forecast">▶</button>
-<input type="range" id="wm-slider" min="0" max="47" step="1" value="0" oninput="wmSeek(+this.value)" aria-label="Forecast time">
-</div>
-<div class="wm-legend" id="wm-legend" hidden><div class="wm-ramp" id="wm-ramp"></div><div class="wm-ticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50+ km/h</span></div></div>
-<div class="cm-foot"><span>Forecast wind over the surrounding region for the next 48 hours. Arrows point the way the wind is blowing. This is a regional picture — the forecast model can't show differences across a single course.</span></div>
-</div>
-</section>
-
-<section class="coll" data-sec="next-12">
-<div class="section-title">Next 12 Hours</div>
-<div class="hourly-scroll">
-<div class="hourly-row" id="hourly-row"></div>
 </div>
 </section>
 
@@ -844,6 +784,35 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="section-title">7-Day Outlook</div>
 <div class="daily-grid" id="daily-grid"></div>
 </section>
+
+<!-- Regional wind map: forecast wind speed / gusts and direction over the surrounding area -->
+<section class="coll" data-sec="wind-map">
+<div class="section-title">
+<span style="flex:0 0 auto;white-space:nowrap">Wind Map</span>
+<span style="flex:0 0 auto;display:flex;gap:6px;order:2">
+<button type="button" class="range-btn active" id="wm-mode-speed" onclick="wmMode('speed')">Speed</button>
+<button type="button" class="range-btn" id="wm-mode-gust" onclick="wmMode('gust')">Gusts</button>
+</span>
+</div>
+<div class="cm-panel">
+<div class="cm-map wm-map" id="wm-map">
+<div class="cm-tiles" id="wm-tiles"></div>
+<canvas id="wm-canvas"></canvas>
+<div class="wm-time" id="wm-time" hidden></div>
+<button type="button" class="wm-load" id="wm-load" onclick="wmLoad()">Show wind map</button>
+<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+</div>
+<div class="wm-controls" id="wm-controls" hidden>
+<button type="button" id="wm-play" onclick="wmPlay()" aria-label="Play forecast">▶</button>
+<input type="range" id="wm-slider" min="0" max="47" step="1" value="0" oninput="wmSeek(+this.value)" aria-label="Forecast time">
+</div>
+<div class="wm-legend" id="wm-legend" hidden><div class="wm-ramp" id="wm-ramp"></div><div class="wm-ticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50+ km/h</span></div></div>
+<div class="cm-foot"><span>Forecast wind over the surrounding region for the next 48 hours. Arrows point the way the wind is blowing. This is a regional picture — the forecast model can't show differences across a single course.</span></div>
+</div>
+</section>
+
+<!-- Course map: the course drawn on a real map -->
+<div id="course-map" class="coll" data-sec="course-map"></div>
 
 <details class="about-data">
 <summary>About the Data</summary>
@@ -1434,6 +1403,23 @@ document.getElementById('cm-note').textContent = !hasLine ? 'No fixed course dir
 document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
 }
 
+
+// Storm risk above Low: the Lightning section opens itself and moves to the top, under the cards.
+// When the risk drops back it returns to its usual place and to however you had it folded.
+let lxAlert = ''; // '' = normal · 'open' = raised by a storm alert · 'dismissed' = folded by hand during the alert
+function placeLightning(alert) {
+const sec = document.querySelector('[data-sec="lightning"]');
+if (!sec) return;
+const want = alert ? (lxAlert || 'open') : '';
+const before = document.getElementById(alert ? 'obs-section' : 'tide-section');
+if (sec.nextElementSibling !== before) before.parentNode.insertBefore(sec, before);
+if (want !== lxAlert || sec.classList.contains('lx-alert') !== !!alert) {
+lxAlert = want;
+sec.classList.toggle('lx-alert', !!alert);
+if (typeof decorateColl === 'function') decorateColl(sec);
+renderLightningMap();
+}
+}
 
 // ── LIGHTNING LIVE MAP ────────────────────────────────────────────────────
 // Blitzortung.org's own embeddable live map (their documented iframe), centred on the venue.
@@ -2805,37 +2791,7 @@ el.className = 'risk-value ' + cls;
 // Risk-row glyphs (coloured weather icons)
 document.getElementById('ri-wind').innerHTML = windArrowSVG(wdir, wind);
 document.getElementById('ri-gust').innerHTML = windArrowSVG(wdir, gust);
-document.getElementById('ri-storm').innerHTML = (isStorm? wmoIcon(95) : wmoIcon(code));
-document.getElementById('ri-rain').innerHTML = wmoIcon(maxPP>THRESHOLDS.rainChance.caution?61:(code===0||code===1?1:code));
-document.getElementById('ri-uv').innerHTML = wmoIcon(0);
-document.getElementById('ri-heat').innerHTML = wmoIcon(code);
-
-// "More details" glyphs
-document.getElementById('mi-humid').innerHTML = wmoIcon(humid>80?3:2);
-document.getElementById('mi-rain').innerHTML = wmoIcon(rain>THRESHOLDS.rainMm.caution?61:(maxPP>THRESHOLDS.rainChance.caution?51:2));
-document.getElementById('mi-uv').innerHTML = wmoIcon(0);
-document.getElementById('mi-cape').innerHTML = wmoIcon(cape>=THRESHOLDS.cape.moderate?95:2);
-
-document.getElementById('cur-humid').innerHTML = `${humid}<span class="unit">%</span>`;
-document.getElementById('humid-sub').textContent = humid>80?'Very humid':humid>60?'Moderate':'Comfortable';
-
-document.getElementById('cur-rain').innerHTML = `${rain.toFixed(1)}<span class="unit">mm</span>`;
-document.getElementById('rain-sub').textContent = `Next 6h chance: ${maxPP}%`;
-const rCls = above(rain, THRESHOLDS.rainMm);
-document.getElementById('card-rain').className = 'metric-card ' + (rCls === 'ok' ? '' : rCls);
-
-document.getElementById('cur-uv').textContent = uv !== null ? uvI.label : 'No data';
-const uvBar = document.getElementById('uv-bar');
-uvBar.style.width = uvI.pct + '%';
-uvBar.style.background = uvI.col;
-document.getElementById('card-uv').className = 'metric-card ' + uvI.cls;
-
 const cI = capeRisk(cape);
-document.getElementById('cur-cape').textContent = `${cape} J/kg — ${cI.label}`;
-const capeBar = document.getElementById('cape-bar');
-capeBar.style.width = cI.pct + '%';
-capeBar.style.background = cI.cls==='ok'?'var(--green)':cI.cls==='warn'?'var(--yellow)':'var(--red)';
-document.getElementById('card-cape').className = 'metric-card ' + cI.cls;
 
 // One summary row — each reading shown once
 const heat = tempCls(temp);
@@ -2848,10 +2804,12 @@ document.getElementById('r-gust-sub').textContent = `Suspend at ${THRESHOLDS.gus
 setR('r-storm', cI.label, cI.cls);
 document.getElementById('r-storm-sub').textContent = `CAPE ${cape} J/kg`;
 setR('r-rain', `${maxPP}%`, above(maxPP, THRESHOLDS.rainChance));
+document.getElementById('r-rain-sub').textContent = `Next 6 hours · ${rain.toFixed(1)} mm last hour`;
 setR('r-uv', uv!==null?uvI.label:'—', uvI.cls);
 setR('r-heat', `${temp}°C`, heat);
 document.getElementById('r-heat-sub').textContent =
-`Feels ${feels}° · ${heat==='danger'?'high':heat==='warn'?'moderate':'low'} heat risk`;
+`Feels ${feels}° · ${humid}% humidity${heat==='ok' ? '' : ` · ${heat==='danger'?'high':'moderate'} heat risk`}`;
+placeLightning(isStorm || cI.cls !== 'ok');
 
 renderDaylight(data, loc);
 updateFreshness();
@@ -2962,7 +2920,7 @@ const cell = (label, t) => `<div class="dl-cell"><div class="dl-label">${label}<
 el.innerHTML =
 cell('First light', fmtVenueTime(civil.rise, loc.tz)) + cell('Sunrise', sunrise) +
 cell('Sunset', sunset) + cell('Last light', fmtVenueTime(civil.set, loc.tz)) +
-`<div class="dl-note">${i === 1 ? 'Tomorrow' : 'Today'} · ${loc.short} local time</div>`;
+(i === 1 ? `<div class="dl-note">Tomorrow's times</div>` : '');
 }
 
 // ── DATA FRESHNESS ────────────────────────────────────────────────────────
@@ -3296,21 +3254,29 @@ updateInstallButton();
 // ── COLLAPSIBLE SECTIONS ──────────────────────────────────────────────────
 // Tap a section heading to fold it away; remembered on this phone.
 const collapsedSecs = new Set((() => { try { return JSON.parse(store.get('collapsed', '[]')); } catch { return []; } })());
+// Reference sections start folded away (applied once; after that the phone remembers your own choices)
+if (!store.get('foldDefaults', '')) {
+['wind-map', 'course-map', 'lightning'].forEach(k => collapsedSecs.add(k));
+store.set('collapsed', JSON.stringify([...collapsedSecs]));
+store.set('foldDefaults', '1');
+}
+const isFolded = box => collapsedSecs.has(box.dataset.sec) && !(box.dataset.sec === 'lightning' && lxAlert === 'open');
 function decorateColl(box) {
 const t = box.querySelector(':scope > .section-title');
-box.classList.toggle('collapsed', collapsedSecs.has(box.dataset.sec));
+box.classList.toggle('collapsed', isFolded(box));
 if (!t) return;
 t.setAttribute('role', 'button');
 t.tabIndex = 0;
-t.setAttribute('aria-expanded', String(!collapsedSecs.has(box.dataset.sec)));
+t.setAttribute('aria-expanded', String(!isFolded(box)));
 }
 function toggleColl(box) {
 const key = box.dataset.sec;
-if (collapsedSecs.has(key)) collapsedSecs.delete(key); else collapsedSecs.add(key);
+if (key === 'lightning' && lxAlert === 'open') { lxAlert = 'dismissed'; collapsedSecs.add(key); } // folded by hand during an alert
+else if (collapsedSecs.has(key)) collapsedSecs.delete(key); else collapsedSecs.add(key);
 store.set('collapsed', JSON.stringify([...collapsedSecs]));
 decorateColl(box);
 renderLightningMap();
-if (!collapsedSecs.has(key)) requestAnimationFrame(redrawCharts); // charts need their width back
+if (!isFolded(box)) requestAnimationFrame(redrawCharts); // charts need their width back
 }
 document.querySelectorAll('.coll').forEach(box => {
 decorateColl(box);
