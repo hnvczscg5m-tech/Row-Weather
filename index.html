@@ -618,7 +618,7 @@ display:inline-flex;align-items:center;gap:8px}
 .risk-item.open{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .risk-item.open::after{transform:rotate(-135deg);top:14px;border-color:var(--accent)}
 .risk-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.md-card{background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:12px 12px 10px;margin:-6px 0 14px}
+.md-card{grid-column:1/-1;min-width:0;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:12px 12px 10px;margin:0}
 .md-card[hidden]{display:none}
 .md-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
 .md-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
@@ -783,8 +783,6 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="risk-item"><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div><div class="risk-sub" id="r-rain-sub">Next 6 hours</div></div></div>
 <div class="risk-item"><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div><div class="risk-sub">Right now</div></div></div>
 <div class="risk-item"><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div><div class="risk-sub" id="r-storm-sub">—</div></div></div>
-</div>
-
 <!-- Quick-reference card: tap any reading above for its next 6–12 hours -->
 <div class="md-card" id="md-card" hidden>
 <div class="md-head">
@@ -800,6 +798,8 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <canvas id="md-canvas" role="img"></canvas>
 <div class="md-note" id="md-note"></div>
 </div>
+</div>
+
 
 <!-- Panel order: live check → course wind → what's coming → reference -->
 <!-- Rowing wind: wind relative to the crew's heading -->
@@ -2825,6 +2825,7 @@ async function renderObservations(loc) {
 
  if (lastForecast && lastForecast.loc === loc) {
  lastObs = { wind: spd, gust: gst };
+ if (typeof mdOpen !== 'undefined' && (mdOpen === 'wind' || mdOpen === 'gust')) renderMetricCard();
  updateStatusBanner(loc, lastForecast, lastObs);
  }
 
@@ -3629,6 +3630,12 @@ const card = document.getElementById('md-card'), h = lastHourly, m = MD[mdOpen];
 document.querySelectorAll('.risk-grid .risk-item').forEach(el => { const on = el.dataset.metric === mdOpen; el.classList.toggle('open', on); el.setAttribute('aria-expanded', String(on)); });
 if (!m || !h || !h[m.arr]) { card.hidden = true; mdGeom = null; return; }
 card.hidden = false;
+{ // sit directly under the row of the tapped card (works for 2, 3 or 6 cards per row)
+const grid = document.querySelector('.risk-grid'), items = [...grid.querySelectorAll('.risk-item')];
+const tapped = items.find(el => el.dataset.metric === mdOpen);
+const last = items.filter(el => el.offsetTop === tapped.offsetTop).pop();
+if (last.nextElementSibling !== card) grid.insertBefore(card, last.nextElementSibling);
+}
 [6, 12, 24].forEach(n => document.getElementById('md-r' + n).classList.toggle('active', mdHours === n));
 const loc = LOCATIONS[currentLoc];
 const windy = mdOpen === 'wind' || mdOpen === 'gust';           // wind and gusts share one graph
@@ -3637,6 +3644,8 @@ const i0 = lastHIdx, i1 = Math.min(h.time.length - 1, i0 + mdHours);
 const pts = [];
 for (let i = i0; i <= i1; i++) pts.push({ i, v: h[m.arr][i], v2: pair ? h[pair.arr][i] : m.second ? h[m.second][i] : null });
 if (mdTrack !== null && mdTrack > pts.length - 1) mdTrack = null;
+const liveObs = windy && lastObs && rwState.live && rwState.live.loc === loc ? lastObs : null; // 5. live station reading (wind cards only)
+const rainMm = mdOpen === 'rain' && h.precipitation ? pts.map(p => h.precipitation[p.i] || 0) : null; // 7. rain amounts
 const ok = pts.filter(p => RowingWind.isNum(p.v));
 const fmt = v => RowingWind.isNum(v) ? (m.dp ? v.toFixed(m.dp).replace(/\.0$/, '') : String(Math.round(v))) : '—';
 const U = m.unit ? ' ' + m.unit : '';
@@ -3647,8 +3656,9 @@ const verdictEl = document.getElementById('md-verdict'), noteEl = document.getEl
 if (!ok.length) { document.getElementById('md-now').textContent = 'No data'; verdictEl.textContent = ''; noteEl.textContent = ''; mdGeom = null; return; }
 const peak = ok.reduce((a, b) => b.v > a.v ? b : a), low = ok.reduce((a, b) => b.v < a.v ? b : a);
 const at = p => p.i === i0 ? 'now' : `at ${fmtLocalIso(h.time[p.i])}`;
+const lv = liveObs;
 document.getElementById('md-now').innerHTML = windy
-? `${fmt(h.wind_speed_10m[i0])} km/h <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}</small>`
+? `${fmt(h.wind_speed_10m[i0])} km/h <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}${lv && RowingWind.isNum(lv.wind) ? ` · live ${fmt(lv.wind)}${RowingWind.isNum(lv.gust) ? ' / ' + fmt(lv.gust) : ''} at ${esc(rwState.live.station)}` : ''}</small>`
 : `${fmt(pts[0].v)}${U} <small>now</small>`;
 
 // 1. Verdict in words: when does this reading reach each limit?
@@ -3660,14 +3670,19 @@ if (c) return { cls: 'warn', text: `${mm.title.split(' ·')[0]}: ${mm.limWords[0
 return { cls: 'ok', text: `${mm.title.split(' ·')[0]}: stays below the ${mm.limWords[0].toLowerCase()} level (${L.caution}${u}) for the whole period.` };
 };
 const verdicts = windy ? [verdictFor(MD.wind, mdOpen === 'wind' ? 'v' : 'v2'), verdictFor(MD.gust, mdOpen === 'gust' ? 'v' : 'v2')] : [verdictFor(m, 'v')];
+if (mdOpen === 'storm' && h.weathercode) {
+const ts = mdWindows(pts.map(p => ({ v: STORM_CODES.includes(h.weathercode[p.i]) ? 1 : 0 })), 'v', v => v === 1, h, i0);
+verdicts.push(ts ? { cls: 'danger', text: `Thunderstorm forecast at the venue ${ts}.` } : { cls: 'ok', text: 'No thunderstorm forecast at the venue in this period.' });
+}
 verdicts.forEach(v => { v.text = v.text.replace(/off water level/g, 'off-water level'); });
 verdictEl.innerHTML = verdicts.map(v => `<div class="md-v ${v.cls}"><span aria-hidden="true">${v.cls === 'danger' ? '✕' : v.cls === 'warn' ? '▲' : '✓'}</span> ${esc(v.text)}</div>`).join('');
 
 let note = `Peak ${fmt(peak.v)}${U} ${at(peak)} · lowest ${fmt(low.v)}${U} ${at(low)}.`;
-if (windy) note = `Blue = wind, orange = gusts; arrows show the way the wind is blowing. Limit lines are the ${CREW_LIMITS[crewLevel].label} ${mdOpen === 'wind' ? 'wind' : 'gust'} limits.`;
+if (windy) note = `Blue = wind, orange = gusts; arrows show the way the wind is blowing.${lv ? ' Diamonds at "Now" = live station reading.' : ''} Limit lines are the ${CREW_LIMITS[crewLevel].label} ${mdOpen === 'wind' ? 'wind' : 'gust'} limits.`;
 if (mdOpen === 'rain' && h.precipitation) note += ` Forecast rain over the period: ${pts.reduce((t, p) => t + (h.precipitation[p.i] || 0), 0).toFixed(1)} mm.`;
 if (mdOpen === 'heat') note += ' Dashed line = feels-like temperature.';
-if (mdOpen === 'storm') note += ' CAPE is storm energy in the forecast, not recorded strikes.';
+if (mdOpen === 'storm') note += ' CAPE is storm energy in the forecast, not recorded strikes. A bolt marks any hour with a thunderstorm in the forecast.';
+if (rainMm) note += ' White line = rain amount each hour (mm, right-hand scale).';
 noteEl.textContent = note + ' Shaded = before first light / after last light. Slide along the graph to read any hour. Forecast: Open-Meteo.';
 
 // chart
@@ -3677,9 +3692,9 @@ canvas.style.height = H + 'px';
 const dpr = window.devicePixelRatio || 1;
 canvas.width = W * dpr; canvas.height = H * dpr;
 const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-const padL = 36, padR = 18, padT = 22, padB = windy ? 42 : 24, pw = W - padL - padR, ph = H - padT - padB;
+const padL = 36, padR = mdOpen === 'rain' ? 34 : 18, padT = 22, padB = windy ? 42 : 24, pw = W - padL - padR, ph = H - padT - padB;
 mdGeom = { padL, pw, n: pts.length };
-const all = pts.flatMap(p => [p.v, p.v2]).filter(RowingWind.isNum);
+const all = pts.flatMap(p => [p.v, p.v2]).concat(liveObs ? [liveObs.wind, liveObs.gust] : []).filter(RowingWind.isNum);
 let lo = m.floorFromData ? Math.floor(Math.min(...all) - 2) : 0;
 let hi = m.top || Math.max(...all) * 1.15;
 if (!m.top) { // bring a limit line into view when the readings are anywhere near it
@@ -3754,6 +3769,27 @@ const small = pts.length > 14;
 pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; const c = dotCol(p.v); if (small && !c && k) return;
 ctx.beginPath(); ctx.arc(X(k), Y(p.v), k === 0 ? 4.5 : 3, 0, 2 * Math.PI); ctx.fillStyle = c || mainCol; ctx.fill(); ctx.strokeStyle = K.dot; ctx.lineWidth = 1.2; ctx.stroke(); });
 }
+if (rainMm) { // 7. rain amount per hour on its own right-hand scale
+const top = Math.max(1, Math.ceil(Math.max(...rainMm))), Ym = v => padT + ph - v / top * ph;
+ctx.font = '10px Barlow, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = K.text;
+[0, top / 2, top].forEach(v => ctx.fillText(`${+v.toFixed(1)}`, W - padR + 5, Ym(v)));
+ctx.textBaseline = 'bottom'; ctx.fillText('mm', W - padR + 5, padT - 3);
+ctx.strokeStyle = K.text; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.beginPath();
+rainMm.forEach((v, k) => k ? ctx.lineTo(X(k), Ym(v)) : ctx.moveTo(X(k), Ym(v))); ctx.stroke();
+rainMm.forEach((v, k) => { if (v < 0.05) return; ctx.beginPath(); ctx.arc(X(k), Ym(v), 2.6, 0, 2 * Math.PI); ctx.fillStyle = K.text; ctx.fill(); });
+}
+if (mdOpen === 'storm' && h.weathercode) pts.forEach((p, k) => { // 6. bolt on each forecast thunderstorm hour
+if (!STORM_CODES.includes(h.weathercode[p.i])) return;
+const x = X(k), y = padT + 4;
+ctx.beginPath(); ctx.moveTo(x + 2, y); ctx.lineTo(x - 4, y + 9); ctx.lineTo(x, y + 9); ctx.lineTo(x - 2, y + 17); ctx.lineTo(x + 4, y + 7); ctx.lineTo(x, y + 7); ctx.closePath();
+ctx.fillStyle = K.yellow; ctx.fill(); ctx.strokeStyle = K.dot; ctx.lineWidth = 1; ctx.stroke();
+});
+if (liveObs) [[liveObs.wind, K.accent], [liveObs.gust, K.orange]].forEach(([v, col]) => { // 5. live reading diamonds at "Now"
+if (!RowingWind.isNum(v)) return;
+const x = X(0) + 9, y = Y(v);
+ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 6, y); ctx.closePath();
+ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
+});
 if (mdTrack === null) { // peak label (hidden while sliding, so the two never collide)
 const pk = peak.i - i0; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'bottom'; ctx.fillStyle = K.text;
 ctx.textAlign = pk === 0 ? 'left' : pk === pts.length - 1 ? 'right' : 'center';
@@ -3764,7 +3800,7 @@ ctx.strokeStyle = K.text; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, padT
 if (RowingWind.isNum(p.v)) { ctx.beginPath(); ctx.arc(x, Y(p.v), 6, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = mainCol; ctx.lineWidth = 3; ctx.stroke(); }
 const when = mdTrack === 0 ? 'Now' : fmtLocalIso(h.time[p.i]);
 const lbl = windy ? `${when} · wind ${fmt(h.wind_speed_10m[p.i])} · gusts ${fmt(h.wind_gusts_10m[p.i])} km/h ${RowingWind.isNum(h.wind_direction_10m[p.i]) ? deg2comp(h.wind_direction_10m[p.i]) : ''}`.trim()
-: `${when} · ${fmt(p.v)}${U}${m.second && RowingWind.isNum(p.v2) ? ` (feels ${fmt(p.v2)})` : ''}`;
+: `${when} · ${fmt(p.v)}${U}${m.second && RowingWind.isNum(p.v2) ? ` (feels ${fmt(p.v2)})` : ''}${rainMm ? ` · ${rainMm[mdTrack].toFixed(1)} mm` : ''}${mdOpen === 'storm' && h.weathercode && STORM_CODES.includes(h.weathercode[p.i]) ? ' · thunderstorm' : ''}`;
 ctx.font = '700 12px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width; let px = Math.max(2, Math.min(x - (tw + 16) / 2, W - 2 - (tw + 16)));
 ctx.fillStyle = K.pill; ctx.fillRect(px, 1, tw + 16, 20); ctx.strokeStyle = K.accent; ctx.lineWidth = 1; ctx.strokeRect(px + .5, 1.5, tw + 15, 19);
