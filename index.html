@@ -635,6 +635,10 @@ display:inline-flex;align-items:center;gap:8px}
 .lx-map{position:relative;border-radius:6px;overflow:hidden;background:var(--panel2);height:300px}
 .lx-map iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 @media(min-width:600px){.lx-map{height:380px}}
+.rv-layers,.rv-layers > div{position:absolute;inset:0}
+.rv-layers > div{opacity:0}
+.rv-layers > div.on{opacity:.85}
+.rv-layers img{position:absolute;width:256px;height:256px;max-width:none;display:block}
 /* ===== Wind map ===== */
 .wm-map canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .wm-time{position:absolute;left:8px;top:8px;background:#fff;color:#0b1726;border:1px solid #0b1726;border-radius:14px;padding:4px 11px;font-size:12px;font-weight:700;max-width:calc(100% - 16px)}
@@ -770,10 +774,10 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="risk-grid">
 <div class="risk-item"><span class="risk-icon" id="ri-wind"></span><div class="risk-info"><div class="risk-name">Wind</div><div class="risk-value" id="r-wind">—</div><div class="risk-sub" id="r-wind-sub">—</div></div></div>
 <div class="risk-item"><span class="risk-icon" id="ri-gust"></span><div class="risk-info"><div class="risk-name">Gusts</div><div class="risk-value" id="r-gust">—</div><div class="risk-sub" id="r-gust-sub">—</div></div></div>
-<div class="risk-item"><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div><div class="risk-sub" id="r-storm-sub">—</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">Temperature</div><div class="risk-value" id="r-heat">—</div><div class="risk-sub" id="r-heat-sub">—</div></div></div>
 <div class="risk-item"><div class="risk-info"><div class="risk-name">Rain Chance</div><div class="risk-value" id="r-rain">—</div><div class="risk-sub" id="r-rain-sub">Next 6 hours</div></div></div>
 <div class="risk-item"><div class="risk-info"><div class="risk-name">UV Index</div><div class="risk-value" id="r-uv">—</div><div class="risk-sub">Right now</div></div></div>
-<div class="risk-item"><div class="risk-info"><div class="risk-name">Temperature</div><div class="risk-value" id="r-heat">—</div><div class="risk-sub" id="r-heat-sub">—</div></div></div>
+<div class="risk-item"><div class="risk-info"><div class="risk-name">Storm / Lightning</div><div class="risk-value" id="r-storm">—</div><div class="risk-sub" id="r-storm-sub">—</div></div></div>
 </div>
 
 <!-- Quick-reference card: tap any reading above for its next 6–12 hours -->
@@ -865,10 +869,32 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 
 <!-- 4. Lightning -->
 <section class="coll" data-sec="lightning">
-<div class="section-title">Lightning</div>
+<div class="section-title">
+<span style="flex:0 0 auto;white-space:nowrap">Lightning</span>
+<span style="flex:0 0 auto;display:flex;gap:6px;order:2">
+<button type="button" class="range-btn active" id="lx-v-strikes" onclick="lxSetView('strikes')">Strikes</button>
+<button type="button" class="range-btn" id="lx-v-radar" onclick="lxSetView('radar')">Radar</button>
+</span>
+</div>
 <div class="cm-panel" style="margin-bottom:8px">
 <div class="lx-map" id="lx-map"><iframe id="lx-frame" title="Live lightning strike map (Blitzortung.org)" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+<div id="rv-wrap" hidden>
+<div class="cm-map" id="rv-map">
+<div class="cm-tiles" id="rv-base"></div>
+<div class="rv-layers" id="rv-layers"></div>
+<svg id="rv-svg" aria-hidden="true"></svg>
+<div class="wm-time" id="rv-time"></div>
+<div class="cm-attr">Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
+</div>
+<div class="wm-controls">
+<button type="button" id="rv-play" onclick="rvPlay()" aria-label="Play the last 2 hours">▶</button>
+<input type="range" id="rv-slider" min="0" max="0" step="1" value="0" oninput="rvSeek(+this.value)" aria-label="Radar time">
+</div>
+<div class="cm-foot"><span>Rain radar for the last 2 hours, about 350 km across, with the venue marked. Heavier rain shows as stronger colour; storm cells usually carry the lightning. Radar shows rain, not strikes, and has gaps away from radar stations.</span></div>
+</div>
+<div id="lx-strikes-foot">
 <div class="cm-foot"><span>This section moves to the top and opens when a thunderstorm is forecast at the venue now or within 3 hours. Live strikes from the Blitzortung.org volunteer network, about 300 km around the venue. New strikes flash as they arrive and fade with age. Coverage in Australia is patchy, so an empty map is not proof of no lightning.</span></div>
+</div>
 </div>
 <div class="lightning-bar">
 <div class="lightning-bar-left">
@@ -885,7 +911,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <summary>About the Data</summary>
 <div class="details-body about-text">
 <p><strong>Verdicts:</strong> GO / CAUTION / OFF WATER use the limits selected above (Seniors or Novices). Day verdicts use each day's strongest forecast wind and gusts, which usually come in the afternoon.</p>
-<p><strong>Lightning / CAPE:</strong> CAPE above 1000 J/kg = clear the water. Use the Blitzortung button for live strike maps.</p>
+<p><strong>Lightning / CAPE:</strong> CAPE above 1000 J/kg = clear the water. The Lightning section shows live strikes (Blitzortung.org) or rain radar for the last 2 hours (RainViewer).</p>
 <p><strong>Tides:</strong> Forecast sea level off Fremantle from Open-Meteo's ocean model (tide plus weather effects), shown relative to mean sea level. It is a model forecast, not the official tide table — check BOM tide tables for anything critical. All other venues are freshwater.</p>
 <p><strong>Wind:</strong> Forecast from Open-Meteo. Live observations from the nearest BOM station (named above); the status banner uses whichever of forecast or live wind is worse.</p>
 <p><strong>Daylight:</strong> First and last light are civil twilight (sun 6° below the horizon), calculated in the page.</p>
@@ -1492,12 +1518,95 @@ renderLightningMap();
 // ── LIGHTNING LIVE MAP ────────────────────────────────────────────────────
 // Blitzortung.org's own embeddable live map (their documented iframe), centred on the venue.
 // Loaded only while the Lightning section is open; folding the section away disconnects it.
+let lxView = store.get('lxView', 'strikes') === 'radar' ? 'radar' : 'strikes';
+function lxSetView(v) { lxView = v; store.set('lxView', v); renderLightningMap(); }
 function renderLightningMap() {
 const frame = document.getElementById('lx-frame'), loc = LOCATIONS[currentLoc];
 if (!frame || !loc) return;
 const open = !frame.closest('.coll').classList.contains('collapsed');
-const url = open ? `https://map.blitzortung.org/index.php?interactive=0&NavigationControl=0&FullScreenControl=0&Cookies=0&InfoDiv=0&MenuButtonDiv=0&ScaleControl=1&LinksCheckboxChecked=0&Advertisment=0&venue=${currentLoc}#7/${loc.lat.toFixed(2)}/${loc.lon.toFixed(2)}` : 'about:blank';
+const strikes = lxView === 'strikes';
+document.getElementById('lx-v-strikes').classList.toggle('active', strikes);
+document.getElementById('lx-v-radar').classList.toggle('active', !strikes);
+document.getElementById('lx-map').hidden = !strikes;
+document.getElementById('lx-strikes-foot').hidden = !strikes;
+document.getElementById('rv-wrap').hidden = strikes;
+const url = open && strikes ? `https://map.blitzortung.org/index.php?interactive=0&NavigationControl=0&FullScreenControl=0&Cookies=0&InfoDiv=0&MenuButtonDiv=0&ScaleControl=1&LinksCheckboxChecked=0&Advertisment=0&venue=${currentLoc}#7/${loc.lat.toFixed(2)}/${loc.lon.toFixed(2)}` : 'about:blank';
 if (frame.dataset.url !== url) { frame.dataset.url = url; frame.src = url; }
+if (open && !strikes) renderRadar(); else rvStop();
+}
+
+// ── RAIN RADAR (RainViewer public Weather Maps API: past 2 hours, 10-minute frames, zoom 7 max) ──
+const RV_ZOOM = 7, RV_KEEP_MS = 5 * 60000;
+const rv = { frames: null, host: '', at: 0, idx: 0, timer: null, key: '', loading: false, error: '' };
+function rvStop() { clearInterval(rv.timer); rv.timer = null; const b = document.getElementById('rv-play'); if (b) { b.textContent = '▶'; b.setAttribute('aria-label', 'Play the last 2 hours'); } }
+function rvPlay() {
+if (rv.timer) return rvStop();
+if (!rv.frames) return;
+const b = document.getElementById('rv-play'); b.textContent = '❚❚'; b.setAttribute('aria-label', 'Pause');
+if (rv.idx >= rv.frames.length - 1) rvSeek(0);
+rv.timer = setInterval(() => { if (rv.idx >= rv.frames.length - 1) return rvStop(); rvSeek(rv.idx + 1); }, 650);
+}
+function rvSeek(i) { rv.idx = i; document.getElementById('rv-slider').value = i; rvShow(); }
+async function rvLoad() {
+if (rv.loading) return;
+rv.loading = true; rv.error = '';
+try {
+const j = await fetchJSON('https://api.rainviewer.com/public/weather-maps.json');
+const past = j?.radar?.past;
+if (!j?.host || !Array.isArray(past) || !past.length) throw new Error('no radar frames');
+const atEnd = !rv.frames || rv.idx >= rv.frames.length - 1;
+rv.host = j.host; rv.frames = past; rv.at = Date.now(); rv.key = '';
+if (atEnd) rv.idx = past.length - 1; else rv.idx = Math.min(rv.idx, past.length - 1);
+} catch (err) { rv.error = err.message || 'failed'; }
+finally { rv.loading = false; if (lxView === 'radar') renderRadar(); }
+}
+function renderRadar() {
+const mapEl = document.getElementById('rv-map'), loc = LOCATIONS[currentLoc];
+const W = mapEl.clientWidth;
+if (!W) return;
+const H = Math.round(Math.min(460, Math.max(260, W * 0.9)));
+mapEl.style.height = H + 'px';
+const c = cmProject(loc.lat, loc.lon, RV_ZOOM), ox = c.x - W / 2, oy = c.y - H / 2, n = Math.pow(2, RV_ZOOM);
+const tiles = [];
+for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++)
+for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++)
+if (ty >= 0 && ty < n) tiles.push({ x: ((tx % n) + n) % n, y: ty, left: Math.round(tx * 256 - ox), top: Math.round(ty * 256 - oy) });
+rv.tiles = tiles;
+if (rv.loc !== loc) { rv.loc = loc; rvStop(); if (rv.frames) rv.idx = rv.frames.length - 1; } // a new venue starts on the latest frame
+const key = [loc.short, W, H, rv.at].join('|');
+if (key !== rv.key) { // new venue, size or radar data: rebuild the base map and clear the radar frames
+rv.key = key;
+document.getElementById('rv-base').innerHTML = tiles.map(t => `<img alt="" loading="lazy" decoding="async" src="${CM_TILE(RV_ZOOM, t.x, t.y)}" style="left:${t.left}px;top:${t.top}px" onerror="this.style.display='none'">`).join('');
+document.getElementById('rv-layers').innerHTML = '';
+const svg = document.getElementById('rv-svg');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+svg.innerHTML = `<circle cx="${W / 2}" cy="${H / 2}" r="7" fill="#fff" stroke="#0b1726" stroke-width="2.5"/><circle cx="${W / 2}" cy="${H / 2}" r="2.5" fill="#0b1726"/>`;
+}
+const slider = document.getElementById('rv-slider');
+if (!rv.frames) {
+document.getElementById('rv-time').textContent = rv.error ? `Couldn't load radar (${rv.error}) — tap ▶ to retry` : 'Loading radar…';
+slider.disabled = true;
+if (!rv.error) rvLoad(); else document.getElementById('rv-play').onclick = () => { rv.error = ''; document.getElementById('rv-play').onclick = rvPlay; renderRadar(); };
+return;
+}
+slider.disabled = false; slider.max = rv.frames.length - 1; slider.value = rv.idx;
+if (Date.now() - rv.at > RV_KEEP_MS && !rv.timer) rvLoad(); // radar updates every few minutes
+rvShow();
+}
+function rvShow() {
+const box = document.getElementById('rv-layers'), loc = LOCATIONS[currentLoc];
+if (!rv.frames || !rv.tiles) return;
+const f = rv.frames[rv.idx];
+let layer = box.querySelector(`[data-f="${rv.idx}"]`);
+if (!layer) { // each frame's tiles are fetched the first time it is shown, then kept for replay
+layer = document.createElement('div'); layer.dataset.f = rv.idx;
+layer.innerHTML = rv.tiles.map(t => `<img alt="" decoding="async" src="${rv.host}${f.path}/256/${RV_ZOOM}/${t.x}/${t.y}/2/1_1.png" style="left:${t.left}px;top:${t.top}px" onerror="this.style.display='none'">`).join('');
+box.appendChild(layer);
+}
+box.querySelectorAll('.on').forEach(el => el.classList.remove('on'));
+layer.classList.add('on');
+const mins = Math.round((Date.now() - f.time * 1000) / 60000);
+document.getElementById('rv-time').textContent = `${new Date(f.time * 1000).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: loc.tz })} · ${mins <= 12 && rv.idx === rv.frames.length - 1 ? 'latest' : mins + ' min ago'}`;
 }
 
 // ── WIND MAP (regional) ───────────────────────────────────────────────────
@@ -3466,7 +3575,7 @@ heat:  { title: 'Temperature', unit: '°C', arr: 'temperature_2m', second: 'appa
 };
 let mdOpen = null, mdHours = 12;
 document.querySelectorAll('.risk-grid .risk-item').forEach((el, i) => {
-el.dataset.metric = Object.keys(MD)[i];
+el.dataset.metric = el.querySelector('.risk-value').id.slice(2); // r-wind → wind, r-heat → heat … (so the cards can be reordered freely)
 el.setAttribute('role', 'button'); el.tabIndex = 0; el.setAttribute('aria-expanded', 'false');
 el.setAttribute('aria-controls', 'md-card');
 el.addEventListener('click', () => mdToggle(el.dataset.metric));
