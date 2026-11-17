@@ -626,7 +626,12 @@ display:inline-flex;align-items:center;gap:8px}
 .md-now small{font-family:'Barlow',sans-serif;font-size:13px;font-weight:400;color:var(--muted)}
 .md-tools{display:flex;gap:6px;align-items:center;flex:0 0 auto}
 .md-close{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:16px;cursor:pointer}
-#md-canvas{display:block;width:100%;height:180px}
+#md-canvas{display:block;width:100%;height:186px;touch-action:pan-y;cursor:crosshair}
+.md-verdict{margin:2px 0 8px}
+.md-v{font-size:13.5px;font-weight:600;line-height:1.4;padding:1px 0}
+.md-v.ok{color:var(--green)}.md-v.warn{color:var(--yellow)}.md-v.danger{color:var(--red)}
+.md-tools .range-btn{padding-left:9px;padding-right:9px}
+.md-head{flex-wrap:wrap}
 .md-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
 
 /* ===== Lightning live map ===== */
@@ -787,9 +792,11 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="md-tools">
 <button type="button" class="range-btn" id="md-r6" onclick="mdRange(6)">6 h</button>
 <button type="button" class="range-btn active" id="md-r12" onclick="mdRange(12)">12 h</button>
+<button type="button" class="range-btn" id="md-r24" onclick="mdRange(24)">24 h</button>
 <button type="button" class="md-close" onclick="mdToggle(null)" aria-label="Close">✕</button>
 </div>
 </div>
+<div class="md-verdict" id="md-verdict"></div>
 <canvas id="md-canvas" role="img"></canvas>
 <div class="md-note" id="md-note"></div>
 </div>
@@ -3583,44 +3590,96 @@ el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { 
 });
 function mdToggle(key) {
 mdOpen = key && key !== mdOpen ? key : null;
+mdTrack = null;
 renderMetricCard();
 if (mdOpen) document.getElementById('md-card').scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
-function mdRange(n) { mdHours = n; renderMetricCard(); }
+function mdRange(n) { mdHours = n; mdTrack = null; renderMetricCard(); }
 const mdHourLabel = iso => { const hh = +iso.slice(11, 13); return `${((hh + 11) % 12) + 1}${hh < 12 ? 'am' : 'pm'}`; };
+let mdTrack = null, mdGeom = null, mdTrackTimer = null; // slide-to-read: index of the hour under the finger
+(() => { // bound once — the canvas element is never replaced
+const canvas = document.getElementById('md-canvas');
+const at = e => {
+if (!mdGeom) return;
+const px = e.clientX - canvas.getBoundingClientRect().left;
+const k = Math.max(0, Math.min(mdGeom.n - 1, Math.round((px - mdGeom.padL) / mdGeom.pw * (mdGeom.n - 1))));
+clearTimeout(mdTrackTimer);
+if (k !== mdTrack) { mdTrack = k; renderMetricCard(); }
+};
+const release = ms => { clearTimeout(mdTrackTimer); mdTrackTimer = setTimeout(() => { mdTrack = null; renderMetricCard(); }, ms); };
+canvas.addEventListener('pointerdown', e => { try { canvas.setPointerCapture(e.pointerId); } catch {} at(e); });
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.pressure > 0 || e.buttons) at(e); });
+canvas.addEventListener('pointerup', () => release(4000));
+canvas.addEventListener('pointercancel', () => release(4000));
+canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') release(0); });
+})();
+// "from 8:00 pm to 11:00 pm and from 3:00 am to the end of the period" for the hours where test(v) is true
+function mdWindows(pts, key, test, h, i0) {
+const runs = []; let start = null;
+pts.forEach((p, k) => { const on = RowingWind.isNum(p[key]) && test(p[key]);
+if (on && start === null) start = k;
+if ((!on || k === pts.length - 1) && start !== null) { runs.push([start, on ? k : k - 1]); start = null; } });
+const t = k => fmtLocalIso(h.time[i0 + k]);
+return runs.map(([a, b]) => a === 0 && b === pts.length - 1 ? 'for the whole period'
+: a === b ? (a === 0 ? 'now' : `around ${t(a)}`)
+: `${a === 0 ? 'from now' : `from ${t(a)}`} ${b === pts.length - 1 ? 'to the end of the period' : `to ${t(b)}`}`).join(' and ');
+}
 function renderMetricCard() {
 const card = document.getElementById('md-card'), h = lastHourly, m = MD[mdOpen];
 document.querySelectorAll('.risk-grid .risk-item').forEach(el => { const on = el.dataset.metric === mdOpen; el.classList.toggle('open', on); el.setAttribute('aria-expanded', String(on)); });
-if (!m || !h || !h[m.arr]) { card.hidden = true; return; }
+if (!m || !h || !h[m.arr]) { card.hidden = true; mdGeom = null; return; }
 card.hidden = false;
-document.getElementById('md-r6').classList.toggle('active', mdHours === 6);
-document.getElementById('md-r12').classList.toggle('active', mdHours === 12);
+[6, 12, 24].forEach(n => document.getElementById('md-r' + n).classList.toggle('active', mdHours === n));
+const loc = LOCATIONS[currentLoc];
+const windy = mdOpen === 'wind' || mdOpen === 'gust';           // wind and gusts share one graph
+const pair = windy ? MD[mdOpen === 'wind' ? 'gust' : 'wind'] : null;
 const i0 = lastHIdx, i1 = Math.min(h.time.length - 1, i0 + mdHours);
 const pts = [];
-for (let i = i0; i <= i1; i++) pts.push({ i, v: h[m.arr][i], v2: m.second ? h[m.second][i] : null });
+for (let i = i0; i <= i1; i++) pts.push({ i, v: h[m.arr][i], v2: pair ? h[pair.arr][i] : m.second ? h[m.second][i] : null });
+if (mdTrack !== null && mdTrack > pts.length - 1) mdTrack = null;
 const ok = pts.filter(p => RowingWind.isNum(p.v));
 const fmt = v => RowingWind.isNum(v) ? (m.dp ? v.toFixed(m.dp).replace(/\.0$/, '') : String(Math.round(v))) : '—';
-const lim = m.lim(), lvl = v => !RowingWind.isNum(v) ? 'ok' : m.strictAbove ? above(v, lim) : level(v, lim);
-document.getElementById('md-title').textContent = `${m.title} · next ${mdHours} hours`;
-if (!ok.length) { document.getElementById('md-now').textContent = 'No data'; document.getElementById('md-note').textContent = ''; return; }
+const U = m.unit ? ' ' + m.unit : '';
+const lim = m.lim(), isOver = (v, t) => m.strictAbove ? v > t : v >= t;
+const lvl = v => !RowingWind.isNum(v) ? 'ok' : isOver(v, lim.danger) ? 'danger' : isOver(v, lim.caution) ? 'warn' : 'ok';
+document.getElementById('md-title').textContent = `${windy ? 'Wind & Gusts' : m.title} · next ${mdHours} hours`;
+const verdictEl = document.getElementById('md-verdict'), noteEl = document.getElementById('md-note');
+if (!ok.length) { document.getElementById('md-now').textContent = 'No data'; verdictEl.textContent = ''; noteEl.textContent = ''; mdGeom = null; return; }
 const peak = ok.reduce((a, b) => b.v > a.v ? b : a), low = ok.reduce((a, b) => b.v < a.v ? b : a);
 const at = p => p.i === i0 ? 'now' : `at ${fmtLocalIso(h.time[p.i])}`;
-document.getElementById('md-now').innerHTML = `${fmt(pts[0].v)}${m.unit ? ' ' + m.unit : ''} <small>now</small>`;
-let note = `Peak ${fmt(peak.v)}${m.unit ? ' ' + m.unit : ''} ${at(peak)} · lowest ${fmt(low.v)}${m.unit ? ' ' + m.unit : ''} ${at(low)}.`;
+document.getElementById('md-now').innerHTML = windy
+? `${fmt(h.wind_speed_10m[i0])} km/h <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}</small>`
+: `${fmt(pts[0].v)}${U} <small>now</small>`;
+
+// 1. Verdict in words: when does this reading reach each limit?
+const verdictFor = (mm, key) => {
+const L = mm.lim(), over = (v, t) => mm.strictAbove ? v > t : v >= t, u = mm.unit ? ' ' + mm.unit : '';
+const d = mdWindows(pts, key, v => over(v, L.danger), h, i0), c = mdWindows(pts, key, v => over(v, L.caution) && !over(v, L.danger), h, i0);
+if (d) return { cls: 'danger', text: `${mm.title.split(' ·')[0]}: ${mm.limWords[1].toLowerCase()} level (${L.danger}${u}) reached ${d}.${c ? ` ${mm.limWords[0]} level ${c}.` : ''}` };
+if (c) return { cls: 'warn', text: `${mm.title.split(' ·')[0]}: ${mm.limWords[0].toLowerCase()} level (${L.caution}${u}) reached ${c}. Stays below the ${mm.limWords[1].toLowerCase()} level.` };
+return { cls: 'ok', text: `${mm.title.split(' ·')[0]}: stays below the ${mm.limWords[0].toLowerCase()} level (${L.caution}${u}) for the whole period.` };
+};
+const verdicts = windy ? [verdictFor(MD.wind, mdOpen === 'wind' ? 'v' : 'v2'), verdictFor(MD.gust, mdOpen === 'gust' ? 'v' : 'v2')] : [verdictFor(m, 'v')];
+verdicts.forEach(v => { v.text = v.text.replace(/off water level/g, 'off-water level'); });
+verdictEl.innerHTML = verdicts.map(v => `<div class="md-v ${v.cls}"><span aria-hidden="true">${v.cls === 'danger' ? '✕' : v.cls === 'warn' ? '▲' : '✓'}</span> ${esc(v.text)}</div>`).join('');
+
+let note = `Peak ${fmt(peak.v)}${U} ${at(peak)} · lowest ${fmt(low.v)}${U} ${at(low)}.`;
+if (windy) note = `Blue = wind, orange = gusts; arrows show the way the wind is blowing. Limit lines are the ${CREW_LIMITS[crewLevel].label} ${mdOpen === 'wind' ? 'wind' : 'gust'} limits.`;
 if (mdOpen === 'rain' && h.precipitation) note += ` Forecast rain over the period: ${pts.reduce((t, p) => t + (h.precipitation[p.i] || 0), 0).toFixed(1)} mm.`;
 if (mdOpen === 'heat') note += ' Dashed line = feels-like temperature.';
-if (mdOpen === 'wind' || mdOpen === 'gust') note += ` Lines show the ${CREW_LIMITS[crewLevel].label} limits: caution ${lim.caution}, off water ${lim.danger} km/h.`;
-if (mdOpen === 'storm') note += ` CAPE is storm energy in the forecast, not recorded strikes. ${THRESHOLDS.cape.high} J/kg and above = clear the water.`;
-document.getElementById('md-note').textContent = note + ' Forecast: Open-Meteo.';
+if (mdOpen === 'storm') note += ' CAPE is storm energy in the forecast, not recorded strikes.';
+noteEl.textContent = note + ' Shaded = before first light / after last light. Slide along the graph to read any hour. Forecast: Open-Meteo.';
 
 // chart
-const canvas = document.getElementById('md-canvas'), W = canvas.clientWidth, H = 180;
+const canvas = document.getElementById('md-canvas'), W = canvas.clientWidth, H = windy ? 204 : 186;
 if (!W) return;
+canvas.style.height = H + 'px';
 const dpr = window.devicePixelRatio || 1;
 canvas.width = W * dpr; canvas.height = H * dpr;
 const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-const padL = 36, padR = 18, padT = 16, padB = 24, pw = W - padL - padR, ph = H - padT - padB;
-const all = ok.flatMap(p => RowingWind.isNum(p.v2) ? [p.v, p.v2] : [p.v]);
+const padL = 36, padR = 18, padT = 22, padB = windy ? 42 : 24, pw = W - padL - padR, ph = H - padT - padB;
+mdGeom = { padL, pw, n: pts.length };
+const all = pts.flatMap(p => [p.v, p.v2]).filter(RowingWind.isNum);
 let lo = m.floorFromData ? Math.floor(Math.min(...all) - 2) : 0;
 let hi = m.top || Math.max(...all) * 1.15;
 if (!m.top) { // bring a limit line into view when the readings are anywhere near it
@@ -3631,14 +3690,43 @@ if (hi - lo < 1e-6) hi = lo + Math.max(1, (lim.caution || 1) * 1.12); // flat li
 const step = [0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find(s => (hi - lo) / s <= 5) || 2000;
 hi = Math.ceil(hi / step) * step; lo = Math.floor(lo / step) * step;
 const X = k => padL + (pts.length > 1 ? k / (pts.length - 1) : 0.5) * pw, Y = v => padT + ph - (v - lo) / (hi - lo) * ph;
+
+// 3. Daylight: shade the hours before first light and after last light, and mark both
+const d = new Date(), fmtP = new Intl.DateTimeFormat('en-AU', { minute: 'numeric', second: 'numeric', timeZone: loc.tz }).formatToParts(d);
+const ms0 = d.getTime() - ((+fmtP.find(p => p.type === 'minute').value) * 60 + (+fmtP.find(p => p.type === 'second').value)) * 1000 - d.getMilliseconds(); // start of the current venue hour
+const msEnd = ms0 + (pts.length - 1) * 3600000, Xms = ms => padL + (ms - ms0) / Math.max(1, msEnd - ms0) * pw;
+const days = [...new Set(pts.map(p => h.time[p.i].slice(0, 10)))];
+const lights = days.map(day => sunTimes(day, loc.lat, loc.lon, -6)).filter(Boolean);
+if (lights.length) {
+const dark = [], sun = K === PALETTES.sun;
+dark.push([ms0, lights[0].rise]);
+lights.forEach((L, n) => dark.push([L.set, lights[n + 1] ? lights[n + 1].rise : msEnd]));
+ctx.fillStyle = sun ? 'rgba(11,23,38,.09)' : 'rgba(0,0,0,.28)';
+dark.forEach(([a, b]) => { const x1 = Math.max(padL, Xms(a)), x2 = Math.min(W - padR, Xms(b)); if (x2 > x1) ctx.fillRect(x1, padT, x2 - x1, ph); });
+ctx.font = '600 9px Barlow, sans-serif'; ctx.textBaseline = 'bottom';
+lights.forEach(L => [[L.rise, 'First light'], [L.set, 'Last light']].forEach(([ms, word]) => {
+if (ms <= ms0 || ms >= msEnd) return;
+const x = Xms(ms);
+ctx.strokeStyle = K.muted; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke(); ctx.setLineDash([]);
+ctx.fillStyle = K.label; ctx.textAlign = x > W - padR - 60 ? 'right' : x < padL + 60 ? 'left' : 'center';
+ctx.fillText(`${word} ${fmtVenueTime(ms, loc.tz)}`, x, padT - 2);
+}));
+}
+
 ctx.font = '11px Barlow, sans-serif'; ctx.textBaseline = 'middle';
 for (let g = lo; g <= hi + 1e-9; g += step) {
 ctx.strokeStyle = K.grid2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, Y(g)); ctx.lineTo(W - padR, Y(g)); ctx.stroke();
 ctx.fillStyle = K.label; ctx.textAlign = 'right'; ctx.fillText(String(+g.toFixed(1)), padL - 6, Y(g));
 }
-ctx.font = '11px Barlow, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-const every = pts.length > 8 ? 2 : 1;
-pts.forEach((p, k) => { if (k % every === 0) { ctx.fillStyle = k === 0 ? K.text : K.label; ctx.fillText(k === 0 ? 'Now' : mdHourLabel(h.time[p.i]), X(k), H - padB + 7); } });
+ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+const every = pts.length > 14 ? 4 : pts.length > 8 ? 2 : 1;
+pts.forEach((p, k) => { if (k % every) return;
+ctx.fillStyle = k === 0 ? K.text : K.label; ctx.fillText(k === 0 ? 'Now' : mdHourLabel(h.time[p.i]), X(k), padT + ph + 7);
+if (windy && RowingWind.isNum(h.wind_direction_10m[p.i]) && h.wind_speed_10m[p.i] >= 2) { // 4. direction arrows (pointing the way the wind blows)
+ctx.save(); ctx.translate(X(k), padT + ph + 30); ctx.rotate((h.wind_direction_10m[p.i] + 180) * Math.PI / 180);
+ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(4, 0); ctx.lineTo(1.3, -1); ctx.lineTo(1.3, 7); ctx.lineTo(-1.3, 7); ctx.lineTo(-1.3, -1); ctx.lineTo(-4, 0); ctx.closePath();
+ctx.fillStyle = K.muted; ctx.fill(); ctx.restore();
+} });
 // limit lines (labelled in words, so colour is not the only cue)
 [[lim.caution, K.yellow, m.limWords[0]], [lim.danger, K.red, m.limWords[1]]].forEach(([v, col, word]) => {
 if (!RowingWind.isNum(v) || v <= lo || v > hi) return;
@@ -3646,27 +3734,43 @@ ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); ctx.beginPa
 const leftSide = peak.i - i0 > (pts.length - 1) * 0.6; // keep the words clear of the peak label
 ctx.fillStyle = col; ctx.textAlign = leftSide ? 'left' : 'right'; ctx.textBaseline = 'bottom'; ctx.font = '600 10px Barlow, sans-serif'; ctx.fillText(`${word} ${v}`, leftSide ? padL + 4 : W - padR, Y(v) - 2);
 });
-const col = v => { const l = lvl(v); return l === 'danger' ? K.red : l === 'warn' ? K.yellow : K.accent; };
+const dotCol = v => { const l = lvl(v); return l === 'danger' ? K.red : l === 'warn' ? K.yellow : null; };
+const mainCol = windy ? (mdOpen === 'wind' ? K.accent : K.orange) : K.accent, pairCol = mdOpen === 'wind' ? K.orange : K.accent;
 if (m.bars) {
-const bw = Math.max(6, pw / pts.length * 0.6);
-pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; ctx.fillStyle = col(p.v); ctx.globalAlpha = .85; ctx.fillRect(X(k) - bw / 2, Y(p.v), bw, Math.max(1, padT + ph - Y(p.v))); ctx.globalAlpha = 1; });
+const bw = Math.max(4, pw / pts.length * 0.6);
+pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; ctx.fillStyle = dotCol(p.v) || K.accent; ctx.globalAlpha = .85; ctx.fillRect(X(k) - bw / 2, Y(p.v), bw, Math.max(1, padT + ph - Y(p.v))); ctx.globalAlpha = 1; });
 } else {
 const line = (key, dash) => { ctx.beginPath(); let started = false;
 pts.forEach((p, k) => { const v = p[key]; if (!RowingWind.isNum(v)) return; started ? ctx.lineTo(X(k), Y(v)) : ctx.moveTo(X(k), Y(v)); started = true; });
 ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]); };
-// area
 ctx.beginPath(); ok.forEach((p, n) => { const k = p.i - i0; n ? ctx.lineTo(X(k), Y(p.v)) : ctx.moveTo(X(k), Y(p.v)); });
 ctx.lineTo(X(ok[ok.length - 1].i - i0), padT + ph); ctx.lineTo(X(ok[0].i - i0), padT + ph); ctx.closePath();
-ctx.fillStyle = K.accent; ctx.globalAlpha = .12; ctx.fill(); ctx.globalAlpha = 1;
-if (m.second) { ctx.strokeStyle = K.muted; ctx.lineWidth = 1.5; line('v2', [4, 4]); }
-ctx.strokeStyle = K.accent; ctx.lineWidth = 2.4; ctx.lineJoin = 'round'; line('v');
-pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; ctx.beginPath(); ctx.arc(X(k), Y(p.v), k === 0 ? 4.5 : 3, 0, 2 * Math.PI); ctx.fillStyle = col(p.v); ctx.fill(); ctx.strokeStyle = K.dot; ctx.lineWidth = 1.2; ctx.stroke(); });
+ctx.fillStyle = mainCol; ctx.globalAlpha = .12; ctx.fill(); ctx.globalAlpha = 1;
+ctx.lineJoin = 'round';
+if (pair) { ctx.strokeStyle = pairCol; ctx.lineWidth = 1.6; line('v2'); }
+else if (m.second) { ctx.strokeStyle = K.muted; ctx.lineWidth = 1.5; line('v2', [4, 4]); }
+ctx.strokeStyle = mainCol; ctx.lineWidth = 2.6; line('v');
+const small = pts.length > 14;
+pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; const c = dotCol(p.v); if (small && !c && k) return;
+ctx.beginPath(); ctx.arc(X(k), Y(p.v), k === 0 ? 4.5 : 3, 0, 2 * Math.PI); ctx.fillStyle = c || mainCol; ctx.fill(); ctx.strokeStyle = K.dot; ctx.lineWidth = 1.2; ctx.stroke(); });
 }
-// peak label
+if (mdTrack === null) { // peak label (hidden while sliding, so the two never collide)
 const pk = peak.i - i0; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'bottom'; ctx.fillStyle = K.text;
 ctx.textAlign = pk === 0 ? 'left' : pk === pts.length - 1 ? 'right' : 'center';
-ctx.fillText(fmt(peak.v), X(pk), Math.max(padT - 2, Y(peak.v) - 6));
-canvas.setAttribute('aria-label', `${m.title}, next ${mdHours} hours. Now ${fmt(pts[0].v)} ${m.unit}. ${note}`);
+ctx.fillText(fmt(peak.v), X(pk), Math.max(padT + 9, Y(peak.v) - 6));
+} else { // 2. slide-to-read marker
+const p = pts[mdTrack], x = X(mdTrack);
+ctx.strokeStyle = K.text; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+if (RowingWind.isNum(p.v)) { ctx.beginPath(); ctx.arc(x, Y(p.v), 6, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = mainCol; ctx.lineWidth = 3; ctx.stroke(); }
+const when = mdTrack === 0 ? 'Now' : fmtLocalIso(h.time[p.i]);
+const lbl = windy ? `${when} · wind ${fmt(h.wind_speed_10m[p.i])} · gusts ${fmt(h.wind_gusts_10m[p.i])} km/h ${RowingWind.isNum(h.wind_direction_10m[p.i]) ? deg2comp(h.wind_direction_10m[p.i]) : ''}`.trim()
+: `${when} · ${fmt(p.v)}${U}${m.second && RowingWind.isNum(p.v2) ? ` (feels ${fmt(p.v2)})` : ''}`;
+ctx.font = '700 12px "Barlow Condensed", sans-serif';
+const tw = ctx.measureText(lbl).width; let px = Math.max(2, Math.min(x - (tw + 16) / 2, W - 2 - (tw + 16)));
+ctx.fillStyle = K.pill; ctx.fillRect(px, 1, tw + 16, 20); ctx.strokeStyle = K.accent; ctx.lineWidth = 1; ctx.strokeRect(px + .5, 1.5, tw + 15, 19);
+ctx.fillStyle = K.text; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(lbl, px + 8, 5);
+}
+canvas.setAttribute('aria-label', `${windy ? 'Wind and gusts' : m.title}, next ${mdHours} hours. ${verdicts.map(v => v.text).join(' ')} ${note}`);
 }
 
 // ── INSTALL AS AN APP ─────────────────────────────────────────────────────
