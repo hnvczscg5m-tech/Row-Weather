@@ -15,7 +15,7 @@
 <meta name="theme-color" content="#08121f">
 <!-- Set the saved theme before anything draws (no flash of the wrong theme or ribbon),
      and start downloading the one ribbon this theme and screen size will use. -->
-<script>try{var tx=localStorage.getItem('rowwx.text');if(tx==='large'||tx==='xl')document.documentElement.setAttribute('data-text',tx);var sun=localStorage.getItem('rowwx.theme')==='sun';if(sun)document.documentElement.setAttribute('data-theme','sun');
+<script>try{if(localStorage.getItem('rowwx.layout')==='compact')document.documentElement.setAttribute('data-compact','');var tx=localStorage.getItem('rowwx.text');if(tx==='large'||tx==='xl')document.documentElement.setAttribute('data-text',tx);var sun=localStorage.getItem('rowwx.theme')==='sun';if(sun)document.documentElement.setAttribute('data-theme','sun');
 var l=document.createElement('link');l.rel='preload';l.as='image';l.type='image/webp';
 l.href='weatherow_'+(sun?'day':'night')+'_mode_ribbon'+(matchMedia('(max-width:700px)').matches?'-1200':'')+'.webp';
 document.head.appendChild(l)}catch(e){}</script>
@@ -546,7 +546,12 @@ details.rw-about{margin-top:10px}
 details.rw-about > summary{min-height:40px;padding:0;font-size:calc(14px * var(--fs,1))}
 details.rw-about p{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:1.55;margin:4px 0 8px}
 details.rw-about strong{color:var(--text)}
-details.rw-compare{margin-top:6px}
+.rw-adjust{margin-left:auto}
+.rw-adjust-box{margin-top:8px;padding:10px;border:1px dashed var(--border);border-radius:8px}
+.rw-adjust-box .rw-controls{margin-top:0}
+.rw-compare{margin-top:10px}
+.rw-compare p{font-size:calc(12px * var(--fs,1));color:var(--muted);margin:2px 0 0}
+.rw-cmp-title{font-family:'Barlow Condensed',sans-serif;font-size:calc(14px * var(--fs,1));font-weight:600;margin-bottom:2px}
 .rw-cmp{width:100%;border-collapse:collapse;font-size:calc(13px * var(--fs,1));margin:2px 0 4px}
 .rw-cmp th,.rw-cmp td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;font-weight:600}
 .rw-cmp th{color:var(--muted);font-weight:400}
@@ -630,9 +635,47 @@ display:inline-flex;align-items:center;gap:8px}
 .cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:calc(11px * var(--fs,1));color:var(--muted);line-height:1.5}
 .cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
 
+/* ===== Share ===== */
+.banner-share{margin-left:auto;flex:0 0 40px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid currentColor;border-radius:8px;background:transparent;color:inherit;opacity:.85;cursor:pointer}
+.status-banner.loading .banner-share{display:none}
+#status-text{flex:1 1 auto;min-width:0}
+.share-text{white-space:pre-wrap;word-break:break-word;font-family:'Barlow',sans-serif;font-size:calc(13.5px * var(--fs,1));line-height:1.5;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:0;max-height:42vh;overflow:auto;color:var(--text)}
+
 /* ===== Text size (Settings) ===== */
 html[data-text="large"]{--fs:1.15}
 html[data-text="xl"]{--fs:1.3}
+
+/* ===== Compact layout (Settings): smaller cards, tighter spacing ===== */
+html[data-compact]{--fs:.92}
+html[data-compact][data-text="large"]{--fs:1.05}
+html[data-compact][data-text="xl"]{--fs:1.18}
+html[data-compact] .risk-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+html[data-compact] .risk-item{padding:7px 8px;gap:5px}
+html[data-compact] .risk-item::after{right:6px;top:8px;width:5px;height:5px}
+html[data-compact] .risk-icon{display:none}
+html[data-compact] .risk-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:10px}
+html[data-compact] .risk-value{font-size:calc(19px * var(--fs,1))}
+html[data-compact] .risk-sub{display:none}
+html[data-compact] .risk-info{min-width:0}
+html[data-compact] .section-title{margin:12px 0 6px}
+html[data-compact] .ss-card,html[data-compact] .rw-panel,html[data-compact] .cm-panel,html[data-compact] .tide-widget,html[data-compact] .md-card{padding:9px 10px;margin-bottom:8px}
+html[data-compact] .ss-grid{gap:2px 10px}
+html[data-compact] .daylight{margin-bottom:8px;padding:3px 4px}
+html[data-compact] .status-banner{padding:7px 10px;margin-bottom:6px}
+html[data-compact] .info-row{margin-bottom:6px}
+html[data-compact] .jump{margin-bottom:2px;padding-top:4px;padding-bottom:4px}
+html[data-compact] .rw-insight{margin-top:6px;padding:6px 8px}
+html[data-compact] .hourly-row > *{padding-top:6px;padding-bottom:6px}
+
+/* ===== Wide screens (tablet landscape, desktop): sections flow into two columns ===== */
+@media(min-width:900px){
+#panel-live.active{columns:2;column-gap:22px}
+#panel-live > *{break-inside:avoid}
+#panel-live > .status-banner,#panel-live > .info-row,#panel-live > #session-card,#panel-live > .daylight,#panel-live > .risk-grid,#panel-live > .jump,#panel-live > details.about-data{column-span:all}
+#panel-live > .coll > .section-title:first-child{margin-top:8px}
+.risk-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(min-width:1100px){.risk-grid,html[data-compact] .risk-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 
 /* ===== Jump bar, back to top, pull to refresh ===== */
 .jump{display:flex;align-items:center;gap:6px;margin:0 0 6px;padding:6px 0}
@@ -855,6 +898,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="status-banner loading" id="status-banner" role="status" aria-live="polite">
 <div class="status-dot" aria-hidden="true"></div>
 <span id="status-text"><span class="spinner"></span> Loading weather data…</span>
+<button type="button" class="banner-share" id="share-btn" onclick="openShare()" aria-label="Share these conditions" title="Share"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></button>
 </div>
 
 <div class="info-row">
@@ -1098,6 +1142,23 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 Install Weatherow app</button>
 </div>
 
+<div class="sheet-backdrop" id="share-sheet" hidden onclick="if(event.target===this)closeShare()">
+<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="share-title">
+<div class="sheet-head">
+<div><div class="sheet-title" id="share-title">Share Conditions</div>
+<div class="sheet-note">A snapshot of this venue right now, to send to coaches or parents.</div></div>
+<button type="button" class="sheet-close" onclick="closeShare()" aria-label="Close">✕</button>
+</div>
+<pre class="share-text" id="share-text" tabindex="0"></pre>
+<div class="set-row" style="margin-top:10px">
+<button type="button" class="rw-btn active" id="share-native" onclick="shareText()">Share text…</button>
+<button type="button" class="rw-btn" id="share-copy" onclick="copyShare()">Copy text</button>
+<button type="button" class="rw-btn" id="share-image" onclick="shareImage()">Share as image</button>
+</div>
+<div class="sheet-note" id="share-msg"></div>
+</div>
+</div>
+
 <div class="sheet-backdrop" id="guide-sheet" hidden onclick="if(event.target===this)closeGuide()">
 <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="guide-title">
 <div class="sheet-head">
@@ -1142,6 +1203,14 @@ Install Weatherow app</button>
 <div class="sheet-note" style="margin:-4px 0 8px">Use the arrows to change the order on the page. Hide the ones you don't use.</div>
 <div id="set-secs"></div>
 <div class="set-row"><button type="button" class="rw-btn" onclick="resetSections()">Reset order and show all</button></div>
+</div>
+<div class="set-group">
+<div class="set-label">Layout</div>
+<div class="set-row">
+<button type="button" class="rw-btn" id="lay-standard" onclick="setLayout('standard')">Standard</button>
+<button type="button" class="rw-btn" id="lay-compact" onclick="setLayout('compact')">Compact</button>
+</div>
+<div class="sheet-note">Compact fits the six readings in two rows of three and tightens the spacing, for checking several venues quickly. Tap a card to see its detail.</div>
 </div>
 <div class="set-group">
 <div class="set-label">Text size</div>
@@ -2148,6 +2217,7 @@ const presets = (course.presets || []).map((p, i) =>
 const outbound = ch.mode === 'race' || ((ch.mode === 'custom' || ch.mode === 'preset') && !ch.rev);
 const returning = ch.mode === 'reverse' || ((ch.mode === 'custom' || ch.mode === 'preset') && !!ch.rev);
 
+const adjOpen = !hd || !!rwState.adjOpen; // heading controls are folded behind "Adjust heading" (always open until a heading is set)
 // Component blocks: the bar is that component as a share of the total wind speed (the two are not added together)
 const comp = (title, value, note, mag, k) => `<div class="rw-comp">
 <div class="rw-comp-t">${title}</div>
@@ -2184,12 +2254,12 @@ const crossTxt = c => Math.abs(c.cross) < 0.5 ? 'None' : `${c.cross > 0 ? 'Right
 const names = hasRace && (ch.mode === 'race' || ch.mode === 'reverse')
 ? (ch.mode === 'race' ? [course.raceLabel || 'Race direction', course.reverseLabel || 'Reverse'] : [course.reverseLabel || 'Reverse', course.raceLabel || 'Race direction'])
 : ['This heading', 'Opposite way'];
-compare = `<details class="rw-about rw-compare"${rwState.cmpOpen ? ' open' : ''} ontoggle="rwState.cmpOpen=this.open"><summary>Compare Directions</summary>
+compare = `<div class="rw-compare"><div class="rw-cmp-title">Compare Directions</div>
 <table class="rw-cmp"><thead><tr><th></th><th>${esc(names[0])}</th><th>${esc(names[1])}</th></tr></thead><tbody>
 <tr><th>Heading</th><td>${deg3(heading)}</td><td>${deg3(heading + 180)}</td></tr>
 <tr><th>Along course</th><td>${alongTxt(a.comps)}</td><td>${alongTxt(rev.comps)}</td></tr>
 <tr><th>Crosswind</th><td>${crossTxt(a.comps)}</td><td>${crossTxt(rev.comps)}</td></tr>
-</tbody></table><p>${WU()}, for the wind shown on the dial.</p></details>`;
+</tbody></table><p>${WU()}, for the wind shown on the dial.</p></div>`;
 }
 }
 
@@ -2242,11 +2312,16 @@ ${insight}
 <div class="rw-controls" role="group" aria-label="Crew heading">
 ${hasRace ? `<button type="button" class="rw-btn${ch.mode === 'race' ? ' active' : ''}" onclick="setHeading('race')">${esc(course.raceLabel || 'Race direction')}</button>` : ''}
 <button type="button" class="rw-btn${returning ? ' active' : ''}" aria-pressed="${returning}" onclick="reverseHeading()"${hd ? '' : ' disabled'}>⇄ ${esc(hasRace && course.reverseLabel ? course.reverseLabel : 'Reverse')}</button>
+<button type="button" class="rw-btn rw-adjust" aria-expanded="${adjOpen}" onclick="rwState.adjOpen=${!adjOpen};renderRowingWind()"aria-label="Adjust heading">Adjust<span class="lbl-long"> heading</span> <span aria-hidden="true">${adjOpen ? '▴' : '▾'}</span></button>
+</div>
+${adjOpen ? `<div class="rw-adjust-box">
+<div class="rw-controls" role="group" aria-label="Set a heading">
 ${presets}
 <select class="rw-select" aria-label="Heading" onchange="pickHeadingFromSelect(this)">${options}</select>
 <span class="rw-nudge"><button type="button" class="rw-btn" onclick="nudgeHeading(-5)" aria-label="Turn heading 5 degrees left">−5°</button><button type="button" class="rw-btn" onclick="nudgeHeading(5)" aria-label="Turn heading 5 degrees right">+5°</button>${hasRace && ch.mode !== 'race' ? `<button type="button" class="rw-btn rw-reset" onclick="setHeading('race')" aria-label="Reset to the course bearing, ${deg3(course.bearing)}" title="Reset to the course bearing">↺</button>` : ''}</span>
 </div>
 ${compare}
+</div>` : ''}
 ${hours}
 <details class="rw-about"${rwState.aboutOpen ? ' open' : ''} ontoggle="rwState.aboutOpen=this.open"><summary>About This Course</summary>
 <p>${esc(course.description || '')}</p>
@@ -4057,6 +4132,7 @@ document.getElementById('set-days').innerHTML = DAY_ORDER.map(d => `<button type
 function toggleSetDay(d) { setDays.has(d) ? setDays.delete(d) : setDays.add(d); renderSettingsSessions(); }
 function openSettings() {
 renderSettingsSessions(); renderSettingsSections();
+{ const c = document.documentElement.hasAttribute('data-compact'); document.getElementById('lay-standard').classList.toggle('active', !c); document.getElementById('lay-compact').classList.toggle('active', c); }
 { const t = document.documentElement.getAttribute('data-text') || 'normal'; ['normal', 'large', 'xl'].forEach(k => document.getElementById('text-' + k).classList.toggle('active', k === t)); }
 document.getElementById('unit-kmh').classList.toggle('active', !KN());
 document.getElementById('unit-kn').classList.toggle('active', KN());
@@ -4172,6 +4248,78 @@ ${foot}
 </div>`;
 }
 
+
+// ── SHARE A SNAPSHOT ──────────────────────────────────────────────────────
+// A short plain-text summary of the venue right now (and the next session, if one is set), read from what is on screen.
+function buildShare() {
+const loc = LOCATIONS[currentLoc], t = id => (document.getElementById(id)?.textContent || '').replace(/\s+/g, ' ').trim();
+const st = document.querySelector('#status-text > span:last-child');
+let verdict = '', limits = '';
+if (st) { const c = st.cloneNode(true); const sm = c.querySelector('small'); if (sm) { limits = sm.textContent.split('·')[0].trim(); sm.remove(); } verdict = c.textContent.replace(/\s+/g, ' ').trim(); }
+const level = document.getElementById('status-banner').classList.contains('danger') ? 'danger' : document.getElementById('status-banner').classList.contains('caution') ? 'warn' : 'ok';
+const when = new Date().toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: loc.tz });
+const lines = [`Weatherow · ${loc.short} · ${when}`, `${verdict}${limits ? ` (${limits})` : ''}`];
+const fc = rwState.loc === loc ? rwState.fc : null, hd = effectiveHeading(loc);
+let wind = `Forecast wind ${t('r-wind')}${fc && RowingWind.isNum(fc.dir) ? ' from ' + deg2comp(fc.dir) : ''}, gusts ${t('r-gust')}`;
+const live = rwState.live && rwState.live.loc === loc && RowingWind.isNum(rwState.live.speed) ? rwState.live : null;
+if (live) wind += `. Live at ${live.station}: ${Math.round(live.speed)}${lastObs && RowingWind.isNum(lastObs.gust) ? ', gusts ' + Math.round(lastObs.gust) : ''} ${WU()}${live.dirTxt ? ' ' + live.dirTxt : ''}`;
+lines.push(wind + '.');
+const w = live || fc, a = w && hd ? RowingWind.analyse(w.dir, w.speed, hd.bearing) : null, d = a ? rwDescribe(a.comps) : null;
+if (d) lines.push(`On the course (heading ${deg3(hd.bearing)}): ${d.text.toLowerCase()}.`);
+lines.push(`${t('r-heat')}, ${t('r-heat-sub').toLowerCase()} · rain ${t('r-rain')} · UV ${t('r-uv')} · storm risk ${t('r-storm').toLowerCase()}.`);
+const ses = document.querySelector('#session-card .ss-when');
+if (ses) { const dd = [...document.querySelectorAll('#session-card .ss-grid dd')].map(e => e.textContent.replace(/\s+/g, ' ').trim());
+lines.push(`Next session ${ses.textContent.replace(/\s+/g, ' ').trim()}: ${(document.querySelector('#session-card .ss-head .chip')?.textContent || '').replace(/[✓▲✕]/g, '').trim()} — wind ${dd[0] || '—'}, gusts ${dd[1] || '—'}.`); }
+lines.push('Forecast: Open-Meteo. Check conditions yourself before going on the water.');
+if (location.protocol === 'https:') lines.push(location.origin + location.pathname);
+return { lines, level, loc };
+}
+function openShare() {
+if (!lastForecast) return;
+const s = buildShare();
+document.getElementById('share-text').textContent = s.lines.join('\n');
+document.getElementById('share-native').hidden = !navigator.share;
+document.getElementById('share-msg').textContent = '';
+const sh = document.getElementById('share-sheet'); sh.hidden = false; sh.querySelector('.sheet-close').focus();
+}
+function closeShare() { const sh = document.getElementById('share-sheet'); if (sh.hidden) return; sh.hidden = true; document.getElementById('share-btn').focus(); }
+async function shareText() {
+try { await navigator.share({ title: 'Weatherow', text: document.getElementById('share-text').textContent }); }
+catch (e) { if (e && e.name !== 'AbortError') document.getElementById('share-msg').textContent = 'Sharing isn’t available here — use Copy text.'; }
+}
+async function copyShare() {
+const msg = document.getElementById('share-msg'), text = document.getElementById('share-text').textContent;
+try { await navigator.clipboard.writeText(text); msg.textContent = 'Copied. Paste it into a message.'; }
+catch { const r = document.createRange(); r.selectNodeContents(document.getElementById('share-text')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); msg.textContent = 'Text selected — copy it from here.'; }
+}
+// The same summary drawn as a picture (plain card; Weatherow's ribbon artwork is not reproduced)
+async function shareImage() {
+const msg = document.getElementById('share-msg'), s = buildShare();
+const W = 1080, pad = 64, sun = document.documentElement.getAttribute('data-theme') === 'sun';
+const col = { bg: sun ? '#ffffff' : '#0b1a2e', text: sun ? '#0b1726' : '#deeaf8', muted: sun ? '#4f6680' : '#8fb0d0', ok: sun ? '#0a7a55' : '#2ec4b6', warn: sun ? '#8a5a00' : '#ffd166', danger: sun ? '#c1121f' : '#ff5c6a' };
+const c = document.createElement('canvas'), x = c.getContext('2d');
+const wrap = (text, font) => { x.font = font; const out = []; let line = '';
+text.split(' ').forEach(wd => { const t2 = line ? line + ' ' + wd : wd; if (x.measureText(t2).width > W - pad * 2 && line) { out.push(line); line = wd; } else line = t2; }); if (line) out.push(line); return out; };
+const blocks = s.lines.map((ln, i) => ({ font: i === 0 ? '600 34px "Barlow Condensed", sans-serif' : i === 1 ? '700 54px "Barlow Condensed", sans-serif' : '400 36px Barlow, sans-serif',
+lh: i === 1 ? 64 : i === 0 ? 46 : 50, gap: i <= 1 ? 22 : 16, colour: i === 0 ? col.muted : i === 1 ? col[s.level] : (i >= s.lines.length - (location.protocol === 'https:' ? 2 : 1) ? col.muted : col.text), text: ln }));
+blocks.forEach(b => { b.rows = wrap(b.text, b.font); });
+const H = pad * 2 + blocks.reduce((h, b) => h + b.rows.length * b.lh + b.gap, 0);
+c.width = W; c.height = H;
+x.fillStyle = col.bg; x.fillRect(0, 0, W, H);
+x.fillStyle = col[s.level]; x.fillRect(0, 0, 14, H);
+x.textBaseline = 'top'; let y = pad;
+blocks.forEach(b => { x.font = b.font; x.fillStyle = b.colour; b.rows.forEach(r => { x.fillText(r, pad, y); y += b.lh; }); y += b.gap; });
+const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+if (!blob) { msg.textContent = 'Couldn’t make the image on this device.'; return; }
+const file = new File([blob], `weatherow-${s.loc.short.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`, { type: 'image/png' });
+try {
+if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Weatherow' }); return; }
+} catch (e) { if (e && e.name === 'AbortError') return; }
+const url = URL.createObjectURL(blob), a = document.createElement('a'); // no file sharing here: save it instead
+a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+msg.textContent = 'Image saved to your downloads.';
+}
+
 // ── INSTALL AS AN APP ─────────────────────────────────────────────────────
 // Android/desktop Chrome & Edge offer a real install prompt; iPhone/iPad need Share → Add to Home Screen.
 let deferredInstall = null;
@@ -4219,7 +4367,7 @@ if (!sheet || sheet.hidden) return;
 sheet.hidden = true;
 document.getElementById('install-btn').focus();
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInstallSheet(); closeSettings(); closeGuide(); if (mdOpen) mdToggle(null); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInstallSheet(); closeSettings(); closeGuide(); closeShare(); if (mdOpen) mdToggle(null); } });
 updateInstallButton();
 
 // ── COLLAPSIBLE SECTIONS ──────────────────────────────────────────────────
@@ -4349,6 +4497,14 @@ if (v === 'normal') document.documentElement.removeAttribute('data-text'); else 
 store.set('text', v);
 ['normal', 'large', 'xl'].forEach(k => document.getElementById('text-' + k).classList.toggle('active', k === v));
 requestAnimationFrame(redrawCharts);
+}
+
+function setLayout(v) {
+if (v === 'compact') document.documentElement.setAttribute('data-compact', ''); else document.documentElement.removeAttribute('data-compact');
+store.set('layout', v);
+document.getElementById('lay-standard').classList.toggle('active', v !== 'compact');
+document.getElementById('lay-compact').classList.toggle('active', v === 'compact');
+renderMetricCard(); requestAnimationFrame(redrawCharts);
 }
 
 // ── BACK TO TOP ───────────────────────────────────────────────────────────
