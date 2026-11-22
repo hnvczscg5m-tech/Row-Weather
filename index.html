@@ -470,6 +470,12 @@ details[open] > summary::after{transform:rotate(180deg)}
 .daily-card.best,.ext-card.best{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
 .ext-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px}
 .ext-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.ext-card.long{border-style:dashed;background:transparent}
+.chip.long{color:var(--muted);border-color:var(--muted);background:transparent}
+.ext-long-note{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:1.5;margin:-4px 0 12px}
+.ext-long-note:empty{display:none}
+table.ext tr.long td{color:var(--muted)}
+table.ext tr.long-head td{text-align:left;font-weight:600;color:var(--muted);background:var(--panel2);white-space:normal}
 .ext-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
 .ext-card-day{font-family:'Barlow Condensed',sans-serif;font-size:calc(18px * var(--fs,1));font-weight:700;line-height:1.1}
 .ext-card-date{font-size:calc(12px * var(--fs,1));color:var(--muted)}
@@ -870,7 +876,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </button>
 <div class="view-switch" role="tablist" aria-label="Forecast range">
 <button type="button" class="view-tab active" id="vt-live" role="tab" aria-selected="true" onclick="selectView('live')"><span class="lbl-long">Now &amp; 7 days</span><span class="lbl-short">7 days</span></button>
-<button type="button" class="view-tab" id="vt-ext" role="tab" aria-selected="false" onclick="selectView('ext')"><span class="lbl-long">Days 8–16</span><span class="lbl-short">8–16</span></button>
+<button type="button" class="view-tab" id="vt-ext" role="tab" aria-selected="false" onclick="selectView('ext')"><span class="lbl-long">Days 8–21</span><span class="lbl-short">8–21</span></button>
 </div>
 </nav>
 
@@ -1081,6 +1087,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <p><strong>Lightning / CAPE:</strong> CAPE above 1000 J/kg = clear the water. The Lightning section shows live strikes (Blitzortung.org) or rain radar for the last 2 hours (RainViewer).</p>
 <p><strong>Tides:</strong> Forecast sea level off Fremantle from Open-Meteo's ocean model (tide plus weather effects), shown relative to mean sea level. It is a model forecast, not the official tide table — check BOM tide tables for anything critical. All other venues are freshwater.</p>
 <p><strong>Wind:</strong> Forecast from Open-Meteo. Live observations from the nearest BOM station (named above); the status banner uses whichever of forecast or live wind is worse.</p>
+<p><strong>Days 17–21:</strong> A long-range outlook from the average of NOAA's GFS ensemble forecast (about a 50 km grid), via Open-Meteo. It is much less certain than the first 16 days and shows wind, rain and temperature only — use it for the trend, not for a decision.</p>
 <p><strong>Daylight:</strong> First and last light are civil twilight (sun 6° below the horizon), calculated in the page.</p>
 <p>Data: <a href="https://open-meteo.com" target="_blank" rel="noopener" style="color:var(--accent)">Open-Meteo</a> · Auto-refreshes every 10 min while open.</p>
 </div>
@@ -1090,15 +1097,16 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <!-- ════════ EXTENDED OUTLOOK VIEW ════════ -->
 <div class="view-panel" id="panel-ext">
 
-<div class="ext-warn"><strong>Days 8–16.</strong> Confidence drops the further out you look — treat the back end as a trend, not a precise forecast. ★ marks the best days to row in this window.</div>
+<div class="ext-warn"><strong>Days 8–21.</strong> Confidence drops the further out you look — treat the back end as a trend, not a precise forecast. Days 17–21 come from a coarser long-range forecast and show fewer readings. ★ marks the best days to row in days 8–16.</div>
 
 <div id="ext-status" class="status-banner loading" role="status" aria-live="polite">
 <div class="status-dot" aria-hidden="true"></div>
 <span><span class="spinner"></span> Loading extended outlook…</span>
 </div>
 
-<div class="section-title">Days 8–16 · <span id="ext-loc-name" style="color:var(--accent)">—</span></div>
+<div class="section-title">Days 8–21 · <span id="ext-loc-name" style="color:var(--accent)">—</span></div>
 <div class="ext-cards" id="ext-cards"></div>
+<div class="ext-long-note" id="ext-long-note"></div>
 
 <div class="ext-chart-wrap">
 <div class="ext-chart-title">Max Wind &amp; Gusts (<span id="ext-unit">km/h</span>)
@@ -3135,7 +3143,74 @@ async function renderObservations(loc) {
  }
 }
 
-// ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
+// ── LONG-RANGE OUTLOOK (days 17–21) ───────────────────────────────────────
+// The normal forecast stops at 16 days. Days 17–21 come from Open-Meteo's Ensemble API: the mean of NOAA's
+// GFS ensemble (0.5°, about 50 km, 3-hourly, runs to 35 days). It is coarser and less certain, has no rain
+// chance or UV, and is only fetched when the Days 8–21 tab is open. Values are kept in km/h like everything else.
+const LONG_LAST_DAY = 21, LONG_KEEP_MS = 3 * 3600000, longCache = {};
+const LONG_VARS = ['wind_speed_10m', 'wind_gusts_10m', 'wind_direction_10m', 'temperature_2m', 'precipitation', 'weather_code', 'cape'];
+function longUrl(loc, from, to, model) {
+return `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${LONG_VARS.join(',')}&models=${model}&start_date=${from}&end_date=${to}&timezone=${encodeURIComponent(loc.tz)}&wind_speed_unit=kmh`;
+}
+// One hourly series by name. With a "mean" model it is there directly; with a members model it is averaged here.
+function longSeries(hourly, name) {
+const own = hourly[name], members = Object.keys(hourly).filter(k => k.startsWith(name + '_member')).map(k => hourly[k]);
+const all = (own ? [own] : []).concat(members).filter(a => Array.isArray(a) && a.some(v => v != null));
+if (!all.length) return null;
+if (all.length === 1 || name === 'weather_code') return all[0];
+const n = all[0].length;
+if (name === 'wind_direction_10m') return Array.from({ length: n }, (_, i) => { let sx = 0, cy = 0, c = 0; // circular mean
+all.forEach(a => { if (a[i] != null) { sx += Math.sin(a[i] * Math.PI / 180); cy += Math.cos(a[i] * Math.PI / 180); c++; } });
+return c ? (Math.atan2(sx, cy) * 180 / Math.PI + 360) % 360 : null; });
+return Array.from({ length: n }, (_, i) => { let t = 0, c = 0; all.forEach(a => { if (a[i] != null) { t += a[i]; c++; } }); return c ? t / c : null; });
+}
+function longRows(json) {
+const h = json.hourly;
+if (!h || !Array.isArray(h.time)) throw new Error('no data');
+const S = Object.fromEntries(LONG_VARS.map(v => [v, longSeries(h, v)]));
+if (!S.wind_speed_10m) throw new Error('no wind data');
+const days = [...new Set(h.time.map(t => t.slice(0, 10)))];
+return days.map(date => {
+const idx = h.time.map((t, i) => t.startsWith(date) ? i : -1).filter(i => i >= 0);
+const vals = k => S[k] ? idx.map(i => S[k][i]).filter(v => v != null) : [];
+const ws = vals('wind_speed_10m'), gs = vals('wind_gusts_10m'), tp = vals('temperature_2m'), pr = vals('precipitation'), cp = vals('cape');
+let sx = 0, cy = 0; // dominant direction, weighted by wind speed
+if (S.wind_direction_10m) idx.forEach(i => { const d = S.wind_direction_10m[i], w = S.wind_speed_10m[i]; if (d != null && w != null) { sx += w * Math.sin(d * Math.PI / 180); cy += w * Math.cos(d * Math.PI / 180); } });
+const dayCodes = S.weather_code ? idx.filter(i => { const hr = +h.time[i].slice(11, 13); return hr >= 6 && hr <= 18; }).map(i => S.weather_code[i]).filter(v => v != null) : [];
+const code = dayCodes.some(c => STORM_CODES.includes(c)) ? 95 : dayCodes.length ? dayCodes.sort((a, b) => dayCodes.filter(v => v === a).length - dayCodes.filter(v => v === b).length).pop() : null;
+return { date, long: true, noData: !ws.length, wind: ws.length ? Math.max(...ws) : null, gust: gs.length ? Math.max(...gs) : null,
+dir: sx || cy ? (Math.atan2(sx, cy) * 180 / Math.PI + 360) % 360 : null, mx: tp.length ? Math.max(...tp) : null, mn: tp.length ? Math.min(...tp) : null,
+rain: pr.length ? pr.reduce((a, b) => a + b, 0) : null, pc: null, uv: null, cape: cp.length ? Math.max(...cp) : 0, code };
+}).filter(r => !r.noData);
+}
+// Returns { rows } | { pending } | { error } for this venue, starting a fetch when needed (only while the Days 8–21 tab is open)
+function longRangeFor(loc, idx, daily) {
+const first = daily.time[0], total = daily.time.length;
+if (total >= LONG_LAST_DAY) return { rows: [] };
+const add = n => new Date(Date.parse(first + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+const from = add(total), to = add(LONG_LAST_DAY - 1), key = `${loc.short}|${from}|${to}`;
+const c = longCache[loc.short];
+if (c && c.key === key && (c.pending || (Date.now() - c.at < LONG_KEEP_MS && !c.error))) return c;
+if (c && c.key === key && c.error && Date.now() - c.at < 60000) return c; // don't hammer a failing request
+if (currentView !== 'ext') return c && c.key === key ? c : { idle: true };
+const entry = longCache[loc.short] = { key, pending: true, at: Date.now() };
+(async () => {
+try {
+let json;
+try { json = await fetchJSON(longUrl(loc, from, to, 'ncep_gefs05_ensemble_mean')); }
+catch { json = await fetchJSON(longUrl(loc, from, to, 'ncep_gefs05')); } // same forecast as separate members, averaged in longSeries()
+entry.rows = longRows(json);
+if (!entry.rows.length) throw new Error('no data for these days yet');
+} catch (err) { entry.error = err.message || 'failed'; }
+finally {
+entry.pending = false; entry.at = Date.now();
+if (currentView === 'ext' && currentLoc === idx && cache[idx]) renderExtended(cache[idx].data, loc);
+}
+})();
+return entry;
+}
+
+// ── EXTENDED OUTLOOK (days 8–21) ──────────────────────────────────────────
 function renderExtended(data, loc) {
 data = unitData(data);
 document.getElementById('ext-loc-name').textContent = loc.short;
@@ -3174,52 +3249,63 @@ cape: dd.cape_max ? dd.cape_max[i] : 0
 });
 }
 
-// Day verdicts + best days to row (★): the calmest, driest GO days, up to 3
+// Days 17–21 from the long-range forecast (when it has arrived)
+const lr = longRangeFor(loc, LOCATIONS.indexOf(loc), dd);
+(lr.rows || []).forEach(r => rows.push({ ...r, wind: Math.round(wk(r.wind)), gust: r.gust == null ? null : Math.round(wk(r.gust)), rain: r.rain ?? 0 }));
+const longFrom = rows.findIndex(r => r.long); // -1 when there are none
+extLongFrom = longFrom;
+document.getElementById('ext-long-note').textContent = lr.pending ? 'Loading days 17–21 (long-range forecast)…'
+: lr.error ? `Days 17–21 unavailable (${lr.error}). Days 8–16 are unaffected.`
+: longFrom >= 0 ? 'Days 17–21 (dashed cards) are a long-range outlook: the average of NOAA\'s GFS ensemble forecast on a 50 km grid. Use them for the trend only. Gusts can be understated, and there is no rain chance or UV that far out.' : '';
+const lastDay = startIdx + rows.length;
+
+// Day verdicts + best days to row (★): the calmest, driest GO days in days 8–16, up to 3
 rows.forEach(r => {
-r.verdict = r.noData ? 'none' : assess({ wind: r.wind, gust: r.gust, code: r.code, cape: r.cape }, { ignoreUV: true }).level;
-r.score = r.wind + r.gust * 0.5 + r.pc * 0.15 + r.rain * 2;
+r.verdict = r.noData ? 'none' : assess({ wind: r.wind, gust: r.gust ?? 0, code: r.code, cape: r.cape }, { ignoreUV: true }).level;
+r.score = r.wind + (r.gust ?? r.wind) * 0.5 + (r.pc ?? 0) * 0.15 + r.rain * 2;
 });
-[...rows].filter(r => r.verdict === 'ok').sort((a, b) => a.score - b.score).slice(0, 3).forEach(r => r.best = true);
+[...rows].filter(r => r.verdict === 'ok' && !r.long).sort((a, b) => a.score - b.score).slice(0, 3).forEach(r => r.best = true);
 const bestCount = rows.filter(r => r.best).length;
 
 document.getElementById('ext-cards').innerHTML = rows.map(r => {
 const dt = new Date(r.date + 'T12:00:00');
-return `<div class="ext-card${r.best ? ' best' : ''}">
+return `<div class="ext-card${r.best ? ' best' : ''}${r.long ? ' long' : ''}">
 <div class="ext-card-top">
 <div><div class="ext-card-day">${dt.toLocaleDateString('en-AU',{weekday:'short'})}</div>
 <div class="ext-card-date">${dt.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
 <div class="ext-card-icon">${wmoIcon(r.code)}</div>
 </div>
-<div class="chips">${r.verdict === 'none' ? '<span class="chip none">No data</span>' : chipHTML(r.verdict)}${r.best ? '<span class="chip best">★ Best</span>' : ''}</div>
-<div class="ext-card-row"><span>Wind / gust</span><span>${r.noData ? '—' : `${windArrowSVG(r.dir, r.wind)} ${r.wind} / ${r.gust}`}</span></div>
-<div class="ext-card-row"><span>Rain</span><span>${r.pc}% · ${r.rain.toFixed(1)} mm</span></div>
-<div class="ext-card-row"><span>Temp</span><span>${Math.round(r.mx)}° / ${Math.round(r.mn)}°</span></div>
+<div class="chips">${r.verdict === 'none' ? '<span class="chip none">No data</span>' : chipHTML(r.verdict)}${r.best ? '<span class="chip best">★ Best</span>' : ''}${r.long ? '<span class="chip long">Long-range</span>' : ''}</div>
+<div class="ext-card-row"><span>Wind / gust</span><span>${r.noData ? '—' : `${r.dir == null ? '' : windArrowSVG(r.dir, r.wind)} ${r.wind} / ${r.gust ?? '—'}`}</span></div>
+<div class="ext-card-row"><span>Rain</span><span>${r.pc == null ? '' : r.pc + '% · '}${r.rain.toFixed(1)} mm</span></div>
+<div class="ext-card-row"><span>Temp</span><span>${r.mx == null ? '—' : `${Math.round(r.mx)}° / ${Math.round(r.mn)}°`}</span></div>
 </div>`;
 }).join('');
 document.getElementById('ext-status').innerHTML =
-`<div class="status-dot" aria-hidden="true"></div><span>${bestCount ? `★ ${bestCount} best day${bestCount>1?'s':''} to row` : 'No clear GO days'} in days 8–${total} · ${CREW_LIMITS[crewLevel].label} limits</span>`;
+`<div class="status-dot" aria-hidden="true"></div><span>${bestCount ? `★ ${bestCount} best day${bestCount>1?'s':''} to row` : 'No clear GO days'} in days 8–${Math.min(total, lastDay)} · ${CREW_LIMITS[crewLevel].label} limits${longFrom >= 0 ? ` · outlook to day ${lastDay}` : ''}</span>`;
 document.getElementById('ext-status').className = 'status-banner ' + (bestCount ? 'safe' : 'caution');
 
 // Full table (inside "Full table")
 const head = ['Date','Day','Sky','Max °C','Min °C','Rain mm','Rain %',`Wind ${WU()}`,`Gust ${WU()}`,'Dir','UV','Storm'];
 let html = '<thead><tr>' + head.map(x=>`<th>${x}</th>`).join('') + '</tr></thead><tbody>';
-rows.forEach(r => {
+rows.forEach((r, ri) => {
+if (ri === longFrom) html += `<tr class="long-head"><td colspan="${head.length}">Days 17–${lastDay} · long-range outlook (GFS ensemble average, 50 km grid) — trend only</td></tr>`;
 const dt = new Date(r.date + 'T12:00:00');
 const day = dt.toLocaleDateString('en-AU',{weekday:'short'});
 const dateLbl = dt.toLocaleDateString('en-AU',{day:'2-digit',month:'short'});
 const uvI = uvInfo(r.uv !== null ? Math.round(r.uv) : null);
 const cI = capeRisk(r.cape);
-html += `<tr>
+html += `<tr${r.long ? ' class="long"' : ''}>
 <td>${dateLbl}</td>
 <td>${day}</td>
 <td style="font-size:calc(16px * var(--fs,1))">${wmoIcon(r.code)}</td>
-<td>${Math.round(r.mx)}</td>
-<td style="color:var(--muted)">${Math.round(r.mn)}</td>
+<td>${r.mx == null ? '—' : Math.round(r.mx)}</td>
+<td style="color:var(--muted)">${r.mn == null ? '—' : Math.round(r.mn)}</td>
 <td>${r.rain.toFixed(1)}</td>
-<td>${r.pc}</td>
-<td class="w-${windCls(r.wind)}">${windArrowSVG(r.dir, r.wind)} ${r.wind}</td>
-<td class="w-${gustCls(r.gust)}">${r.gust}</td>
-<td>${deg2comp(r.dir)}</td>
+<td>${r.pc ?? '—'}</td>
+<td class="w-${windCls(r.wind)}">${r.dir == null ? '' : windArrowSVG(r.dir, r.wind)} ${r.wind}</td>
+<td class="w-${gustCls(r.gust ?? 0)}">${r.gust ?? '—'}</td>
+<td>${r.dir == null ? '—' : deg2comp(r.dir)}</td>
 <td class="w-${uvI.cls||'ok'}">${r.uv!==null?Math.round(r.uv):'—'}</td>
 <td class="w-${cI.cls}">${cI.label}</td>
 </tr>`;
@@ -3233,6 +3319,7 @@ drawExtTemp('ext-temp-canvas', labels, rows.map(r=>r.mx), rows.map(r=>r.mn));
 drawExtRain('ext-rain-canvas', labels, rows.map(r=>r.rain), rows.map(r=>r.pc));
 }
 
+let extLongFrom = -1; // index of the first long-range day in the extended charts (-1 = none)
 function extCanvasSetup(id, n) {
 const canvas = document.getElementById(id);
 const dpr = window.devicePixelRatio || 1;
@@ -3248,6 +3335,13 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 ctx.clearRect(0, 0, cssW, cssH);
 const innerW = cssW - padL - padR;
 const x = i => n === 1 ? padL + innerW/2 : padL + (i/(n-1))*innerW;
+if (extLongFrom > 0 && extLongFrom < n) { // shade the long-range days
+const x0 = (x(extLongFrom - 1) + x(extLongFrom)) / 2;
+ctx.fillStyle = K === PALETTES.sun ? 'rgba(11,23,38,.07)' : 'rgba(255,255,255,.05)';
+ctx.fillRect(x0, padT - 12, cssW - padR / 2 - x0, plotH + 12);
+ctx.strokeStyle = K.muted; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x0, padT - 12); ctx.lineTo(x0, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
+ctx.fillStyle = K.muted; ctx.font = '700 9px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('LONG-RANGE', x0 + 4, padT - 11);
+}
 return {ctx, cssW, cssH, padL, padR, padT, padB, plotH, x};
 }
 
@@ -3274,7 +3368,7 @@ function drawExtWind(id, labels, wind, gust) {
 const n = labels.length, S = extCanvasSetup(id, n);
 const {ctx} = S;
 const big = KN() ? 5 : 10;
-const maxVal = Math.max(4 * big, Math.ceil(Math.max(...gust) / big) * big);
+const maxVal = Math.max(4 * big, Math.ceil(Math.max(...gust.map((g, i) => g ?? wind[i])) / big) * big);
 const y = v => S.padT + S.plotH - (v/maxVal)*S.plotH;
 extGrid(ctx, S, maxVal);
 // suspend threshold
@@ -3292,7 +3386,7 @@ for (let i=0;i<n;i++){
 const cx = S.x(i);
 // gust (back, orange)
 ctx.fillStyle = K.gustFill;
-ctx.fillRect(cx-bw/2, y(gust[i]), bw, S.padT+S.plotH - y(gust[i]));
+if (gust[i] != null) ctx.fillRect(cx-bw/2, y(gust[i]), bw, S.padT+S.plotH - y(gust[i]));
 // wind (front, teal) — colour by risk
 const w = wind[i];
 ctx.fillStyle = levelHex(windCls(w));
@@ -3307,8 +3401,8 @@ extLabels(ctx, S, labels);
 function drawExtTemp(id, labels, mx, mn) {
 const n = labels.length, S = extCanvasSetup(id, n);
 const {ctx} = S;
-const lo = Math.floor(Math.min(...mn)/5)*5;
-const hi = Math.ceil(Math.max(...mx)/5)*5;
+const lo = Math.floor(Math.min(...mn.filter(v => v != null))/5)*5;
+const hi = Math.ceil(Math.max(...mx.filter(v => v != null))/5)*5;
 const range = Math.max(1, hi-lo);
 const y = v => S.padT + S.plotH - ((v-lo)/range)*S.plotH;
 // grid in temp scale
@@ -3320,17 +3414,17 @@ ctx.beginPath(); ctx.moveTo(S.padL,yy); ctx.lineTo(S.cssW-S.padR,yy); ctx.stroke
 ctx.fillStyle=K.muted; ctx.fillText(Math.round(val), S.padL-6, yy);
 }
 const line = (arr,col)=>{
-ctx.beginPath(); ctx.moveTo(S.x(0), y(arr[0]));
-for(let i=1;i<n;i++) ctx.lineTo(S.x(i), y(arr[i]));
+ctx.beginPath(); let on = false;
+for(let i=0;i<n;i++){ if (arr[i] == null) continue; on ? ctx.lineTo(S.x(i), y(arr[i])) : ctx.moveTo(S.x(i), y(arr[i])); on = true; }
 ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.stroke();
-for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(S.x(i),y(arr[i]),3,0,2*Math.PI);
+for(let i=0;i<n;i++){ if (arr[i] == null) continue; ctx.beginPath();ctx.arc(S.x(i),y(arr[i]),3,0,2*Math.PI);
 ctx.fillStyle=K.dot;ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();}
 };
 line(mx,K.red); line(mn,K.tide);
 // value labels for max
 ctx.fillStyle=K.text; ctx.font='700 10px "Barlow Condensed",sans-serif';
 ctx.textAlign='center'; ctx.textBaseline='bottom';
-for(let i=0;i<n;i++) ctx.fillText(Math.round(mx[i])+'°', S.x(i), y(mx[i])-6);
+for(let i=0;i<n;i++) if (mx[i] != null) ctx.fillText(Math.round(mx[i])+'°', S.x(i), y(mx[i])-6);
 extLabels(ctx, S, labels);
 }
 
@@ -3351,10 +3445,10 @@ ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(rain[i].toFixed(1)
 }
 // chance % line (0-100 mapped onto same plot height)
 const yp = v => S.padT + S.plotH - (v/100)*S.plotH;
-ctx.beginPath(); ctx.moveTo(S.x(0), yp(pc[0]));
-for(let i=1;i<n;i++) ctx.lineTo(S.x(i), yp(pc[i]));
+ctx.beginPath(); let onP = false; // no rain chance in the long-range days: the line simply stops
+for(let i=0;i<n;i++){ if (pc[i] == null) continue; onP ? ctx.lineTo(S.x(i), yp(pc[i])) : ctx.moveTo(S.x(i), yp(pc[i])); onP = true; }
 ctx.strokeStyle=K.yellow; ctx.lineWidth=2; ctx.stroke();
-for(let i=0;i<n;i++){ctx.beginPath();ctx.arc(S.x(i),yp(pc[i]),2.5,0,2*Math.PI);
+for(let i=0;i<n;i++){ if (pc[i] == null) continue; ctx.beginPath();ctx.arc(S.x(i),yp(pc[i]),2.5,0,2*Math.PI);
 ctx.fillStyle=K.yellow;ctx.fill();}
 extLabels(ctx, S, labels);
 }
