@@ -418,7 +418,22 @@ font-size:calc(14px * var(--fs,1));letter-spacing:.3px;padding:2px 9px;border-ra
 .freshness{font-size:calc(14px * var(--fs,1));color:var(--muted)}
 .freshness.stale{color:var(--yellow);font-weight:600}
 .prefs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.fresh-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:1 1 240px;min-width:0}
+/* phones: verdict banner and the controls under it are kept compact (one slim banner + one row) */
+@media(max-width:700px){
+.status-banner{padding:9px 12px;gap:8px;margin-bottom:8px;font-size:calc(17px * var(--fs,1));line-height:1.2}
+.status-banner small{font-size:calc(12px * var(--fs,1))}
+.status-banner .wx-ico{font-size:calc(20px * var(--fs,1))}
+#status-text{gap:8px}
+.status-banner .status-dot{display:none}
+.info-row{flex-wrap:nowrap;gap:8px;margin:0 0 10px}
+.freshness{flex:1 1 0;min-width:0;font-size:calc(12px * var(--fs,1));line-height:1.25}
+.prefs{flex:0 0 auto;flex-wrap:nowrap;gap:6px}
+.seg{padding:2px}
+.seg-btn{min-height:40px;padding:0 9px}
+.sun-toggle{min-height:44px;min-width:44px;padding:0 10px}
+html[data-text] .info-row{flex-wrap:wrap}
+html[data-text] .freshness{flex:1 1 100%}
+}
 .seg{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:3px}
 .seg-label{font-size:calc(13px * var(--fs,1));color:var(--muted);padding:0 8px}
 .seg-btn{min-height:44px;padding:0 12px;border:none;background:none;color:var(--muted);border-radius:8px;
@@ -843,15 +858,15 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 </div>
 
 <div class="info-row">
-<div class="fresh-row"><div class="freshness" id="freshness">Loading…</div>
-<button type="button" class="sun-toggle" id="settings-btn" onclick="openSettings()" aria-label="Settings: session times, sections, text size and units">⚙</button></div>
+<div class="freshness" id="freshness">Loading…</div>
 <div class="prefs">
 <div class="seg" role="group" aria-label="Wind limits for">
-<span class="seg-label">Limits</span>
+<span class="seg-label lbl-long">Limits</span>
 <button type="button" class="seg-btn" id="crew-senior" aria-pressed="true" onclick="setCrewLevel('senior')">Seniors</button>
 <button type="button" class="seg-btn" id="crew-novice" aria-pressed="false" onclick="setCrewLevel('novice')">Novices</button>
 </div>
-<button type="button" class="sun-toggle" id="sun-toggle" aria-pressed="false" onclick="toggleSunMode()">☀ Sun mode</button>
+<button type="button" class="sun-toggle" id="sun-toggle" aria-pressed="false" aria-label="Sun mode" title="Sun mode" onclick="toggleSunMode()">☀<span class="lbl-long"> Sun mode</span></button>
+<button type="button" class="sun-toggle" id="settings-btn" onclick="openSettings()" aria-label="Settings: session times, sections, text size and units" title="Settings">⚙</button>
 </div>
 </div>
 
@@ -3507,7 +3522,7 @@ const ago = mins < 1 ? 'just now' : `${mins} min ago`;
 if (refreshing) { el.className = 'freshness'; el.textContent = `Updating… (showing forecast from ${ago})`; return; }
 const stale = mins >= STALE_MIN;
 el.className = 'freshness' + (stale ? ' stale' : '');
-el.textContent = stale ? `⚠ Forecast updated ${ago} — tap Refresh` : `Forecast updated ${ago}`;
+el.textContent = stale ? `⚠ Updated ${ago} — tap Refresh` : `Updated ${ago}`;
 }
 
 // ── CONTROLS ──────────────────────────────────────────────────────────────
