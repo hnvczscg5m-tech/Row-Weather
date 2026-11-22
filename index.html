@@ -743,6 +743,10 @@ background:var(--panel2);color:var(--text);border:1px solid var(--border);border
 .set-item b{font-family:'Barlow Condensed',sans-serif;font-size:calc(16px * var(--fs,1))}
 .set-item small{display:block;color:var(--muted);font-size:calc(12px * var(--fs,1))}
 .set-item button{min-height:36px;padding:0 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;font:inherit;font-size:calc(13px * var(--fs,1));cursor:pointer}
+.set-item-btns{display:flex;gap:6px;flex:0 0 auto}
+.set-item.off > span:first-child{opacity:.55}
+.set-item .set-onoff{min-width:52px;font-weight:600}
+.set-item .set-onoff[aria-checked=true]{background:var(--accent2);border-color:var(--accent2);color:#fff}
 .set-add{border-top:1px dashed var(--border);padding-top:10px;margin-top:8px}
 .ss-next{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
 .ss-next-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:calc(13px * var(--fs,1))}
@@ -1196,7 +1200,7 @@ Install Weatherow app</button>
 <button type="button" class="rw-btn active" onclick="addSession()">Add session</button>
 </div>
 </div>
-<div class="sheet-note" id="set-msg">Add each regular session with its days. Weatherow shows a summary card for whichever comes next, at the selected venue.</div>
+<div class="sheet-note" id="set-msg">Add each regular session with its days. Weatherow shows a summary card for whichever comes next, at the selected venue. Switch a session Off to pause it without deleting it; with every session off, the card is hidden.</div>
 </div>
 <div class="set-group">
 <div class="set-label">Sections</div>
@@ -4125,7 +4129,10 @@ const daysText = days => days.length === 7 ? 'Every day' : DAY_ORDER.filter(d =>
 let setDays = new Set([1, 2, 3, 4, 5]);
 function renderSettingsSessions() {
 const list = getSessions();
-document.getElementById('set-list').innerHTML = list.length ? list.map((x, i) => `<div class="set-item"><span><b>${hm12(x.start)} – ${hm12(x.end)}</b><small>${daysText(x.days)}</small></span><button type="button" onclick="removeSession(${i})" aria-label="Remove ${hm12(x.start)} session">Remove</button></div>`).join('')
+document.getElementById('set-list').innerHTML = list.length ? list.map((x, i) => { const on = x.on !== false;
+return `<div class="set-item${on ? '' : ' off'}"><span><b>${hm12(x.start)} – ${hm12(x.end)}</b><small>${daysText(x.days)}${on ? '' : ' · switched off'}</small></span>
+<span class="set-item-btns"><button type="button" class="set-onoff" role="switch" aria-checked="${on}" onclick="toggleSession(${i})" aria-label="${hm12(x.start)} session, ${daysText(x.days)}: ${on ? 'on' : 'off'}">${on ? 'On' : 'Off'}</button>
+<button type="button" onclick="removeSession(${i})" aria-label="Remove ${hm12(x.start)} session">Remove</button></span></div>`; }).join('')
 : '<div class="sheet-note" style="margin-bottom:8px">No sessions saved yet.</div>';
 document.getElementById('set-days').innerHTML = DAY_ORDER.map(d => `<button type="button" class="set-day" aria-pressed="${setDays.has(d)}" onclick="toggleSetDay(${d})">${DAY_SHORT[d]}</button>`).join('');
 }
@@ -4152,6 +4159,7 @@ saveSessions(list);
 msg.textContent = 'Session added.';
 renderSettingsSessions(); renderSession();
 }
+function toggleSession(i) { const list = getSessions(); if (!list[i]) return; list[i].on = list[i].on === false; saveSessions(list); renderSettingsSessions(); renderSession(); }
 function removeSession(i) { const list = getSessions(); list.splice(i, 1); saveSessions(list); renderSettingsSessions(); renderSession(); }
 function setUnit(u) {
 if ((u === 'kn') === KN()) return;
@@ -4169,8 +4177,9 @@ if (entry) { render(entry.data, LOCATIONS[currentLoc]); redrawCharts(); }
 // Looks up to 7 days ahead for the saved sessions, shows the next one in full and the two after it in brief.
 function renderSession() {
 const el = document.getElementById('session-card');
-const { loc, hourly: h } = rwState, sessions = getSessions();
+const { loc, hourly: h } = rwState, saved = getSessions(), sessions = saved.filter(x => x.on !== false);
 if (!el || !loc || !h) return;
+if (saved.length && !sessions.length) { el.innerHTML = ''; return; } // every session is switched off: no card at all
 if (!sessions.length) {
 el.innerHTML = `<div class="ss-card ss-prompt"><span>Set your session times to get a summary for the next one here.</span><button type="button" class="ss-link" onclick="openSettings()">Set sessions</button></div>`;
 return;
@@ -4198,7 +4207,7 @@ mid: idx[Math.floor((idx.length - 1) / 2)], storm: idx.some(i => STORM_CODES.inc
 r.v = assess({ wind: r.wind ? Math.round(r.wind[1]) : 0, gust: r.gust ? Math.round(r.gust[1]) : 0, code: r.storm ? 95 : h.weathercode?.[r.mid], cape: r.cape ? r.cape[1] : 0, uv: r.uv ? Math.round(r.uv[1]) : null });
 return r; };
 const usable = occ.map(o => ({ o, r: study(o) })).filter(x => x.r).slice(0, 3);
-const foot = `<div class="ss-foot"><span>${sessions.length} session time${sessions.length === 1 ? '' : 's'} saved · ${CREW_LIMITS[crewLevel].label} limits</span><button type="button" class="ss-link" onclick="openSettings()">Change sessions</button></div>`;
+const foot = `<div class="ss-foot"><span>${sessions.length === saved.length ? `${saved.length} session time${saved.length === 1 ? '' : 's'} saved` : `${sessions.length} of ${saved.length} session times on`} · ${CREW_LIMITS[crewLevel].label} limits</span><button type="button" class="ss-link" onclick="openSettings()">Change sessions</button></div>`;
 if (!usable.length) {
 el.innerHTML = `<div class="ss-card"><div class="ss-kicker">Next session · ${esc(loc.short)}</div><div class="ss-why">No forecast is available yet for your next session.</div>${foot}</div>`;
 return;
