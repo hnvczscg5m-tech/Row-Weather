@@ -614,6 +614,40 @@ display:inline-flex;align-items:center;gap:8px}
 .cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5}
 .cm-foot a{color:var(--accent);white-space:nowrap;flex:0 0 auto;min-height:32px;display:inline-flex;align-items:center}
 
+/* ===== Session summary card + settings ===== */
+#session-card:empty{display:none}
+.ss-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.ss-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.ss-kicker{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.ss-when{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;line-height:1.15}
+.ss-why{font-size:13px;line-height:1.45;margin:2px 0 8px}
+.ss-why.warn{color:var(--yellow)}.ss-why.danger{color:var(--red)}.ss-why.ok{color:var(--green)}
+.ss-grid{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:14px;line-height:1.4}
+.ss-grid dt{color:var(--muted);white-space:nowrap}
+.ss-grid dd{margin:0;font-weight:600;min-width:0}
+.ss-grid dd small{font-weight:400;color:var(--muted);font-size:12px}
+.ss-flag{color:var(--yellow)}
+.ss-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--muted)}
+.ss-link{background:none;border:none;padding:6px 0;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.ss-prompt{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+#settings-btn{padding:0 13px;font-size:19px}
+.set-group{padding:12px 0;border-top:1px solid var(--border)}
+.set-label{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;margin-bottom:8px}
+.set-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.set-row label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.set-days{gap:5px}
+.set-day{min-width:40px;min-height:40px;padding:0 4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);border-radius:8px;font:600 14px 'Barlow Condensed',sans-serif;cursor:pointer}
+.set-day[aria-pressed=true]{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.set-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:14px}
+.set-item b{font-family:'Barlow Condensed',sans-serif;font-size:16px}
+.set-item small{display:block;color:var(--muted);font-size:12px}
+.set-item button{min-height:36px;padding:0 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;font:inherit;font-size:13px;cursor:pointer}
+.set-add{border-top:1px dashed var(--border);padding-top:10px;margin-top:8px}
+.ss-next{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.ss-next-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.ss-next-row small{color:var(--muted);font-size:12px}
+.set-row input[type=time]{min-height:44px;padding:0 10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:8px;font:inherit;font-size:16px}
+
 /* ===== Quick-reference reading card ===== */
 .risk-item{cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 .risk-item::after{content:'';position:absolute;right:9px;top:11px;width:6px;height:6px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);opacity:.7}
@@ -771,8 +805,12 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <button type="button" class="seg-btn" id="crew-novice" aria-pressed="false" onclick="setCrewLevel('novice')">Novices</button>
 </div>
 <button type="button" class="sun-toggle" id="sun-toggle" aria-pressed="false" onclick="toggleSunMode()">☀ Sun mode</button>
+<button type="button" class="sun-toggle" id="settings-btn" onclick="openSettings()" aria-label="Settings: session time and units">⚙</button>
 </div>
 </div>
+
+<!-- Session summary: the forecast for your usual session time -->
+<div id="session-card"></div>
 
 <!-- Daylight: first light, sunrise, sunset, last light -->
 <div class="daylight" id="daylight"></div>
@@ -874,7 +912,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <button type="button" id="wm-play" onclick="wmPlay()" aria-label="Play forecast">▶</button>
 <input type="range" id="wm-slider" min="0" max="47" step="1" value="0" oninput="wmSeek(+this.value)" aria-label="Forecast time">
 </div>
-<div class="wm-legend" id="wm-legend" hidden><div class="wm-ramp" id="wm-ramp"></div><div class="wm-ticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50+ km/h</span></div></div>
+<div class="wm-legend" id="wm-legend" hidden><div class="wm-ramp" id="wm-ramp"></div><div class="wm-ticks" id="wm-ticks"></div></div>
 <div class="cm-foot"><span>Forecast wind over the surrounding region for the next 48 hours. Arrows point the way the wind is blowing. This is a regional picture — the forecast model can't show differences across a single course.</span></div>
 </div>
 </section>
@@ -946,7 +984,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="ext-cards" id="ext-cards"></div>
 
 <div class="ext-chart-wrap">
-<div class="ext-chart-title">Max Wind &amp; Gusts (km/h)
+<div class="ext-chart-title">Max Wind &amp; Gusts (<span id="ext-unit">km/h</span>)
 <span class="leg">
 <span><span class="sw" style="background:var(--accent)"></span>Wind</span>
 <span><span class="sw" style="background:var(--orange)"></span>Gust</span>
@@ -991,6 +1029,39 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <button type="button" class="install-btn" id="install-btn" onclick="installApp()" hidden>
 <svg class="share-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 8v6M9 11l3 3 3-3"/></svg>
 Install Weatherow app</button>
+</div>
+
+<div class="sheet-backdrop" id="settings-sheet" hidden onclick="if(event.target===this)closeSettings()">
+<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+<div class="sheet-head">
+<div><div class="sheet-title" id="settings-title">Settings</div>
+<div class="sheet-note">Saved on this phone only.</div></div>
+<button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close">✕</button>
+</div>
+<div class="set-group">
+<div class="set-label">Session times</div>
+<div id="set-list"></div>
+<div class="set-add">
+<div class="set-row">
+<label>Start <input type="time" id="set-start" step="300" value="05:30"></label>
+<label>Finish <input type="time" id="set-end" step="300" value="07:30"></label>
+</div>
+<div class="set-row set-days" id="set-days" role="group" aria-label="Days"></div>
+<div class="set-row">
+<button type="button" class="rw-btn active" onclick="addSession()">Add session</button>
+</div>
+</div>
+<div class="sheet-note" id="set-msg">Add each regular session with its days. Weatherow shows a summary card for whichever comes next, at the selected venue.</div>
+</div>
+<div class="set-group">
+<div class="set-label">Wind speed units</div>
+<div class="set-row">
+<button type="button" class="rw-btn" id="unit-kmh" onclick="setUnit('kmh')">km/h</button>
+<button type="button" class="rw-btn" id="unit-kn" onclick="setUnit('kn')">Knots</button>
+</div>
+<div class="sheet-note">In knots the limits are rounded to whole knots, for example 20 km/h becomes 11 kn.</div>
+</div>
+</div>
 </div>
 
 <div class="sheet-backdrop" id="install-sheet" hidden onclick="if(event.target===this)closeInstallSheet()">
@@ -1205,6 +1276,21 @@ set(k, v) { try { localStorage.setItem('rowwx.' + k, v); } catch {} }
 
 let crewLevel = CREW_LIMITS[store.get('crew', 'senior')] ? store.get('crew', 'senior') : 'senior';
 
+// ── WIND UNITS (km/h or knots) ────────────────────────────────────────────
+// Everything is fetched and stored in km/h. When knots is chosen, wind values are converted once as the
+// data enters render() / renderExtended(), and every km/h-based limit goes through wk() or applyCrewLimits().
+let windUnit = store.get('unit', 'kmh') === 'kn' ? 'kn' : 'kmh';
+const KN = () => windUnit === 'kn';
+const WU = () => KN() ? 'kn' : 'km/h';
+const wk = v => KN() ? v / 1.852 : v; // a km/h figure → the unit on screen
+function unitData(d) {
+if (!KN() || !d) return d;
+const c = v => (typeof v === 'number' ? v / 1.852 : v);
+const conv = (o, keys) => { if (!o) return o; const out = { ...o }; keys.forEach(k => { if (out[k] != null) out[k] = Array.isArray(out[k]) ? out[k].map(c) : c(out[k]); }); return out; };
+return { ...d, current: conv(d.current, ['wind_speed_10m', 'wind_gusts_10m']), hourly: conv(d.hourly, ['wind_speed_10m', 'wind_gusts_10m']),
+daily: conv(d.daily, ['wind_speed_10m_max', 'wind_gusts_10m_max']) };
+}
+
 // ── CHART COLOURS (canvas can't read CSS variables, so one palette per theme) ──
 const PALETTES = {
 dark: { text:'#deeaf8', muted:'#6b8fb5', label:'#8fb0d0', faint:'#5a7da0', grid:'rgba(0,180,216,0.08)', grid2:'rgba(0,180,216,0.14)',
@@ -1304,10 +1390,10 @@ const r = rel * Math.PI / 180;
 return { rel, speed, head: speed * Math.cos(r), cross: speed * Math.sin(r) };
 }
 // Strength words describe the wind only — never "safe"/"unsafe"
-const strength = s => s < 6 ? 'Light' : s < 15 ? 'Moderate' : s < 25 ? 'Fresh' : 'Strong';
+const strength = s => s < wk(6) ? 'Light' : s < wk(15) ? 'Moderate' : s < wk(25) ? 'Fresh' : 'Strong';
 function classify(c) {
 if (!c) return null;
-if (c.speed < 2) return { kind: 'calm', label: 'Calm', plain: 'Calm', short: 'Calm' };
+if (c.speed < wk(2)) return { kind: 'calm', label: 'Calm', plain: 'Calm', short: 'Calm' };
 const off = Math.min(c.rel, 360 - c.rel); // 0 = from dead ahead, 180 = from dead astern
 const side = c.cross > 0 ? 'right' : 'left';
 const S = strength(c.speed), L = side[0].toUpperCase();
@@ -1320,7 +1406,7 @@ return { kind: 'tail', label: `${S} tailwind`, plain: 'Tailwind', short: 'Tail' 
 // One call for the UI: handles missing data and calm without a direction
 function analyse(windFrom, speed, heading) {
 if (!isNum(speed) || !isNum(heading)) return null;
-if (speed < 2) return { comps: { rel: null, speed, head: 0, cross: 0 }, cls: classify({ speed }) };
+if (speed < wk(2)) return { comps: { rel: null, speed, head: 0, cross: 0 }, cls: classify({ speed }) };
 const comps = components(windFrom, speed, heading);
 return comps ? { comps, cls: classify(comps) } : null;
 }
@@ -1486,8 +1572,8 @@ g += `<g transform="translate(${W - 24} 28)"><circle r="16" fill="#fff" stroke="
 // Wind (top-left): live reading if there is one, otherwise the forecast for now
 const w = (rwState.loc === loc && rwState.live && RowingWind.isNum(rwState.live.speed)) ? rwState.live : (rwState.loc === loc ? rwState.fc : null);
 if (w && RowingWind.isNum(w.speed)) {
-const calm = w.speed < 2 || !RowingWind.isNum(w.dir);
-const text = calm ? 'Wind calm' : `${w.dirTxt || deg2comp(w.dir)} ${Math.round(w.speed)} km/h`;
+const calm = w.speed < wk(2) || !RowingWind.isNum(w.dir);
+const text = calm ? 'Wind calm' : `${w.dirTxt || deg2comp(w.dir)} ${Math.round(w.speed)} ${WU()}`;
 const bw = text.length * 6.4 + (calm ? 14 : 36);
 g += `<g transform="translate(8 14)"><rect width="${bw.toFixed(1)}" height="28" rx="14" fill="#fff" stroke="${ink}" stroke-width="1"/>
 ${calm ? '' : `<g transform="translate(16 14) rotate(${(w.dir + 180) % 360})"><path d="M0 -9 L5 3 L1.6 1.5 L1.6 9 L-1.6 9 L-1.6 1.5 L-5 3Z" fill="#0077b6"/></g>`}
@@ -1675,6 +1761,7 @@ document.getElementById('wm-tiles').innerHTML = imgs.join('');
 const has = !!wm.data;
 document.getElementById('wm-load').hidden = has;
 ['wm-controls', 'wm-legend', 'wm-time'].forEach(id => { document.getElementById(id).hidden = !has; });
+document.getElementById('wm-ticks').innerHTML = [0, 10, 20, 30, 40, 50].map((v, k) => `<span>${Math.round(wk(v))}${k === 5 ? '+ ' + WU() : ''}</span>`).join('');
 document.getElementById('wm-ramp').style.background = `linear-gradient(90deg,${WM_STOPS.filter(s => s[0] <= 50).map(s => `rgb(${s[1]}) ${s[0] * 2}%`).join(',')})`;
 if (has) { document.getElementById('wm-slider').max = wm.data.times.length - 1; document.getElementById('wm-slider').value = wm.idx; }
 wmDraw();
@@ -1752,7 +1839,7 @@ ctx.restore();
 }
 const here = sample(v.W / 2, v.H / 2), hs = Math.hypot(here.u, here.n);
 const when = new Date(d.times[i]).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: loc.tz });
-document.getElementById('wm-time').textContent = `${when} · ${gust ? 'gusts' : 'wind'} ${Math.round(here.val)} km/h${hs >= 2 ? ' ' + deg2comp((Math.atan2(-here.u, -here.n) * 180 / Math.PI + 360) % 360) : ''} at ${loc.short}`;
+document.getElementById('wm-time').textContent = `${when} · ${gust ? 'gusts' : 'wind'} ${Math.round(wk(here.val))} ${WU()}${hs >= 2 ? ' ' + deg2comp((Math.atan2(-here.u, -here.n) * 180 / Math.PI + 360) % 360) : ''} at ${loc.short}`;
 }
 // venue marker
 ctx.beginPath(); ctx.arc(v.W / 2, v.H / 2, 6, 0, 2 * Math.PI);
@@ -1763,24 +1850,24 @@ ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#0b1726'; ctx.lineWidth =
 // rwState is filled by render() (forecast) and renderObservations() (live)
 let rwState = { loc: null, fc: null, hourly: null, hIdx: 0, daily: null, live: null };
 const RW_KIND_VAR = { head: 'var(--orange)', tail: 'var(--green)', cross: 'var(--accent)', calm: 'var(--muted)' };
-const fmtHead = c => Math.abs(c.head) < 0.5 ? 'None' : `${c.head > 0 ? 'Headwind' : 'Tailwind'} ${Math.round(Math.abs(c.head))} km/h`;
-const fmtCross = c => Math.abs(c.cross) < 0.5 ? 'None' : `${Math.round(Math.abs(c.cross))} km/h from ${c.cross > 0 ? 'right' : 'left'}`;
+const fmtHead = c => Math.abs(c.head) < 0.5 ? 'None' : `${c.head > 0 ? 'Headwind' : 'Tailwind'} ${Math.round(Math.abs(c.head))} ${WU()}`;
+const fmtCross = c => Math.abs(c.cross) < 0.5 ? 'None' : `${Math.round(Math.abs(c.cross))} ${WU()} from ${c.cross > 0 ? 'right' : 'left'}`;
 const fmtWind = (speed, dir, dirTxt) => !RowingWind.isNum(speed) ? '—' :
-speed < 2 ? 'Calm' : `${RowingWind.isNum(dir) ? `${dirTxt || deg2comp(dir)} (${deg3(dir)})` : (dirTxt || '—')} · ${Math.round(speed)} km/h`;
+speed < wk(2) ? 'Calm' : `${RowingWind.isNum(dir) ? `${dirTxt || deg2comp(dir)} (${deg3(dir)})` : (dirTxt || '—')} · ${Math.round(speed)} ${WU()}`;
 
 // ── Boat classes (overhead drawings) ──────────────────────────────────────
 // n = rowers · scull = two oars each · cox = coxswain (drawn in the stern) · len = hull length in metres.
 // Sweep rig is the standard one: stroke seat on stroke side (port), alternating forward, bow seat on bow side.
 const RW_BOATS = {
 '8+': { name: 'Coxed eight', n: 8, scull: false, cox: true, len: 17.5 },
+'4x+': { name: 'Coxed quad scull', n: 4, scull: true, cox: true, len: 13.4 },
 '4+': { name: 'Coxed four', n: 4, scull: false, cox: true, len: 13.7 },
-'4−': { name: 'Coxless four', n: 4, scull: false, cox: false, len: 12.8 },
-'4x': { name: 'Quad scull', n: 4, scull: true, cox: false, len: 12.8 },
 '2−': { name: 'Coxless pair', n: 2, scull: false, cox: false, len: 10.0 },
 '2x': { name: 'Double scull', n: 2, scull: true, cox: false, len: 10.0 },
 '1x': { name: 'Single scull', n: 1, scull: true, cox: false, len: 8.2 }
 };
-let rwBoat = RW_BOATS[store.get('boat', '8+')] ? store.get('boat', '8+') : '8+';
+let rwBoat = ({ '4x': '4x+', '4−': '4+' })[store.get('boat', '8+')] || store.get('boat', '8+'); // older saved choices map to the coxed boats
+if (!RW_BOATS[rwBoat]) rwBoat = '8+';
 let rwSel = null;      // forecast hour shown on the dial (index into the hourly data), or null = live / now
 let rwAngle = null;    // boat rotation actually drawn (unbounded, so it always turns the short way)
 function setBoat(cls) { if (!RW_BOATS[cls]) return; rwBoat = cls; store.set('boat', cls); renderRowingWind(); }
@@ -1827,7 +1914,7 @@ return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central"
 }).join('');
 // Wind arrow: sits at the rim on the side the wind comes FROM and points inward, the way the air is moving.
 // A faint dashed line carries the airflow on across the dial, underneath the boat.
-const usable = w => w && RowingWind.isNum(w.dir) && RowingWind.isNum(w.speed) && w.speed >= 2;
+const usable = w => w && RowingWind.isNum(w.dir) && RowingWind.isNum(w.speed) && w.speed >= wk(2);
 const flow = usable(primary) ? (() => { const [x1, y1] = pt(primary.dir, 46), [x2, y2] = pt(primary.dir + 180, 58);
 return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${RW_KIND_VAR[kind] || 'var(--accent)'}" stroke-width="1.2" stroke-dasharray="2 4" opacity=".4"/>`; })() : '';
 const arrow = (w, solid) => {
@@ -1867,12 +1954,12 @@ mostlyAngle: 40     // up to this many degrees off the bow/stern: "Predominantly
 };
 function rwDescribe(c) {
 if (!c) return null;
-if (c.speed < 2) return { kind: 'calm', text: 'Calm' };
-if (c.speed < RW_WORDS.variable) return { kind: 'calm', text: 'Light variable wind' };
+if (c.speed < wk(2)) return { kind: 'calm', text: 'Calm' };
+if (c.speed < wk(RW_WORDS.variable)) return { kind: 'calm', text: 'Light variable wind' };
 const H = Math.abs(c.head), X = Math.abs(c.cross);
 const along = c.head > 0 ? 'headwind' : 'tailwind', side = c.cross > 0 ? 'right' : 'left';
 const off = Math.atan2(X, H) * 180 / Math.PI; // 0 = straight along the boat, 90 = straight across
-const S = c.speed < RW_WORDS.light ? 'Light ' : c.speed >= RW_WORDS.strong ? 'Strong ' : '';
+const S = c.speed < wk(RW_WORDS.light) ? 'Light ' : c.speed >= wk(RW_WORDS.strong) ? 'Strong ' : '';
 const cap = t => t[0].toUpperCase() + t.slice(1);
 const alongKind = c.head > 0 ? 'head' : 'tail';
 if (off <= RW_WORDS.pureAngle) return { kind: alongKind, text: cap(`${S}${along}`) };
@@ -1891,12 +1978,9 @@ cross: 'Crosswind may affect boat set and steering. The coxswain should watch co
 '4+': { head: 'Headwind adds resistance through the drive. Keep rhythm and length rather than rushing the slide.',
 tail: 'Tailwind can shorten the feel of the stroke. Stay patient and keep finishes clean.',
 cross: 'Crosswind may push the bow off line. The coxswain should watch alignment and steer early.' },
-'4−': { head: 'Maintain rhythm and length as headwind resistance increases.',
-tail: 'Tailwind can make the rate creep up. Keep the rhythm steady and controlled.',
-cross: 'Crosswind may affect steering without a coxswain. The steersperson should check the line often.' },
-'4x': { head: 'Headwind adds load at the catch. Keep the rhythm together and blades clear on the recovery.',
+'4x+': { head: 'Headwind adds load at the catch. Keep the rhythm together and blades clear on the recovery.',
 tail: 'Tailwind may lift the rate. Stay together and keep the blade work clean.',
-cross: 'Monitor balance and blade clearance in crosswind conditions.' },
+cross: 'Crosswind may affect balance and blade clearance. The coxswain should watch course alignment.' },
 '2−': { head: 'Headwind magnifies small timing differences. Keep length and match the catch.',
 tail: 'Tailwind can make the boat feel light. Keep technique consistent and finishes together.',
 cross: 'Crosswind may affect balance and directional control. Keep technical execution consistent.' },
@@ -1909,15 +1993,16 @@ cross: 'Expect more noticeable steering and balance corrections, particularly in
 };
 function rwInsight(cls, c) {
 if (!c) return '';
-if (c.speed < RW_WORDS.variable) return 'Very little wind. Expect minimal effect on boat run or steering.';
+if (c.speed < wk(RW_WORDS.variable)) return 'Very little wind. Expect minimal effect on boat run or steering.';
 const kind = Math.abs(c.cross) >= Math.abs(c.head) ? 'cross' : (c.head > 0 ? 'head' : 'tail');
 let t = RW_INSIGHT[cls][kind];
-if (kind !== 'cross' && Math.abs(c.cross) >= 8) t += ` Some ${c.cross > 0 ? 'right' : 'left'} crosswind as well.`;
+if (kind !== 'cross' && Math.abs(c.cross) >= wk(8)) t += ` Some ${c.cross > 0 ? 'right' : 'left'} crosswind as well.`;
 return t;
 }
 
 function renderRowingWind() {
 try { renderCourseMap(); renderWindMap(); } catch (e) { console.warn('course map', e); }
+try { if (typeof renderSession === 'function') renderSession(); } catch (e) { console.warn('session card', e); }
 const el = document.getElementById('rowing-wind');
 const { loc, fc, hourly: h, hIdx } = rwState;
 if (!el || !loc) return;
@@ -1978,8 +2063,8 @@ rows = primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.di
 headline = `<div class="rw-class rw-k-${kind}">${desc ? desc.text : 'No wind data'}</div>`;
 if (a) {
 const c = a.comps, H = Math.abs(c.head), X = Math.abs(c.cross);
-stats = comp(H < 0.5 ? 'HEAD / TAIL' : c.head > 0 ? 'HEADWIND' : 'TAILWIND', H < 0.5 ? 'None' : `${Math.round(H)} km/h`, '', H, H < 0.5 ? 'calm' : c.head > 0 ? 'head' : 'tail') +
-comp('CROSSWIND', X < 0.5 ? 'None' : `${Math.round(X)} km/h`, X < 0.5 ? '' : `from ${c.cross > 0 ? 'right' : 'left'}`, X, X < 0.5 ? 'calm' : 'cross');
+stats = comp(H < 0.5 ? 'HEAD / TAIL' : c.head > 0 ? 'HEADWIND' : 'TAILWIND', H < 0.5 ? 'None' : `${Math.round(H)} ${WU()}`, '', H, H < 0.5 ? 'calm' : c.head > 0 ? 'head' : 'tail') +
+comp('CROSSWIND', X < 0.5 ? 'None' : `${Math.round(X)} ${WU()}`, X < 0.5 ? '' : `from ${c.cross > 0 ? 'right' : 'left'}`, X, X < 0.5 ? 'calm' : 'cross');
 } else stats = `<div class="rw-hint">No wind reading to analyse yet.</div>`;
 rows = statLine('Crew heading', `${compassLong(heading)} (${deg3(heading)})`) +
 (primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : '');
@@ -2002,7 +2087,7 @@ compare = `<details class="rw-about rw-compare"${rwState.cmpOpen ? ' open' : ''}
 <tr><th>Heading</th><td>${deg3(heading)}</td><td>${deg3(heading + 180)}</td></tr>
 <tr><th>Along course</th><td>${alongTxt(a.comps)}</td><td>${alongTxt(rev.comps)}</td></tr>
 <tr><th>Crosswind</th><td>${crossTxt(a.comps)}</td><td>${crossTxt(rev.comps)}</td></tr>
-</tbody></table><p>km/h, for the wind shown on the dial.</p></details>`;
+</tbody></table><p>${WU()}, for the wind shown on the dial.</p></details>`;
 }
 }
 
@@ -2020,16 +2105,16 @@ cards.push(`<button type="button" class="rw-hour${on ? ' sel' : ''}" aria-presse
 <div class="rw-hour-w">${windArrowSVG(h.wind_direction_10m[i], h.wind_speed_10m[i])} ${Math.round(h.wind_speed_10m[i])} ${deg2comp(h.wind_direction_10m[i])}</div>
 <div class="rw-hour-c rw-k-${r.cls.kind}">${r.cls.plain}</div>
 <div class="rw-hour-n">${r.cls.kind === 'calm' ? '—' : `${r.comps.head >= 0 ? 'Head' : 'Tail'} ${Math.round(Math.abs(r.comps.head))} · X ${Math.round(Math.abs(r.comps.cross))}`}</div>
-<div class="rw-bar" aria-hidden="true"><i class="rw-kb-${r.cls.kind}" style="width:${Math.min(100, h.wind_speed_10m[i] / 40 * 100).toFixed(0)}%"></i></div>
+<div class="rw-bar" aria-hidden="true"><i class="rw-kb-${r.cls.kind}" style="width:${Math.min(100, h.wind_speed_10m[i] / wk(40) * 100).toFixed(0)}%"></i></div>
 </button>`);
 }
-hours = cards.length ? `<div class="rw-sub">Through the Day <span class="rw-legend">Tap an hour · km/h · X = crosswind</span></div>
+hours = cards.length ? `<div class="rw-sub">Through the Day <span class="rw-legend">Tap an hour · ${WU()} · X = crosswind</span></div>
 <div class="rw-hours" id="rw-hours">${cards.join('')}</div>` : '';
 }
 
 const boatSel = `<div class="rw-boats" role="radiogroup" aria-label="Boat class">${Object.keys(RW_BOATS).map(k =>
 `<button type="button" role="radio" aria-checked="${k === rwBoat}" aria-label="${k} — ${RW_BOATS[k].name}" class="rw-boat-btn${k === rwBoat ? ' active' : ''}" onclick="setBoat('${k}')">${k}</button>`).join('')}</div>`;
-const dialLabel = `Compass. ${RW_BOATS[rwBoat].name}${RowingWind.isNum(heading) ? ` heading ${compassLong(heading)}, ${Math.round(heading)} degrees` : ', heading not set'}. ${primary && RowingWind.isNum(primary.speed) ? (primary.speed < 2 ? 'Calm.' : `Wind from ${primary.dirTxt || (RowingWind.isNum(primary.dir) ? deg2comp(primary.dir) : 'unknown direction')} at ${Math.round(primary.speed)} kilometres per hour${desc ? ': ' + desc.text.toLowerCase() : ''}.`) : 'No wind data.'} Tap the dial to set the direction your crew is rowing.`;
+const dialLabel = `Compass. ${RW_BOATS[rwBoat].name}${RowingWind.isNum(heading) ? ` heading ${compassLong(heading)}, ${Math.round(heading)} degrees` : ', heading not set'}. ${primary && RowingWind.isNum(primary.speed) ? (primary.speed < wk(2) ? 'Calm.' : `Wind from ${primary.dirTxt || (RowingWind.isNum(primary.dir) ? deg2comp(primary.dir) : 'unknown direction')} at ${Math.round(primary.speed)} kilometres per hour${desc ? ': ' + desc.text.toLowerCase() : ''}.`) : 'No wind data.'} Tap the dial to set the direction your crew is rowing.`;
 const keepScroll = document.getElementById('rw-hours')?.scrollLeft || 0;
 
 el.innerHTML = `<div class="section-title">Rowing Wind</div>
@@ -2064,7 +2149,7 @@ ${hours}
 <details class="rw-about"${rwState.aboutOpen ? ' open' : ''} ontoggle="rwState.aboutOpen=this.open"><summary>About This Course</summary>
 <p>${esc(course.description || '')}</p>
 ${course.source ? `<p><strong>Source:</strong> ${esc(course.source)}</p>` : ''}
-<p>Left and right are relative to the direction of travel (the way the boat is moving, not the way rowers face). Headwind and crosswind components are calculated from the wind vector; these labels describe the wind's direction only, not whether conditions are safe to row. The 4+ is drawn stern-coxed.</p>
+<p>Left and right are relative to the direction of travel (the way the boat is moving, not the way rowers face). Headwind and crosswind components are calculated from the wind vector; these labels describe the wind's direction only, not whether conditions are safe to row. The 4+ and 4x+ are drawn stern-coxed.</p>
 </details>
 </div>`;
 const rail = document.getElementById('rw-hours');
@@ -2149,7 +2234,7 @@ tideError = err.message || 'failed';
 } finally {
 tideLoading = false;
 const loc = LOCATIONS[currentLoc];
-if (loc.tidal) renderTides(loc);
+if (loc.tidal) { renderTides(loc); if (typeof renderSession === 'function') renderSession(); }
 }
 }
 // Height at any moment: a smooth curve through the hourly values (null outside the data)
@@ -2562,7 +2647,8 @@ dir.push(h.wind_direction_10m[i]);
 times.push(new Date(h.time[i]));
 }
 
-const maxVal = Math.max(40, Math.ceil(Math.max(...gst) / 10) * 10);
+const big = KN() ? 5 : 10; // scale steps: 10 km/h or 5 kn
+const maxVal = Math.max(4 * big, Math.ceil(Math.max(...gst) / big) * big);
 const x = i => padL + i * colW;
 const y = v => padT + plotH - (v / maxVal) * plotH;
 
@@ -2714,8 +2800,8 @@ const a = ax.getContext('2d');
 a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, padL, cssH);
 a.font = '10px Barlow, sans-serif'; a.textAlign = 'right'; a.textBaseline = 'middle';
 for (let s = 0; s <= steps; s++) { const val = maxVal / steps * s; a.fillStyle = K.muted; a.fillText(Math.round(val), padL - 6, y(val)); }
-if (suspendAt <= maxVal && suspendAt % (maxVal / steps)) { a.fillStyle = 'rgba(230,57,70,0.9)'; a.fillText(suspendAt, padL - 6, y(suspendAt)); }
-a.textAlign = 'left'; a.textBaseline = 'top'; a.fillStyle = K.muted; a.fillText('km/h', 4, padT - 14);
+if (suspendAt <= maxVal && Math.min(...[0, 1, 2, 3, 4].map(k => Math.abs(y(suspendAt) - y(maxVal / steps * k)))) > 11) { a.fillStyle = 'rgba(230,57,70,0.9)'; a.fillText(suspendAt, padL - 6, y(suspendAt)); }
+a.textAlign = 'left'; a.textBaseline = 'top'; a.fillStyle = K.muted; a.fillText(WU(), 4, padT - 14);
 a.strokeStyle = K.grid2; a.lineWidth = 1; a.beginPath(); a.moveTo(padL - .5, padT); a.lineTo(padL - .5, padT + plotH); a.stroke();
 }
 }
@@ -2803,8 +2889,9 @@ async function renderObservations(loc) {
  if (myId !== obsRequestId) return;
 
  // Wind + gusts from the wind station
- const spd = num(wObs.wind_spd_kmh);
- const gst = num(wObs.gust_kmh);
+ const toUnit = v => v === null ? null : wk(v);
+ const spd = toUnit(num(wObs.wind_spd_kmh));
+ const gst = toUnit(num(wObs.gust_kmh));
  const dirTxt = wObs.wind_dir || '—';
  const when = wObs.local_date_time || '—';
 
@@ -2823,8 +2910,8 @@ async function renderObservations(loc) {
  const diff = Math.round(spd) - fSpd;
  const sign = diff > 0 ? '+' : '';
  compareHtml = `<div class="obs-compare"><strong style="color:var(--text)">Observed vs forecast:</strong>
- live ${Math.round(spd)} km/h vs forecast ${fSpd} km/h (${sign}${diff} km/h).
- ${Math.abs(diff) >= THRESHOLDS.obsDiff ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
+ live ${Math.round(spd)} ${WU()} vs forecast ${fSpd} ${WU()} (${sign}${diff} ${WU()}).
+ ${Math.abs(diff) >= wk(THRESHOLDS.obsDiff) ? 'Notable difference — trust the live reading for on-water decisions.' : 'Forecast tracking well.'}</div>`;
  }
 
  const timeLine = sameStation ? `${esc(when)} · BOM` : `Wind: ${esc(when)} · Other: ${esc(mainWhen)} · BOM`;
@@ -2837,8 +2924,8 @@ async function renderObservations(loc) {
  <div class="obs-time">${timeLine}</div>
  </div>
  <div class="obs-grid">
- <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${showNum(spd)}<span class="u"> km/h</span></div></div>
- <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${showNum(gst)}<span class="u"> km/h</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Wind</div><div class="obs-cell-val">${showNum(spd)}<span class="u"> ${WU()}</span></div></div>
+ <div class="obs-cell"><div class="obs-cell-label">Gusts</div><div class="obs-cell-val">${showNum(gst)}<span class="u"> ${WU()}</span></div></div>
  <div class="obs-cell"><div class="obs-cell-label">Direction</div><div class="obs-cell-val">${dirCell}</div></div>
  <div class="obs-cell"><div class="obs-cell-label">Temp</div><div class="obs-cell-val">${temp === null ? '—' : temp}<span class="u"> °C</span></div></div>
  <div class="obs-cell"><div class="obs-cell-label">Humidity</div><div class="obs-cell-val">${showNum(hum)}<span class="u"> %</span></div></div>
@@ -2867,7 +2954,9 @@ async function renderObservations(loc) {
 
 // ── EXTENDED OUTLOOK (days 8–16) ──────────────────────────────────────────
 function renderExtended(data, loc) {
+data = unitData(data);
 document.getElementById('ext-loc-name').textContent = loc.short;
+document.getElementById('ext-unit').textContent = WU();
 if (data._extPending || data.daily.time.length < 9) {
 const pending = !!data._extPending;
 document.getElementById('ext-status').className = 'status-banner ' + (pending ? 'loading' : 'caution');
@@ -2929,7 +3018,7 @@ document.getElementById('ext-status').innerHTML =
 document.getElementById('ext-status').className = 'status-banner ' + (bestCount ? 'safe' : 'caution');
 
 // Full table (inside "Full table")
-const head = ['Date','Day','Sky','Max °C','Min °C','Rain mm','Rain %','Wind km/h','Gust km/h','Dir','UV','Storm'];
+const head = ['Date','Day','Sky','Max °C','Min °C','Rain mm','Rain %',`Wind ${WU()}`,`Gust ${WU()}`,'Dir','UV','Storm'];
 let html = '<thead><tr>' + head.map(x=>`<th>${x}</th>`).join('') + '</tr></thead><tbody>';
 rows.forEach(r => {
 const dt = new Date(r.date + 'T12:00:00');
@@ -3001,7 +3090,8 @@ labels.forEach((l,i)=> ctx.fillText(l.toUpperCase(), S.x(i), S.padT + S.plotH + 
 function drawExtWind(id, labels, wind, gust) {
 const n = labels.length, S = extCanvasSetup(id, n);
 const {ctx} = S;
-const maxVal = Math.max(40, Math.ceil(Math.max(...gust)/10)*10);
+const big = KN() ? 5 : 10;
+const maxVal = Math.max(4 * big, Math.ceil(Math.max(...gust) / big) * big);
 const y = v => S.padT + S.plotH - (v/maxVal)*S.plotH;
 extGrid(ctx, S, maxVal);
 // suspend threshold
@@ -3096,13 +3186,13 @@ const highUV = !opts.ignoreUV && uv !== null && uv !== undefined && uv >= THRESH
 if (isStorm || wind >= W.danger || gust >= G.danger) {
 const r = [];
 if (isStorm) r.push('Thunderstorm / lightning risk');
-if (wind >= W.danger || gust >= G.danger) r.push(`Wind ${wind} km/h, gusts ${gust}${src}`);
+if (wind >= W.danger || gust >= G.danger) r.push(`Wind ${wind} ${WU()}, gusts ${gust}${src}`);
 return { level: 'danger', reasons: r };
 }
 if (wind >= W.caution || gust >= G.caution || (cape ?? 0) >= C.moderate || highUV) {
 const r = [];
-if (wind >= W.caution) r.push(`Wind ${wind} km/h${src}`);
-if (gust >= G.caution) r.push(`Gusts ${gust} km/h${src}`);
+if (wind >= W.caution) r.push(`Wind ${wind} ${WU()}${src}`);
+if (gust >= G.caution) r.push(`Gusts ${gust} ${WU()}${src}`);
 if (highUV) r.push(`UV ${uv}`);
 if ((cape ?? 0) >= C.moderate) r.push('Storm risk');
 return { level: 'warn', reasons: r };
@@ -3136,12 +3226,13 @@ banner.className = 'status-banner caution';
 st.innerHTML = `${icon} <span><b>CAUTION</b> — ${v.reasons.join(' · ')}<br><small>${limits} limits · ${loc.short}</small></span>`;
 } else {
 banner.className = 'status-banner safe';
-st.innerHTML = `${icon} <span><b>GO</b> — ${wmoDesc(fc.code)}, wind ${wind} km/h${liveWorse ? ' (live)' : ''}, UV ${fc.uv ?? '—'}<br><small>${limits} limits · ${loc.short}</small></span>`;
+st.innerHTML = `${icon} <span><b>GO</b> — ${wmoDesc(fc.code)}, wind ${wind} ${WU()}${liveWorse ? ' (live)' : ''}, UV ${fc.uv ?? '—'}<br><small>${limits} limits · ${loc.short}</small></span>`;
 }
 }
 
 // ── RENDER LIVE ───────────────────────────────────────────────────────────
 function render(data, loc) {
+data = unitData(data);
 const c = data.current;
 const temp = Math.round(c.temperature_2m);
 const feels = Math.round(c.apparent_temperature);
@@ -3190,11 +3281,11 @@ const cI = capeRisk(cape);
 // One summary row — each reading shown once
 const heat = tempCls(temp);
 const gCls = gustCls(gust);
-setR('r-wind', `${wind} km/h`, windCls(wind));
+setR('r-wind', `${wind} ${WU()}`, windCls(wind));
 document.getElementById('r-wind-sub').innerHTML =
 `From ${deg2comp(wdir)}<span class="course-wind" id="r-wind-course"></span>`;
-setR('r-gust', `${gust} km/h`, gCls);
-document.getElementById('r-gust-sub').textContent = `Suspend at ${THRESHOLDS.gust.danger} km/h`;
+setR('r-gust', `${gust} ${WU()}`, gCls);
+document.getElementById('r-gust-sub').textContent = `Suspend at ${THRESHOLDS.gust.danger} ${WU()}`;
 setR('r-storm', cI.label, cI.cls);
 document.getElementById('r-storm-sub').textContent = `CAPE ${cape} J/kg`;
 setR('r-rain', `${maxPP}%`, above(maxPP, THRESHOLDS.rainChance));
@@ -3251,7 +3342,7 @@ card.innerHTML = `
 <div class="daily-icon">${wmoIcon(dd.weathercode[i])}</div>
 <div class="daily-temps">${Math.round(dd.temperature_2m_max[i])}°<span class="daily-lo"> / ${Math.round(dd.temperature_2m_min[i])}°</span></div>
 <div class="daily-detail">
-${windArrowSVG(dd.wind_direction_10m_dominant[i], wMax)} ${wMax} km/h · gust ${gMax}<br>
+${windArrowSVG(dd.wind_direction_10m_dominant[i], wMax)} ${wMax} ${WU()} · gust ${gMax}<br>
 Rain ${rp}%<br>
 UV ${uvD!==null?uvDI.label:'—'}<br>
 ${cDI.label}
@@ -3372,7 +3463,7 @@ const c = d.current;
 const curHour = (c.time || '').slice(0, 13);
 const i = d.hourly?.time ? d.hourly.time.findIndex(t => t.startsWith(curHour)) : -1;
 const uvRaw = i >= 0 ? d.hourly.uv_index?.[i] : null;
-return { at: Date.now(), wind: Math.round(c.wind_speed_10m), gust: Math.round(c.wind_gusts_10m),
+return { at: Date.now(), wind: Math.round(wk(c.wind_speed_10m)), gust: Math.round(wk(c.wind_gusts_10m)),
 code: c.weathercode, cape: c.cape ?? 0, uv: uvRaw == null ? null : Math.round(uvRaw) };
 }
 async function fetchOverview(idx) {
@@ -3397,7 +3488,7 @@ const sum = venueSummary(i);
 let right;
 if (!sum) right = `<span class="chip none">Loading…</span>`;
 else if (sum.error) right = `<span class="chip none">Unavailable</span>`;
-else right = `${chipHTML(assess(sum).level)}<span class="venue-row-wind">Wind ${sum.wind} · gust ${sum.gust} km/h</span>`;
+else right = `${chipHTML(assess(sum).level)}<span class="venue-row-wind">Wind ${sum.wind} · gust ${sum.gust} ${WU()}</span>`;
 return `<button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="selectLocation(${i})"${i === currentLoc ? ' aria-current="true"' : ''}>
 <img src="${loc.icon}" alt="">
 <span><span class="venue-row-name">${loc.short}</span><br><span class="venue-row-meta">${loc.state} · ${venueLocalTime(loc)}</span></span>
@@ -3431,8 +3522,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVenueSh
 
 // ── LIMITS (Seniors / Novices) ────────────────────────────────────────────
 function applyCrewLimits() {
-Object.assign(THRESHOLDS.wind, CREW_LIMITS[crewLevel].wind);
-Object.assign(THRESHOLDS.gust, CREW_LIMITS[crewLevel].gust);
+// in knots the limits are shown, and applied, as whole knots (20 km/h → 11 kn, 30 → 16, 40 → 22)
+const lim = o => KN() ? { caution: Math.round(o.caution / 1.852), danger: Math.round(o.danger / 1.852) } : o;
+Object.assign(THRESHOLDS.wind, lim(CREW_LIMITS[crewLevel].wind));
+Object.assign(THRESHOLDS.gust, lim(CREW_LIMITS[crewLevel].gust));
 ['senior', 'novice'].forEach(l => {
 const b = document.getElementById('crew-' + l);
 b.classList.toggle('active', l === crewLevel);
@@ -3601,8 +3694,8 @@ if (!document.hidden && !isFresh(currentLoc)) loadWeather();
 // ── QUICK-REFERENCE READING CARD ──────────────────────────────────────────
 // Tap one of the six cards: a large card opens underneath with that reading's next 6 or 12 hours.
 const MD = {
-wind:  { title: 'Wind', unit: 'km/h', arr: 'wind_speed_10m', lim: () => THRESHOLDS.wind, limWords: ['Caution', 'Off water'] },
-gust:  { title: 'Gusts', unit: 'km/h', arr: 'wind_gusts_10m', lim: () => THRESHOLDS.gust, limWords: ['Caution', 'Off water'] },
+wind:  { title: 'Wind', get unit() { return WU(); }, arr: 'wind_speed_10m', lim: () => THRESHOLDS.wind, limWords: ['Caution', 'Off water'] },
+gust:  { title: 'Gusts', get unit() { return WU(); }, arr: 'wind_gusts_10m', lim: () => THRESHOLDS.gust, limWords: ['Caution', 'Off water'] },
 storm: { title: 'Storm / Lightning · CAPE', unit: 'J/kg', arr: 'cape', lim: () => ({ caution: THRESHOLDS.cape.moderate, danger: THRESHOLDS.cape.high }), limWords: ['Moderate', 'Clear the water'] },
 rain:  { title: 'Rain Chance', unit: '%', arr: 'precipitation_probability', bars: true, top: 100, lim: () => THRESHOLDS.rainChance, limWords: ['Likely', 'Very likely'] },
 uv:    { title: 'UV Index', unit: '', arr: 'uv_index', lim: () => ({ caution: THRESHOLDS.uv.caution, danger: 11 }), limWords: ['Very high', 'Extreme'], dp: 1 },
@@ -3685,7 +3778,7 @@ const peak = ok.reduce((a, b) => b.v > a.v ? b : a), low = ok.reduce((a, b) => b
 const at = p => p.i === i0 ? 'now' : `at ${fmtLocalIso(h.time[p.i])}`;
 const lv = liveObs;
 document.getElementById('md-now').innerHTML = windy
-? `${fmt(h.wind_speed_10m[i0])} km/h <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}${lv && RowingWind.isNum(lv.wind) ? ` · live ${fmt(lv.wind)}${RowingWind.isNum(lv.gust) ? ' / ' + fmt(lv.gust) : ''} at ${esc(rwState.live.station)}` : ''}</small>`
+? `${fmt(h.wind_speed_10m[i0])} ${WU()} <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}${lv && RowingWind.isNum(lv.wind) ? ` · live ${fmt(lv.wind)}${RowingWind.isNum(lv.gust) ? ' / ' + fmt(lv.gust) : ''} at ${esc(rwState.live.station)}` : ''}</small>`
 : `${fmt(pts[0].v)}${U} <small>now</small>`;
 
 // 1. Verdict in words: when does this reading reach each limit?
@@ -3826,7 +3919,7 @@ const p = pts[mdTrack], x = X(mdTrack);
 ctx.strokeStyle = K.text; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
 if (RowingWind.isNum(p.v)) { ctx.beginPath(); ctx.arc(x, Y(p.v), 6, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = mainCol; ctx.lineWidth = 3; ctx.stroke(); }
 const when = mdTrack === 0 ? 'Now' : fmtLocalIso(h.time[p.i]);
-const lbl = windy ? `${when} · wind ${fmt(h.wind_speed_10m[p.i])} · gusts ${fmt(h.wind_gusts_10m[p.i])} km/h ${RowingWind.isNum(h.wind_direction_10m[p.i]) ? deg2comp(h.wind_direction_10m[p.i]) : ''}`.trim()
+const lbl = windy ? `${when} · wind ${fmt(h.wind_speed_10m[p.i])} · gusts ${fmt(h.wind_gusts_10m[p.i])} ${WU()} ${RowingWind.isNum(h.wind_direction_10m[p.i]) ? deg2comp(h.wind_direction_10m[p.i]) : ''}`.trim()
 : `${when} · ${fmt(p.v)}${U}${m.second && RowingWind.isNum(p.v2) ? ` (feels ${fmt(p.v2)})` : ''}${rainMm ? ` · ${rainMm[mdTrack].toFixed(1)} mm` : ''}${mdOpen === 'storm' && h.weathercode && STORM_CODES.includes(h.weathercode[p.i]) ? ' · thunderstorm' : ''}`;
 ctx.font = '700 12px "Barlow Condensed", sans-serif';
 const tw = ctx.measureText(lbl).width; let px = Math.max(2, Math.min(x - (tw + 16) / 2, W - 2 - (tw + 16)));
@@ -3834,6 +3927,145 @@ ctx.fillStyle = K.pill; ctx.fillRect(px, 1, tw + 16, 20); ctx.strokeStyle = K.ac
 ctx.fillStyle = K.text; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(lbl, px + 8, 5);
 }
 canvas.setAttribute('aria-label', `${windy ? 'Wind and gusts' : m.title}, next ${mdHours} hours. ${verdicts.map(v => v.text).join(' ')} ${note}`);
+}
+
+
+// ── SETTINGS: session times + wind units ──────────────────────────────────
+// Sessions are saved as [{ start: "05:30", end: "07:30", days: [1,2,3,4,5] }] (0 = Sunday).
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+function getSessions() {
+try {
+const a = JSON.parse(store.get('sessions', 'null'));
+if (Array.isArray(a)) return a.filter(x => x && /^\d\d:\d\d$/.test(x.start) && /^\d\d:\d\d$/.test(x.end) && Array.isArray(x.days) && x.days.length);
+} catch {}
+const m = /^(\d\d:\d\d)-(\d\d:\d\d)$/.exec(store.get('session', '')); // the earlier single every-day session
+return m ? [{ start: m[1], end: m[2], days: [0, 1, 2, 3, 4, 5, 6] }] : [];
+}
+function saveSessions(list) { store.set('sessions', JSON.stringify(list)); store.set('session', ''); }
+const hm12 = hm => fmtLocalIso(`2000-01-01T${hm}`);
+const daysText = days => days.length === 7 ? 'Every day' : DAY_ORDER.filter(d => days.includes(d)).join() === '1,2,3,4,5' ? 'Weekdays' : DAY_ORDER.filter(d => days.includes(d)).join() === '6,0' ? 'Weekends' : DAY_ORDER.filter(d => days.includes(d)).map(d => DAY_SHORT[d]).join(', ');
+let setDays = new Set([1, 2, 3, 4, 5]);
+function renderSettingsSessions() {
+const list = getSessions();
+document.getElementById('set-list').innerHTML = list.length ? list.map((x, i) => `<div class="set-item"><span><b>${hm12(x.start)} – ${hm12(x.end)}</b><small>${daysText(x.days)}</small></span><button type="button" onclick="removeSession(${i})" aria-label="Remove ${hm12(x.start)} session">Remove</button></div>`).join('')
+: '<div class="sheet-note" style="margin-bottom:8px">No sessions saved yet.</div>';
+document.getElementById('set-days').innerHTML = DAY_ORDER.map(d => `<button type="button" class="set-day" aria-pressed="${setDays.has(d)}" onclick="toggleSetDay(${d})">${DAY_SHORT[d]}</button>`).join('');
+}
+function toggleSetDay(d) { setDays.has(d) ? setDays.delete(d) : setDays.add(d); renderSettingsSessions(); }
+function openSettings() {
+renderSettingsSessions();
+document.getElementById('unit-kmh').classList.toggle('active', !KN());
+document.getElementById('unit-kn').classList.toggle('active', KN());
+const sh = document.getElementById('settings-sheet'); sh.hidden = false; sh.querySelector('.sheet-close').focus();
+}
+function closeSettings() { const sh = document.getElementById('settings-sheet'); if (sh.hidden) return; sh.hidden = true; document.getElementById('settings-btn').focus(); }
+function addSession() {
+const a = document.getElementById('set-start').value, b = document.getElementById('set-end').value, msg = document.getElementById('set-msg');
+if (!/^\d\d:\d\d$/.test(a) || !/^\d\d:\d\d$/.test(b)) { msg.textContent = 'Enter both a start and a finish time.'; return; }
+if (b <= a) { msg.textContent = 'The finish time needs to be later than the start, on the same day.'; return; }
+if (!setDays.size) { msg.textContent = 'Choose at least one day.'; return; }
+const list = getSessions();
+if (list.length >= 10) { msg.textContent = 'Ten sessions is the most that can be saved. Remove one first.'; return; }
+list.push({ start: a, end: b, days: DAY_ORDER.filter(d => setDays.has(d)) });
+list.sort((x, y) => x.start.localeCompare(y.start));
+saveSessions(list);
+msg.textContent = 'Session added.';
+renderSettingsSessions(); renderSession();
+}
+function removeSession(i) { const list = getSessions(); list.splice(i, 1); saveSessions(list); renderSettingsSessions(); renderSession(); }
+function setUnit(u) {
+if ((u === 'kn') === KN()) return;
+windUnit = u === 'kn' ? 'kn' : 'kmh'; store.set('unit', windUnit);
+document.getElementById('unit-kmh').classList.toggle('active', !KN());
+document.getElementById('unit-kn').classList.toggle('active', KN());
+applyCrewLimits();
+overview.fill(null);               // venue-list figures were in the old unit
+rwState.live = null; lastObs = null; // live readings are re-read in the new unit
+const entry = cache[currentLoc];
+if (entry) { render(entry.data, LOCATIONS[currentLoc]); redrawCharts(); }
+}
+
+// ── SESSION SUMMARY CARD ──────────────────────────────────────────────────
+// Looks up to 7 days ahead for the saved sessions, shows the next one in full and the two after it in brief.
+function renderSession() {
+const el = document.getElementById('session-card');
+const { loc, hourly: h } = rwState, sessions = getSessions();
+if (!el || !loc || !h) return;
+if (!sessions.length) {
+el.innerHTML = `<div class="ss-card ss-prompt"><span>Set your session times to get a summary for the next one here.</span><button type="button" class="ss-link" onclick="openSettings()">Set sessions</button></div>`;
+return;
+}
+const nowLocal = new Date().toLocaleString('sv-SE', { timeZone: loc.tz, hour12: false }).replace(' ', 'T'); // venue clock, "2026-11-22T15:50:12"
+const offset = Math.round((Date.parse(nowLocal + 'Z') - Date.now()) / 60000) * 60000;                     // venue time minus UTC
+const toMs = (date, hm) => Date.parse(`${date}T${hm}:00Z`) - offset;
+const today = nowLocal.slice(0, 10), nowHM = nowLocal.slice(11, 16);
+const addDays = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+const dow = d => new Date(d + 'T12:00:00Z').getUTCDay();
+// every occurrence in the next 7 days that hasn't finished, soonest first
+const occ = [];
+for (let n = 0; n <= 7; n++) { const date = addDays(today, n);
+sessions.forEach(ses => { if (ses.days.includes(dow(date)) && (n > 0 || nowHM < ses.end)) occ.push({ ses, date, n, key: date + ses.start }); }); }
+occ.sort((a, b) => a.key.localeCompare(b.key));
+const hoursFor = o => { const out = [], hFrom = +o.ses.start.slice(0, 2), hTo = +o.ses.end.slice(0, 2) + (o.ses.end.slice(3) === '00' ? 0 : 1); // whole forecast hours covering the session
+for (let hr = hFrom; hr <= Math.min(23, hTo); hr++) { const i = h.time.indexOf(`${o.date}T${String(hr).padStart(2, '0')}:00`); if (i >= 0) out.push(i); } return out; };
+const dayWord = o => o.n === 0 ? 'Today' : o.n === 1 ? 'Tomorrow' : new Date(o.date + 'T12:00:00Z').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const mm = a => a.length ? [Math.min(...a), Math.max(...a)] : null;
+const range = (a, unit) => !a ? '—' : Math.round(a[0]) === Math.round(a[1]) ? `${Math.round(a[0])}${unit}` : `${Math.round(a[0])}–${Math.round(a[1])}${unit}`;
+const study = o => { const idx = hoursFor(o); if (!idx.length) return null;
+const vals = k => idx.map(i => h[k]?.[i]).filter(RowingWind.isNum);
+const r = { idx, wind: mm(vals('wind_speed_10m')), gust: mm(vals('wind_gusts_10m')), temp: mm(vals('temperature_2m')), pop: mm(vals('precipitation_probability')), uv: mm(vals('uv_index')), cape: mm(vals('cape')),
+mid: idx[Math.floor((idx.length - 1) / 2)], storm: idx.some(i => STORM_CODES.includes(h.weathercode?.[i])) };
+r.v = assess({ wind: r.wind ? Math.round(r.wind[1]) : 0, gust: r.gust ? Math.round(r.gust[1]) : 0, code: r.storm ? 95 : h.weathercode?.[r.mid], cape: r.cape ? r.cape[1] : 0, uv: r.uv ? Math.round(r.uv[1]) : null });
+return r; };
+const usable = occ.map(o => ({ o, r: study(o) })).filter(x => x.r).slice(0, 3);
+const foot = `<div class="ss-foot"><span>${sessions.length} session time${sessions.length === 1 ? '' : 's'} saved · ${CREW_LIMITS[crewLevel].label} limits</span><button type="button" class="ss-link" onclick="openSettings()">Change sessions</button></div>`;
+if (!usable.length) {
+el.innerHTML = `<div class="ss-card"><div class="ss-kicker">Next session · ${esc(loc.short)}</div><div class="ss-why">No forecast is available yet for your next session.</div>${foot}</div>`;
+return;
+}
+const { o, r } = usable[0], ses = o.ses, date = o.date, idx = r.idx, mid = r.mid, v = r.v;
+const { wind, gust, temp, pop, uv, storm } = r;
+const inProgress = o.n === 0 && nowHM >= ses.start;
+const whenTxt = `${dayWord(o)} · ${hm12(ses.start)} – ${hm12(ses.end)}`;
+const why = v.level === 'ok' ? 'Wind, gusts and storm risk all stay under your limits for this session.' : v.reasons.join(' · ');
+
+// wind on the course, for the middle of the session and the heading currently set
+const hd = effectiveHeading(loc);
+const a = hd ? RowingWind.analyse(h.wind_direction_10m[mid], h.wind_speed_10m[mid], hd.bearing) : null;
+const d = a ? rwDescribe(a.comps) : null;
+const courseTxt = !hd ? 'Set a heading in Rowing Wind' : !d ? '—'
+: `${d.text}${a.comps.speed >= wk(2) ? ` <small>${Math.abs(a.comps.head) < 0.5 ? '' : `${a.comps.head > 0 ? 'head' : 'tail'} ${Math.round(Math.abs(a.comps.head))}`}${Math.abs(a.comps.head) >= 0.5 && Math.abs(a.comps.cross) >= 0.5 ? ' · ' : ''}${Math.abs(a.comps.cross) < 0.5 ? '' : `cross ${Math.round(Math.abs(a.comps.cross))} from ${a.comps.cross > 0 ? 'right' : 'left'}`} · heading ${deg3(hd.bearing)}</small>` : ''}`;
+
+// light
+const startMs = toMs(date, ses.start), endMs = toMs(date, ses.end), civil = sunTimes(date, loc.lat, loc.lon, -6);
+let light = '—';
+if (civil) {
+const before = Math.round((civil.rise - startMs) / 60000), after = Math.round((endMs - civil.set) / 60000);
+light = before > 0 ? `<span class="ss-flag">▲ Starts ${before} min before first light</span> <small>(${fmtVenueTime(civil.rise, loc.tz)})</small>`
+: after > 0 ? `<span class="ss-flag">▲ Finishes ${after} min after last light</span> <small>(${fmtVenueTime(civil.set, loc.tz)})</small>`
+: `In daylight <small>first light ${fmtVenueTime(civil.rise, loc.tz)} · last light ${fmtVenueTime(civil.set, loc.tz)}</small>`;
+}
+// tide (tidal venues, when the sea-level data covers the session)
+let tide = '';
+if (loc.tidal) {
+const t1 = tideHeight(startMs), t2 = tideHeight(endMs);
+tide = `<dt>Tide</dt><dd>${t1 === null || t2 === null ? '—' : `${fmtTideH(t1)} → ${fmtTideH(t2)} m <small>${Math.abs(t2 - t1) < 0.02 ? 'slack' : t2 > t1 ? 'rising' : 'falling'} · vs mean sea level</small>`}</dd>`;
+}
+const later = usable.slice(1).map(x => `<div class="ss-next-row"><span><b>${dayWord(x.o)}</b> · ${hm12(x.o.ses.start)} – ${hm12(x.o.ses.end)}<br><small>wind ${range(x.r.wind, '')}, gusts to ${x.r.gust ? Math.round(x.r.gust[1]) : '—'} ${WU()}${x.r.storm ? ' · thunderstorm forecast' : ''}</small></span>${chipHTML(x.r.v.level)}</div>`).join('');
+el.innerHTML = `<div class="ss-card">
+<div class="ss-head"><div><div class="ss-kicker">${inProgress ? 'Session now' : 'Next session'} · ${esc(loc.short)}</div><div class="ss-when">${whenTxt}</div></div>${chipHTML(v.level)}</div>
+<div class="ss-why ${v.level}">${esc(why)}</div>
+<dl class="ss-grid">
+<dt>Wind</dt><dd>${range(wind, ' ' + WU())} <small>from ${deg2comp(h.wind_direction_10m[mid])}</small></dd>
+<dt>Gusts</dt><dd>${gust ? `up to ${Math.round(gust[1])} ${WU()}` : '—'}</dd>
+<dt>On the course</dt><dd>${courseTxt}</dd>
+<dt>Light</dt><dd>${light}</dd>
+${tide}
+<dt>Weather</dt><dd>${range(temp, '°C')} <small>rain ${pop ? Math.round(pop[1]) + '%' : '—'} · UV ${uv ? Math.round(uv[1]) : '—'}${storm ? ' · thunderstorm forecast' : ''}</small></dd>
+</dl>
+${later ? `<div class="ss-next"><div class="ss-kicker">After that</div>${later}</div>` : ''}
+${foot}
+</div>`;
 }
 
 // ── INSTALL AS AN APP ─────────────────────────────────────────────────────
@@ -3883,7 +4115,7 @@ if (!sheet || sheet.hidden) return;
 sheet.hidden = true;
 document.getElementById('install-btn').focus();
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInstallSheet(); if (mdOpen) mdToggle(null); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInstallSheet(); closeSettings(); if (mdOpen) mdToggle(null); } });
 updateInstallButton();
 
 // ── COLLAPSIBLE SECTIONS ──────────────────────────────────────────────────
