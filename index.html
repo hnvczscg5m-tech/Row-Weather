@@ -203,6 +203,8 @@ border-radius:6px;cursor:pointer;transition:all .2s}
 .wg-swatch{width:14px;height:3px;border-radius:2px;display:inline-block}
 .wind-graph-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
 #wind-canvas{display:block;height:210px}
+.wind-graph-frame{position:relative}
+#wind-axis{position:absolute;left:0;top:0;pointer-events:none;background:var(--panel);display:block}
 
 .hourly-scroll{overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--accent2) transparent}
 .hourly-row{display:flex;gap:7px;min-width:max-content}
@@ -833,8 +835,11 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <span class="wg-leg"><span class="wg-swatch" style="background:var(--orange)"></span>Gusts</span>
 <span class="wg-leg"><span style="color:var(--accent)">↑</span> Arrow = direction wind blows toward</span>
 </div>
+<div class="wind-graph-frame">
 <div class="wind-graph-scroll">
 <canvas id="wind-canvas"></canvas>
+</div>
+<canvas id="wind-axis" aria-hidden="true"></canvas>
 </div>
 </div>
 </section>
@@ -2536,7 +2541,7 @@ const n = end - start;
 if (n < 2) return;
 
 const colW = is7day ? 14 : 46;
-const padL = 38, padR = 16, padT = 34, padB = is7day ? 40 : 46;
+const padL = 38, padR = 16, padT = 34, padB = is7day ? 44 : 46;
 const cssW = padL + padR + (n - 1) * colW;
 const plotH = 130;
 const cssH = padT + plotH + padB;
@@ -2571,11 +2576,27 @@ const cx = x(i);
 ctx.strokeStyle = K.grid2;
 ctx.lineWidth = 1;
 ctx.beginPath(); ctx.moveTo(cx, padT - 4); ctx.lineTo(cx, padT + plotH); ctx.stroke();
-ctx.fillStyle = (i === 0) ? K.accent : K.label;
-ctx.textAlign = 'left';
-ctx.textBaseline = 'top';
-ctx.font = '700 11px "Barlow Condensed", sans-serif';
-ctx.fillText(i === 0 ? 'TODAY' : times[i].toLocaleDateString('en-AU',{weekday:'short'}).toUpperCase(), cx + 3, padT + plotH + 6);
+if (i === 0 && times[0].getHours() < 9) { // room before midday: name today at the start as well
+ctx.fillStyle = K.accent; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = '700 11px "Barlow Condensed", sans-serif';
+ctx.fillText('TODAY', cx + 3, padT + plotH + 21);
+}
+}
+}
+// time-of-day marks every 6 hours, so each day can be read morning / midday / evening
+ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '10px "Barlow Condensed", sans-serif';
+for (let i = 1; i < n; i++) {
+const hr = times[i].getHours();
+if (hr % 6) continue;
+const cx = x(i);
+if (hr) { ctx.strokeStyle = K.grid; ctx.lineWidth = 1; ctx.setLineDash(hr === 12 ? [] : [2, 3]); ctx.beginPath(); ctx.moveTo(cx, padT); ctx.lineTo(cx, padT + plotH); ctx.stroke(); ctx.setLineDash([]); }
+if (i < 2) continue; // keep clear of the first column
+ctx.fillStyle = hr === 12 ? K.label : K.muted;
+ctx.font = '10px "Barlow Condensed", sans-serif';
+ctx.fillText(hr === 0 ? '12am' : hr === 12 ? '12pm' : hr < 12 ? hr + 'am' : (hr - 12) + 'pm', cx, padT + plotH + 6);
+if (hr === 12) { // the day's name sits under its midday mark, so it stays in view while that day is on screen
+const today = times[i].toDateString() === times[0].toDateString();
+ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.fillStyle = today ? K.accent : K.label;
+ctx.fillText(today ? 'TODAY' : times[i].toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' }).toUpperCase(), cx, padT + plotH + 21);
 }
 }
 }
@@ -2590,8 +2611,6 @@ const yy = y(val);
 ctx.strokeStyle = K.grid;
 ctx.lineWidth = 1;
 ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cssW - padR, yy); ctx.stroke();
-ctx.fillStyle = K.muted;
-ctx.fillText(Math.round(val), padL - 6, yy);
 }
 
 const suspendAt = THRESHOLDS.wind.danger;
@@ -2686,11 +2705,19 @@ ctx.fillText(deg2comp(dir[i]), cx, padT + plotH + 22);
 }
 }
 
-ctx.textAlign = 'left';
-ctx.textBaseline = 'top';
-ctx.fillStyle = K.muted;
-ctx.font = '10px Barlow, sans-serif';
-ctx.fillText('km/h', 4, padT - 14);
+// Frozen km/h axis
+const ax = document.getElementById('wind-axis');
+if (ax) {
+ax.style.width = padL + 'px'; ax.style.height = cssH + 'px';
+ax.width = padL * dpr; ax.height = cssH * dpr;
+const a = ax.getContext('2d');
+a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, padL, cssH);
+a.font = '10px Barlow, sans-serif'; a.textAlign = 'right'; a.textBaseline = 'middle';
+for (let s = 0; s <= steps; s++) { const val = maxVal / steps * s; a.fillStyle = K.muted; a.fillText(Math.round(val), padL - 6, y(val)); }
+if (suspendAt <= maxVal && suspendAt % (maxVal / steps)) { a.fillStyle = 'rgba(230,57,70,0.9)'; a.fillText(suspendAt, padL - 6, y(suspendAt)); }
+a.textAlign = 'left'; a.textBaseline = 'top'; a.fillStyle = K.muted; a.fillText('km/h', 4, padT - 14);
+a.strokeStyle = K.grid2; a.lineWidth = 1; a.beginPath(); a.moveTo(padL - .5, padT); a.lineTo(padL - .5, padT + plotH); a.stroke();
+}
 }
 
 // ── BOM LIVE OBSERVATIONS ─────────────────────────────────────────────────
