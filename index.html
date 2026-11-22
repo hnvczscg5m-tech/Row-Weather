@@ -940,6 +940,8 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <button type="button" class="range-btn" id="md-r6" onclick="mdRange(6)">6 h</button>
 <button type="button" class="range-btn active" id="md-r12" onclick="mdRange(12)">12 h</button>
 <button type="button" class="range-btn" id="md-r24" onclick="mdRange(24)">24 h</button>
+<button type="button" class="range-btn" id="md-r48" onclick="mdRange(48)">48 h</button>
+<button type="button" class="range-btn" id="md-r72" onclick="mdRange(72)">72 h</button>
 <button type="button" class="md-close" onclick="mdToggle(null)" aria-label="Close">✕</button>
 </div>
 </div>
@@ -3917,12 +3919,15 @@ canvas.addEventListener('pointercancel', () => release(4000));
 canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') release(0); });
 })();
 // "from 8:00 pm to 11:00 pm and from 3:00 am to the end of the period" for the hours where test(v) is true
+// Clock time for a forecast hour; ranges longer than a day also name the day ("Tue 3:00 pm")
+const mdDay = iso => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('en-AU', { weekday: 'short' });
+const mdWhen = iso => (mdHours > 24 ? mdDay(iso) + ' ' : '') + fmtLocalIso(iso);
 function mdWindows(pts, key, test, h, i0) {
 const runs = []; let start = null;
 pts.forEach((p, k) => { const on = RowingWind.isNum(p[key]) && test(p[key]);
 if (on && start === null) start = k;
 if ((!on || k === pts.length - 1) && start !== null) { runs.push([start, on ? k : k - 1]); start = null; } });
-const t = k => fmtLocalIso(h.time[i0 + k]);
+const t = k => mdWhen(h.time[i0 + k]);
 return runs.map(([a, b]) => a === 0 && b === pts.length - 1 ? 'for the whole period'
 : a === b ? (a === 0 ? 'now' : `around ${t(a)}`)
 : `${a === 0 ? 'from now' : `from ${t(a)}`} ${b === pts.length - 1 ? 'to the end of the period' : `to ${t(b)}`}`).join(' and ');
@@ -3938,7 +3943,7 @@ const tapped = items.find(el => el.dataset.metric === mdOpen);
 const last = items.filter(el => el.offsetTop === tapped.offsetTop).pop();
 if (last.nextElementSibling !== card) grid.insertBefore(card, last.nextElementSibling);
 }
-[6, 12, 24].forEach(n => document.getElementById('md-r' + n).classList.toggle('active', mdHours === n));
+[6, 12, 24, 48, 72].forEach(n => document.getElementById('md-r' + n).classList.toggle('active', mdHours === n));
 const loc = LOCATIONS[currentLoc];
 const windy = mdOpen === 'wind' || mdOpen === 'gust';           // wind and gusts share one graph
 const pair = windy ? MD[mdOpen === 'wind' ? 'gust' : 'wind'] : null;
@@ -3957,7 +3962,7 @@ document.getElementById('md-title').textContent = `${windy ? 'Wind & Gusts' : m.
 const verdictEl = document.getElementById('md-verdict'), noteEl = document.getElementById('md-note');
 if (!ok.length) { document.getElementById('md-now').textContent = 'No data'; verdictEl.textContent = ''; noteEl.textContent = ''; mdGeom = null; return; }
 const peak = ok.reduce((a, b) => b.v > a.v ? b : a), low = ok.reduce((a, b) => b.v < a.v ? b : a);
-const at = p => p.i === i0 ? 'now' : `at ${fmtLocalIso(h.time[p.i])}`;
+const at = p => p.i === i0 ? 'now' : `at ${mdWhen(h.time[p.i])}`;
 const lv = liveObs;
 document.getElementById('md-now').innerHTML = windy
 ? `${fmt(h.wind_speed_10m[i0])} ${WU()} <small>wind now · gusts ${fmt(h.wind_gusts_10m[i0])}${lv && RowingWind.isNum(lv.wind) ? ` · live ${fmt(lv.wind)}${RowingWind.isNum(lv.gust) ? ' / ' + fmt(lv.gust) : ''} at ${esc(rwState.live.station)}` : ''}</small>`
@@ -4022,7 +4027,7 @@ ctx.fillStyle = sun ? 'rgba(11,23,38,.09)' : 'rgba(0,0,0,.28)';
 dark.forEach(([a, b]) => { const x1 = Math.max(padL, Xms(a)), x2 = Math.min(W - padR, Xms(b)); if (x2 > x1) ctx.fillRect(x1, padT, x2 - x1, ph); });
 ctx.font = '600 9px Barlow, sans-serif'; ctx.textBaseline = 'bottom';
 lights.forEach(L => [[L.rise, 'First light'], [L.set, 'Last light']].forEach(([ms, word]) => {
-if (ms <= ms0 || ms >= msEnd) return;
+if (ms <= ms0 || ms >= msEnd || mdHours > 24) return; // longer ranges: the shading alone marks night, day names go along the top
 const x = Xms(ms);
 ctx.strokeStyle = K.muted; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke(); ctx.setLineDash([]);
 ctx.fillStyle = K.label; ctx.textAlign = x > W - padR - 60 ? 'right' : x < padL + 60 ? 'left' : 'center';
@@ -4037,7 +4042,15 @@ ctx.fillStyle = K.label; ctx.textAlign = 'right'; ctx.fillText(String(+g.toFixed
 }
 ctx.textAlign = 'center'; ctx.textBaseline = 'top';
 const every = pts.length > 14 ? 4 : pts.length > 8 ? 2 : 1;
-pts.forEach((p, k) => { if (k % every) return;
+const multi = mdHours > 24, clockStep = mdHours > 48 ? 12 : 6; // 48 h: a mark every 6 hours · 72 h: every 12
+if (multi) pts.forEach((p, k) => { // midnight lines with the day's name above the graph
+if (!k || +h.time[p.i].slice(11, 13) !== 0) return;
+ctx.strokeStyle = K.muted; ctx.lineWidth = 1; ctx.globalAlpha = .55; ctx.beginPath(); ctx.moveTo(X(k), padT - 4); ctx.lineTo(X(k), padT + ph); ctx.stroke(); ctx.globalAlpha = 1;
+ctx.font = '700 10px "Barlow Condensed", sans-serif'; ctx.fillStyle = K.label; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+if (X(k) < W - padR - 24) ctx.fillText(mdDay(h.time[p.i]).toUpperCase(), X(k) + 3, padT - 3);
+});
+ctx.font = '11px Barlow, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+pts.forEach((p, k) => { if (multi ? (k !== 0 && (+h.time[p.i].slice(11, 13) % clockStep || X(k) - X(0) < 38)) : k % every) return;
 ctx.fillStyle = k === 0 ? K.text : K.label; ctx.fillText(k === 0 ? 'Now' : mdHourLabel(h.time[p.i]), X(k), padT + ph + 7);
 if (windy && RowingWind.isNum(h.wind_direction_10m[p.i]) && h.wind_speed_10m[p.i] >= 2) { // 4. direction arrows (pointing the way the wind blows)
 ctx.save(); ctx.translate(X(k), padT + ph + 30); ctx.rotate((h.wind_direction_10m[p.i] + 180) * Math.PI / 180);
@@ -4054,7 +4067,7 @@ ctx.fillStyle = col; ctx.textAlign = leftSide ? 'left' : 'right'; ctx.textBaseli
 const dotCol = v => { const l = lvl(v); return l === 'danger' ? K.red : l === 'warn' ? K.yellow : null; };
 const mainCol = windy ? (mdOpen === 'wind' ? K.accent : K.orange) : K.accent, pairCol = mdOpen === 'wind' ? K.orange : K.accent;
 if (m.bars) {
-const bw = Math.max(4, pw / pts.length * 0.6);
+const bw = Math.max(1.5, Math.min(18, pw / pts.length * 0.6));
 pts.forEach((p, k) => { if (!RowingWind.isNum(p.v)) return; ctx.fillStyle = dotCol(p.v) || K.accent; ctx.globalAlpha = .85; ctx.fillRect(X(k) - bw / 2, Y(p.v), bw, Math.max(1, padT + ph - Y(p.v))); ctx.globalAlpha = 1; });
 } else {
 const line = (key, dash) => { ctx.beginPath(); let started = false;
@@ -4100,7 +4113,7 @@ ctx.fillText(fmt(peak.v), X(pk), Math.max(padT + 9, Y(peak.v) - 6));
 const p = pts[mdTrack], x = X(mdTrack);
 ctx.strokeStyle = K.text; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
 if (RowingWind.isNum(p.v)) { ctx.beginPath(); ctx.arc(x, Y(p.v), 6, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = mainCol; ctx.lineWidth = 3; ctx.stroke(); }
-const when = mdTrack === 0 ? 'Now' : fmtLocalIso(h.time[p.i]);
+const when = mdTrack === 0 ? 'Now' : mdWhen(h.time[p.i]);
 const lbl = windy ? `${when} · wind ${fmt(h.wind_speed_10m[p.i])} · gusts ${fmt(h.wind_gusts_10m[p.i])} ${WU()} ${RowingWind.isNum(h.wind_direction_10m[p.i]) ? deg2comp(h.wind_direction_10m[p.i]) : ''}`.trim()
 : `${when} · ${fmt(p.v)}${U}${m.second && RowingWind.isNum(p.v2) ? ` (feels ${fmt(p.v2)})` : ''}${rainMm ? ` · ${rainMm[mdTrack].toFixed(1)} mm` : ''}${mdOpen === 'storm' && h.weathercode && STORM_CODES.includes(h.weathercode[p.i]) ? ' · thunderstorm' : ''}`;
 ctx.font = '700 12px "Barlow Condensed", sans-serif';
