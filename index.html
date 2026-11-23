@@ -382,16 +382,24 @@ border-radius:16px 16px 0 0;border:1px solid var(--border);padding:16px 14px cal
 .sheet-close{min-width:44px;min-height:44px;border:1px solid var(--border);background:var(--panel);color:var(--text);
 border-radius:10px;font-size:calc(16px * var(--fs,1));cursor:pointer;flex-shrink:0}
 .sheet-list{display:flex;flex-direction:column;gap:8px}
-.venue-row{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;min-height:64px;padding:10px 12px;
+.venue-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:46px;padding:5px 10px;
 width:100%;text-align:left;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);
 cursor:pointer;font:inherit}
 .venue-row:hover{border-color:var(--accent2)}
 .venue-row.active{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
-.venue-row img{width:34px;height:34px;border-radius:6px;object-fit:contain}
-.venue-row-name{font-family:'Barlow Condensed',sans-serif;font-size:calc(18px * var(--fs,1));font-weight:600;line-height:1.15}
-.venue-row-meta{font-size:calc(12px * var(--fs,1));color:var(--muted)}
-.venue-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.venue-row img{width:28px;height:28px;border-radius:6px;object-fit:contain}
+.venue-row-text{min-width:0}
+.venue-row-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-family:'Barlow Condensed',sans-serif;font-size:calc(17px * var(--fs,1));font-weight:600;line-height:1.1}
+.venue-row-meta{display:block;font-size:calc(11px * var(--fs,1));color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venue-row-right{display:flex;align-items:center;gap:8px}
 .venue-row-wind{font-size:calc(12px * var(--fs,1));color:var(--muted);white-space:nowrap}
+.venue-row .chip{font-size:calc(12px * var(--fs,1));padding:1px 7px}
+.venue-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:4px;margin:0 0 10px;background:var(--panel);border:1px solid var(--border);border-radius:12px;position:sticky;top:0;z-index:2}
+.venue-tab{flex:1 1 auto;min-height:40px;padding:0 4px;border:0;border-radius:9px;background:none;color:var(--muted);cursor:pointer;white-space:nowrap;
+font-family:'Barlow Condensed',sans-serif;font-size:calc(15px * var(--fs,1));font-weight:600;letter-spacing:.2px}
+.venue-tab.active{background:var(--accent2);color:#fff}
+.venue-empty{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:1.5;padding:18px 6px;text-align:center}
+.sheet-list{gap:6px}
 
 /* ===== Verdict chips (word + symbol, never colour alone) ===== */
 .chip{display:inline-flex;align-items:center;gap:4px;font-family:'Barlow Condensed',sans-serif;font-weight:700;
@@ -723,7 +731,7 @@ background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .rw-winding{margin:6px 0 0}
 .tide-place-note{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:1.5;margin:0 0 10px}
 .venue-row-wrap .venue-row{flex:1;min-width:0}
-.venue-star{flex:0 0 46px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:10px;font-size:calc(20px * var(--fs,1));cursor:pointer}
+.venue-star{flex:0 0 42px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:10px;font-size:calc(20px * var(--fs,1));cursor:pointer}
 .venue-star[aria-pressed=true]{color:var(--yellow);border-color:var(--yellow)}
 .venue-btn.swipe-l{animation:vbL .22s ease}.venue-btn.swipe-r{animation:vbR .22s ease}
 @keyframes vbL{from{transform:translateX(26px);opacity:.4}to{transform:none;opacity:1}}
@@ -904,11 +912,12 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="sheet-head">
 <div>
 <div class="sheet-title" id="sheet-title">All Venues · Conditions Now</div>
-<div class="sheet-note">Forecast wind, gusts, storm risk and UV at each venue right now, using your current limits. Tap a venue to open it.</div>
+<div class="sheet-note" id="venue-note">Forecast wind / gust and a verdict for each venue right now, using your current limits. Tap a venue to open it.</div>
 </div>
 <button type="button" class="sheet-close" onclick="closeVenueSheet()" aria-label="Close">✕</button>
 </div>
-<div class="sheet-list" id="venue-list"></div>
+<div class="venue-tabs" id="venue-tabs" role="tablist" aria-label="Venue groups"></div>
+<div class="sheet-list" id="venue-list" role="tabpanel"></div>
 </div>
 </div>
 
@@ -1299,17 +1308,31 @@ Install Weatherow app</button>
 //   stretches   with a path: the straight parts, in start → finish order, listed under "Wind By Stretch":
 //               [{ label, bearing, length (m), from, to }] where from / to are positions in `path`
 //   winding     true = the course bends so much that the overall line is only a rough guide (a note says so)
-// Venue extras: group ('regatta' default, 'wa' or 'intl') for the venue list; tidePlace ('fremantle' default, 'bunbury', 'albany')
+// Venue extras: group: 'intl' marks an international venue (the venue list sorts the rest into WA or Australia by `state`);
+// area names the sub-heading a WA venue sits under ('Swan River', 'Canning River', 'Lakes & Regional'); tidePlace ('fremantle' default, 'bunbury', 'albany')
 // and tideNote for the Tides panel; tideMsg replaces the "freshwater venue" line where that would be wrong.
 // A venue with no obsStation (the international ones) simply has no Live Observations; `bom` is optional too.
 // The readable compass point (N, NNE…) is worked out from the bearing automatically.
 // Adding a venue = add one entry with lat/lon/tz and a course; everything else follows.
 // icons/freshwater_bay.png is the WA swan: every WA venue uses it. The other Australian venues have their state's icon.
-// Venues without artwork (the international ones) get a plain lettered tile, drawn here so no image file is needed
-const badgeIcon = t => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="#0d2137"/><path d="M12 72q9-8 18 0t18 0 18 0 18 0" fill="none" stroke="#00b4d8" stroke-width="5" stroke-linecap="round"/><text x="48" y="54" text-anchor="middle" font-family="Arial Narrow,Arial,Helvetica,sans-serif" font-weight="700" font-size="36" fill="#fff">${t}</text></svg>`);
+// International venues get their national flag as a rounded tile, drawn here so no image files are needed.
+// (Simplified for a small tile: Spain without its coat of arms, the USA with nine stars.)
+const FLAGS = {
+gb: '<clipPath id="u"><path d="M48 48h48v48zM48 48v48H0zM48 48H0V0zM48 48V0h48z"/></clipPath><rect width="96" height="96" fill="#012169"/><path d="M0 0L96 96M96 0L0 96" stroke="#fff" stroke-width="19"/><path d="M0 0L96 96M96 0L0 96" stroke="#C8102E" stroke-width="12.8" clip-path="url(#u)"/><path d="M48 0v96M0 48h96" stroke="#fff" stroke-width="32"/><path d="M48 0v96M0 48h96" stroke="#C8102E" stroke-width="19"/>',
+es: '<rect width="96" height="96" fill="#AA151B"/><rect y="24" width="96" height="48" fill="#F1BF00"/>',
+bg: '<rect width="96" height="32" fill="#fff"/><rect y="32" width="96" height="32" fill="#00966E"/><rect y="64" width="96" height="32" fill="#D62612"/>',
+ch: '<rect width="96" height="96" fill="#DA291C"/><path d="M39 18h18v21h21v18H57v21H39V57H18V39h21z" fill="#fff"/>',
+cz: '<rect width="96" height="48" fill="#fff"/><rect y="48" width="96" height="48" fill="#D7141A"/><path d="M0 0L48 48L0 96z" fill="#11457E"/>',
+de: '<rect width="96" height="32" fill="#000"/><rect y="32" width="96" height="32" fill="#DD0000"/><rect y="64" width="96" height="32" fill="#FFCE00"/>',
+hu: '<rect width="96" height="32" fill="#CE2939"/><rect y="32" width="96" height="32" fill="#fff"/><rect y="64" width="96" height="32" fill="#477050"/>',
+it: '<rect width="32" height="96" fill="#009246"/><rect x="32" width="32" height="96" fill="#fff"/><rect x="64" width="32" height="96" fill="#CE2B37"/>',
+pl: '<rect width="96" height="48" fill="#fff"/><rect y="48" width="96" height="48" fill="#DC143C"/>',
+us: '<rect width="96" height="96" fill="#B22234"/><rect y="7.38" width="96" height="7.38" fill="#fff"/><rect y="22.15" width="96" height="7.38" fill="#fff"/><rect y="36.92" width="96" height="7.38" fill="#fff"/><rect y="51.69" width="96" height="7.38" fill="#fff"/><rect y="66.46" width="96" height="7.38" fill="#fff"/><rect y="81.23" width="96" height="7.38" fill="#fff"/><rect width="46" height="51.69" fill="#3C3B6E"/><path d="M9.5 4.7L10.6 7.9L14.1 8.0L11.3 10.1L12.3 13.4L9.5 11.4L6.7 13.4L7.7 10.1L4.9 8.0L8.4 7.9zM23.0 4.7L24.1 7.9L27.6 8.0L24.8 10.1L25.8 13.4L23.0 11.4L20.2 13.4L21.2 10.1L18.4 8.0L21.9 7.9zM36.5 4.7L37.6 7.9L41.1 8.0L38.3 10.1L39.3 13.4L36.5 11.4L33.7 13.4L34.7 10.1L31.9 8.0L35.4 7.9zM9.5 21.0L10.6 24.2L14.1 24.3L11.3 26.4L12.3 29.7L9.5 27.7L6.7 29.7L7.7 26.4L4.9 24.3L8.4 24.2zM23.0 21.0L24.1 24.2L27.6 24.3L24.8 26.4L25.8 29.7L23.0 27.7L20.2 29.7L21.2 26.4L18.4 24.3L21.9 24.2zM36.5 21.0L37.6 24.2L41.1 24.3L38.3 26.4L39.3 29.7L36.5 27.7L33.7 29.7L34.7 26.4L31.9 24.3L35.4 24.2zM9.5 37.3L10.6 40.5L14.1 40.6L11.3 42.7L12.3 46.0L9.5 44.0L6.7 46.0L7.7 42.7L4.9 40.6L8.4 40.5zM23.0 37.3L24.1 40.5L27.6 40.6L24.8 42.7L25.8 46.0L23.0 44.0L20.2 46.0L21.2 42.7L18.4 40.6L21.9 40.5zM36.5 37.3L37.6 40.5L41.1 40.6L38.3 42.7L39.3 46.0L36.5 44.0L33.7 46.0L34.7 42.7L31.9 40.6L35.4 40.5z" fill="#fff"/>'
+};
+const flagIcon = c => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><clipPath id="r"><rect width="96" height="96" rx="18"/></clipPath><g clip-path="url(#r)">${FLAGS[c]}</g><rect x="1" y="1" width="94" height="94" rx="17" fill="none" stroke="#0b1726" stroke-opacity=".3" stroke-width="2"/></svg>`);
 const LOCATIONS = [
 {
-name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 192, status: 'verified',
   raceLabel: 'Outbound', reverseLabel: 'Return',
@@ -1327,7 +1350,7 @@ windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json
 tideDist: "~4 km"
 },
 {
-name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 212, status: 'verified',
   raceLabel: 'Downstream', reverseLabel: 'Return',
@@ -1344,7 +1367,7 @@ windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~4 km", json
 tideDist: "~3 km"
 },
 {
-name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion_lakes.png", state: "WA",
+name: "Champion Lakes, Armadale", short: "Champion Lakes", icon: "icons/champion_lakes.png", state: "WA", area: 'Lakes & Regional',
 course: {
   bearing: 42, status: 'verified',
   description: '2,000 m, 8-lane course running SW → NE alongside Tonkin Highway; crews race north-east to the finish tower at the north-eastern end.',
@@ -1443,7 +1466,7 @@ obsStation: { name: "Canberra Airport", dist: "~7 km", json: "https://www.bom.go
 },
 // ── WA rivers and training waters (added from a local coach's pins, measure-distance screenshots and club traffic maps) ──
 {
-name: "Matilda Bay, Crawley (Narrows Course)", short: "Matilda Bay", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Matilda Bay, Crawley (Narrows Course)", short: "Matilda Bay", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 46, status: 'approximate', ends: true,
   raceLabel: 'To The Narrows', reverseLabel: 'To Matilda Bay',
@@ -1459,7 +1482,7 @@ obsStation: { name: "Perth Metro", dist: "~6 km", json: "https://www.bom.gov.au/
 windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
 },
 {
-name: "Perth Water, Swan River", short: "Perth Water", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Perth Water, Swan River", short: "Perth Water", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 112, status: 'approximate', ends: true,
   raceLabel: 'To Causeway', reverseLabel: 'To WARC',
@@ -1475,7 +1498,7 @@ obsStation: { name: "Perth Metro", dist: "~5 km", json: "https://www.bom.gov.au/
 windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
 },
 {
-name: "Canning Bridge, Canning River", short: "Canning Bridge", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Canning Bridge, Canning River", short: "Canning Bridge", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Canning River',
 course: {
   bearing: 351, status: 'verified', ends: true,
   raceLabel: 'Down River', reverseLabel: 'Up River',
@@ -1493,7 +1516,7 @@ obsStation: { name: "Perth Metro", dist: "~11 km", json: "https://www.bom.gov.au
 windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
 },
 {
-name: "Shelley, Canning River", short: "Shelley", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Shelley, Canning River", short: "Shelley", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Canning River',
 course: {
   bearing: 55, status: 'verified', ends: true,
   raceLabel: 'Up River', reverseLabel: 'Down River',
@@ -1509,7 +1532,7 @@ obsStation: { name: "Perth Metro", dist: "~12 km", json: "https://www.bom.gov.au
 windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~9 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
 },
 {
-name: "Bayswater, Swan River (Redcliffe to Garrett)", short: "Bayswater", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Bayswater, Swan River (Redcliffe to Garrett)", short: "Bayswater", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 261, status: 'approximate', ends: true,
   raceLabel: 'Downstream', reverseLabel: 'Upstream',
@@ -1526,7 +1549,7 @@ bom: "https://weather.bom.gov.au/map/wind?lat=-31.93&lon=115.93&zoom=9",
 obsStation: { name: "Perth Airport", dist: "~5 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] },
 },
 {
-name: "Guildford to Garrett, Swan River", short: "Guildford", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Guildford to Garrett, Swan River", short: "Guildford", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 230, status: 'approximate', ends: true, winding: true,
   raceLabel: 'Downstream', reverseLabel: 'Upstream',
@@ -1543,7 +1566,7 @@ bom: "https://weather.bom.gov.au/map/wind?lat=-31.92&lon=115.94&zoom=9",
 obsStation: { name: "Perth Airport", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] },
 },
 {
-name: "Guildford Grammar, Swan River (Sandy Beach to Guildford GS)", short: "Guildford Grammar", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Guildford Grammar, Swan River (Sandy Beach to Guildford GS)", short: "Guildford Grammar", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
 course: {
   bearing: 40, status: 'approximate', ends: true, winding: true,
   raceLabel: 'Upstream', reverseLabel: 'Downstream',
@@ -1561,7 +1584,7 @@ bom: "https://weather.bom.gov.au/map/wind?lat=-31.91&lon=115.97&zoom=9",
 obsStation: { name: "Perth Airport", dist: "~5 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] },
 },
 {
-name: "Leschenault Inlet, Bunbury (Preston River Course)", short: "Bunbury", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Leschenault Inlet, Bunbury (Preston River Course)", short: "Bunbury", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Lakes & Regional',
 course: {
   bearing: 289, status: 'approximate', ends: true,
   raceLabel: 'Racing', reverseLabel: 'Return',
@@ -1578,7 +1601,7 @@ bom: "https://weather.bom.gov.au/map/wind?lat=-33.33&lon=115.65&zoom=9",
 obsStation: { name: "Bunbury", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94604.json" },
 },
 {
-name: "Kalgan River, Albany (Short Course)", short: "Albany", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
+name: "Kalgan River, Albany (Short Course)", short: "Albany", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Lakes & Regional',
 course: {
   bearing: 196, status: 'approximate', ends: true,
   raceLabel: 'Racing', reverseLabel: 'Return',
@@ -1595,7 +1618,7 @@ obsStation: { name: "Albany Airport", dist: "~15 km", json: "https://www.bom.gov
 // ── International venues ── start and finish points are PROVISIONAL (from the supplied venue list, confidence low or very low).
 // No BOM station, so there are no live observations: everything shown is forecast.
 {
-name: "Henley-on-Thames, United Kingdom", short: "Henley", icon: badgeIcon("HN"), state: "UK", group: 'intl',
+name: "Henley-on-Thames, United Kingdom", short: "Henley", icon: flagIcon('gb'), state: "UK", group: 'intl',
 course: {
   bearing: 199, status: 'approximate', midApprox: true,
   description: "Henley Royal Regatta course: 2,112 m on the Thames, raced upstream from Temple Island on two stations, Berkshire and Buckinghamshire. The line shown is an approximate midline between the two stations.",
@@ -1607,7 +1630,7 @@ lat: 51.5479, lon: -0.8941, tz: "Europe/London", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=51.55;x=-0.89;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Seville (La Cartuja), Spain", short: "Seville", icon: badgeIcon("SV"), state: "Spain", group: 'intl',
+name: "Seville (La Cartuja), Spain", short: "Seville", icon: flagIcon('es'), state: "Spain", group: 'intl',
 course: {
   bearing: 33, status: 'approximate', midApprox: true,
   description: "2,000 m with 6 racing lanes at La Cartuja: start near Torre Schindler, finish at the CEAR La Cartuja centre. The river corridor bends, so the straight line shown is only a stand-in for the real course.",
@@ -1619,7 +1642,7 @@ lat: 37.40263, lon: -5.9991, tz: "Europe/Madrid", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=37.40;x=-6.00;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Plovdiv, Bulgaria", short: "Plovdiv", icon: badgeIcon("PV"), state: "Bulgaria", group: 'intl',
+name: "Plovdiv, Bulgaria", short: "Plovdiv", icon: flagIcon('bg'), state: "Bulgaria", group: 'intl',
 course: {
   bearing: 56, status: 'approximate', midApprox: true,
   description: "2,000 m, 8-lane regatta course, raced towards the east-north-east. The official finish tower (42.148333, 24.716194) stands on the bank, so the finish point used here is not the middle of the water.",
@@ -1631,7 +1654,7 @@ lat: 42.14335, lon: 24.706, tz: "Europe/Sofia", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=42.14;x=24.71;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Lucerne (Rotsee), Switzerland", short: "Lucerne Rotsee", icon: badgeIcon("LU"), state: "Switzerland", group: 'intl',
+name: "Lucerne (Rotsee), Switzerland", short: "Lucerne Rotsee", icon: flagIcon('ch'), state: "Switzerland", group: 'intl',
 course: {
   bearing: 238, status: 'approximate', midApprox: true,
   description: "2,000 m on the Rotsee, with 8 lanes numbered 0 to 7: start near Rotsee-Badi, finish near the western end. No surveyed midline is available, so the line is approximate.",
@@ -1643,7 +1666,7 @@ lat: 47.06935, lon: 8.31355, tz: "Europe/Zurich", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=47.07;x=8.31;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Račice, Czechia", short: "Racice", icon: badgeIcon("RC"), state: "Czechia", group: 'intl',
+name: "Račice, Czechia", short: "Racice", icon: flagIcon('cz'), state: "Czechia", group: 'intl',
 course: {
   bearing: 46, status: 'approximate', midApprox: true,
   description: "2,000 m, 8-lane course at Račice, raced towards the north-east. The course axis is extrapolated from venue maps and the buoy line has not been verified.",
@@ -1655,7 +1678,7 @@ lat: 50.4519, lon: 14.3323, tz: "Europe/Prague", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=50.45;x=14.33;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Duisburg (Wedau), Germany", short: "Duisburg", icon: badgeIcon("DU"), state: "Germany", group: 'intl',
+name: "Duisburg (Wedau), Germany", short: "Duisburg", icon: flagIcon('de'), state: "Germany", group: 'intl',
 course: {
   bearing: 356, status: 'approximate', midApprox: true,
   description: "2,000 m regatta course at Wedau, raced south to north. The lane layout depends on the event, so the line shown is the geometric centre of the racing water.",
@@ -1667,7 +1690,7 @@ lat: 51.40364, lon: 6.7915, tz: "Europe/Berlin", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=51.40;x=6.79;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Szeged (Maty-ér), Hungary", short: "Szeged", icon: badgeIcon("SZ"), state: "Hungary", group: 'intl',
+name: "Szeged (Maty-ér), Hungary", short: "Szeged", icon: flagIcon('hu'), state: "Hungary", group: 'intl',
 course: {
   bearing: 202, status: 'approximate', midApprox: true,
   description: "2,000 m course at Maty-ér. The end points come from venue and grandstand positions, not a verified line on the water, and the lane layout varies by event.",
@@ -1679,7 +1702,7 @@ lat: 46.2388, lon: 20.07515, tz: "Europe/Budapest", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=46.24;x=20.08;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Varese (Schiranna), Italy", short: "Varese", icon: badgeIcon("VA"), state: "Italy", group: 'intl',
+name: "Varese (Schiranna), Italy", short: "Varese", icon: flagIcon('it'), state: "Italy", group: 'intl',
 course: {
   bearing: 130, status: 'approximate', midApprox: true,
   description: "2,000 m, 8-lane course on Lake Varese, finishing at Schiranna. The finish tower (near 45.80122, 8.78156) stands on the shore, so the line on the water is approximate.",
@@ -1691,7 +1714,7 @@ lat: 45.8073, lon: 8.77125, tz: "Europe/Rome", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=45.81;x=8.77;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Poznań (Lake Malta), Poland", short: "Poznan", icon: badgeIcon("PZ"), state: "Poland", group: 'intl',
+name: "Poznań (Lake Malta), Poland", short: "Poznan", icon: flagIcon('pl'), state: "Poland", group: 'intl',
 course: {
   bearing: 101, status: 'approximate', midApprox: true,
   description: "2,000 m, 8-lane course on Lake Malta, raced west to east: the official course diagram confirms the direction. The centreline is approximate.",
@@ -1703,7 +1726,7 @@ lat: 52.40255, lon: 16.9706, tz: "Europe/Warsaw", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=52.40;x=16.97;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Long Beach Marine Stadium (LA 2028), United States", short: "Long Beach", icon: badgeIcon("LB"), state: "USA", group: 'intl',
+name: "Long Beach Marine Stadium (LA 2028), United States", short: "Long Beach", icon: flagIcon('us'), state: "USA", group: 'intl',
 course: {
   bearing: 279, status: 'provisional', midApprox: true,
   description: "Planned 1,500 m, 6-lane course for the LA 2028 Olympic regatta at Long Beach Marine Stadium, finishing at the west or north-west end. The lane plan has not been published and these end points are provisional: check the line on the Course Map before relying on the headwind and crosswind figures.",
@@ -1716,7 +1739,7 @@ tideMsg: "Marine Stadium is tidal salt water, joined to Alamitos Bay. Weatherow 
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=33.76;x=-118.12;z=9;d=2;dl=2;dc=0;"
 },
 {
-name: "Lake Piediluco, Italy", short: "Piediluco", icon: badgeIcon("PI"), state: "Italy", group: 'intl',
+name: "Lake Piediluco, Italy", short: "Piediluco", icon: flagIcon('it'), state: "Italy", group: 'intl',
 course: {
   bearing: 292, status: 'provisional', midApprox: true,
   description: "2,000 m, 8-lane course on Lake Piediluco. Start in the east and finish in the west is a tentative reading: the direction of racing and the midline still need checking on the water.",
@@ -4217,39 +4240,62 @@ if (isFresh(i)) return currentSummary(cache[i].data); // full data already loade
 const o = overview[i];
 return o && (Date.now() - o.at) < REFRESH_MS ? o : null;
 }
+// The list is shown one tab at a time: Favourites, WA, Australia, International (by place, not by type of venue)
+let venueTab = 'wa';
 function renderVenueList() {
-let lastGroup = null;
-document.getElementById('venue-list').innerHTML = venueOrder().map(i => {
+document.getElementById('venue-tabs').innerHTML = VENUE_TABS.map(([k, label]) =>
+`<button type="button" role="tab" aria-selected="${k === venueTab}" class="venue-tab${k === venueTab ? ' active' : ''}" onclick="setVenueTab('${k}')">${label}</button>`).join('');
+document.getElementById('venue-note').textContent = `Forecast wind / gust in ${WU()} and a verdict for each venue right now, using your current limits. Tap a venue to open it.`;
+const list = venueTabList(venueTab);
+let lastArea = null;
+document.getElementById('venue-list').innerHTML = !list.length
+? `<div class="venue-empty">No favourites yet. Tap ☆ beside any venue to keep it here. Swiping the venue button then steps through your favourites.</div>`
+: list.map(i => {
 const loc = LOCATIONS[i], fav = favVenues.has(loc.short);
-const group = fav ? 'Favourites' : VENUE_GROUPS.find(g => g[0] === venueGroup(i))[1];
-const groupHead = group !== lastGroup ? `<div class="venue-group">${group}</div>` : '';
-lastGroup = group;
+const area = venueTab === 'wa' ? (loc.area || 'Other') : null; // WA is split by water
+const areaHead = area && area !== lastArea ? `<div class="venue-group">${area}</div>` : '';
+if (area) lastArea = area;
 const sum = venueSummary(i);
 let right;
 if (!sum) right = `<span class="chip none">Loading…</span>`;
 else if (sum.error) right = `<span class="chip none">Unavailable</span>`;
-else right = `${chipHTML(assess(sum).level)}<span class="venue-row-wind">Wind ${sum.wind} · gust ${sum.gust} ${WU()}</span>`;
-return `${groupHead}<div class="venue-row-wrap"><button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="selectLocation(${i})"${i === currentLoc ? ' aria-current="true"' : ''}>
+else right = `<span class="venue-row-wind" aria-label="Wind ${sum.wind}, gusts ${sum.gust} ${WU()}">${sum.wind} / ${sum.gust}</span>${chipHTML(assess(sum).level)}`;
+return `${areaHead}<div class="venue-row-wrap"><button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="selectLocation(${i})"${i === currentLoc ? ' aria-current="true"' : ''}>
 <img src="${loc.icon}" alt="">
-<span><span class="venue-row-name">${loc.short}</span><br><span class="venue-row-meta">${loc.state} · ${venueLocalTime(loc)}</span></span>
+<span class="venue-row-text"><span class="venue-row-name">${loc.short}</span>${venueTab === 'wa' ? '' : `<span class="venue-row-meta">${loc.state} · ${venueLocalTime(loc)}</span>`}</span>
 <span class="venue-row-right">${right}</span>
 </button><button type="button" class="venue-star" aria-pressed="${fav}" aria-label="${fav ? 'Remove' : 'Add'} ${loc.short} ${fav ? 'from' : 'to'} favourites" onclick="toggleFav(${i})">${fav ? '★' : '☆'}</button></div>`;
 }).join('');
+}
+// Conditions are fetched only for the tab on show (anything missing or older than 10 min), filling in as each arrives
+const overviewBusy = {};
+function loadVenueTab() {
+const sheet = document.getElementById('venue-sheet');
+venueTabList(venueTab).forEach(i => {
+if (venueSummary(i) || overviewBusy[i]) return;
+overviewBusy[i] = true;
+fetchOverview(i)
+.then(sum => { overview[i] = sum; })
+.catch(() => { overview[i] = { at: Date.now(), error: true }; })
+.finally(() => { overviewBusy[i] = false; if (!sheet.hidden) renderVenueList(); });
+});
+}
+function setVenueTab(k) {
+venueTab = k;
+store.set('venueTab', k);
+renderVenueList();
+loadVenueTab();
+document.querySelector('#venue-sheet .sheet').scrollTop = 0;
 }
 function openVenueSheet() {
 const sheet = document.getElementById('venue-sheet');
 sheet.hidden = false;
 document.getElementById('venue-btn').setAttribute('aria-expanded', 'true');
+// Opens on the tab holding the venue you are on (or on Favourites, if that is where you picked it from last time)
+venueTab = store.get('venueTab', '') === 'fav' && favVenues.has(LOCATIONS[currentLoc].short) ? 'fav' : venueGroup(currentLoc);
 renderVenueList();
 sheet.querySelector('.sheet-close').focus();
-// Fetch anything missing or older than 10 min, updating the list as each arrives
-LOCATIONS.forEach((_, i) => {
-if (venueSummary(i)) return;
-fetchOverview(i)
-.then(sum => { overview[i] = sum; })
-.catch(() => { overview[i] = { at: Date.now(), error: true }; })
-.finally(() => { if (!sheet.hidden) renderVenueList(); });
-});
+loadVenueTab();
 }
 function closeVenueSheet() {
 const sheet = document.getElementById('venue-sheet');
@@ -5113,19 +5159,26 @@ addEventListener('touchend', end, { passive: true }); addEventListener('touchcan
 
 // ── FAVOURITE VENUES + SWIPE BETWEEN VENUES ───────────────────────────────
 const favVenues = new Set((() => { try { return JSON.parse(store.get('favs', '[]')); } catch { return []; } })());
-// List order: starred venues first, each group in the usual order
-// Favourites first, then the WA rivers and training waters, the Australian regatta venues, and the international venues
-const VENUE_GROUPS = [['wa', 'WA Rivers & Training Waters'], ['regatta', 'Australian Regatta Venues'], ['intl', 'International Venues']];
-const venueGroup = i => VENUE_GROUPS.some(g => g[0] === LOCATIONS[i].group) ? LOCATIONS[i].group : 'regatta';
-const venueOrder = () => {
-const all = LOCATIONS.map((_, i) => i), fav = i => favVenues.has(LOCATIONS[i].short);
-return [...all.filter(fav), ...VENUE_GROUPS.flatMap(([k]) => all.filter(i => !fav(i) && venueGroup(i) === k))];
-};
+// Venues are grouped by place. WA is split by water; the international venues are in A–Z order.
+const VENUE_TABS = [['fav', '★ Favourites'], ['wa', 'WA'], ['aus', 'Australia'], ['intl', 'International']];
+const WA_AREAS = ['Swan River', 'Canning River', 'Lakes & Regional'];
+const venueGroup = i => LOCATIONS[i].group === 'intl' ? 'intl' : LOCATIONS[i].state === 'WA' ? 'wa' : 'aus';
+function venueTabList(tab) {
+const all = LOCATIONS.map((_, i) => i);
+if (tab === 'fav') return all.filter(i => favVenues.has(LOCATIONS[i].short));
+const list = all.filter(i => venueGroup(i) === tab);
+if (tab === 'wa') { const rank = i => { const r = WA_AREAS.indexOf(LOCATIONS[i].area); return r < 0 ? WA_AREAS.length : r; }; list.sort((a, b) => rank(a) - rank(b) || a - b); }
+if (tab === 'intl') list.sort((a, b) => LOCATIONS[a].short.localeCompare(LOCATIONS[b].short));
+return list;
+}
 function toggleFav(i) { const k = LOCATIONS[i].short; favVenues.has(k) ? favVenues.delete(k) : favVenues.add(k); store.set('favs', JSON.stringify([...favVenues])); renderVenueList(); }
+// Swiping the venue button steps through your favourites; with none starred, through the venues in the current venue's tab
 function stepVenue(d) {
-const order = venueOrder(), at = order.indexOf(currentLoc);
+const favs = venueTabList('fav'), ring = favs.length ? favs : venueTabList(venueGroup(currentLoc));
+const at = ring.indexOf(currentLoc);
+const next = at < 0 ? ring[d > 0 ? 0 : ring.length - 1] : ring[(at + d + ring.length) % ring.length];
 const btn = document.getElementById('venue-btn');
-selectLocation(order[(at + d + order.length) % order.length]);
+if (next !== currentLoc) selectLocation(next);
 btn.classList.remove('swipe-l', 'swipe-r'); void btn.offsetWidth; btn.classList.add(d > 0 ? 'swipe-l' : 'swipe-r');
 }
 { const btn = document.getElementById('venue-btn'); let sx = null, sy = 0, swipedAt = 0;
