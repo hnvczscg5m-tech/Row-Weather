@@ -707,6 +707,20 @@ background:var(--panel2);color:var(--text);border:1px solid var(--border);border
 .ptr.settle{transition:transform .2s ease,opacity .2s ease}
 /* ===== Venue list: favourites ===== */
 .venue-row-wrap{display:flex;gap:6px;align-items:stretch}
+.venue-group{font-family:'Barlow Condensed',sans-serif;font-size:calc(13px * var(--fs,1));font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin:8px 2px -2px}
+.venue-group:first-child{margin-top:0}
+.rw-stretches{display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.rw-st{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:8px;width:100%;min-height:48px;padding:6px 4px;border:0;border-bottom:1px solid var(--border);
+background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.rw-st.sel{background:rgba(0,180,216,.1);box-shadow:inset 3px 0 0 var(--accent)}
+.rw-st-n{width:20px;height:20px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:calc(11px * var(--fs,1));font-weight:700;display:flex;align-items:center;justify-content:center}
+.rw-st.sel .rw-st-n{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.rw-st-name{font-size:calc(13px * var(--fs,1));font-weight:600;line-height:1.25}
+.rw-st-name small{display:block;font-size:calc(11px * var(--fs,1));font-weight:400;color:var(--muted)}
+.rw-st-v{font-family:'Barlow Condensed',sans-serif;font-size:calc(15px * var(--fs,1));font-weight:600;white-space:nowrap;min-width:52px;text-align:right}
+.rw-st-note{font-size:calc(11px * var(--fs,1));color:var(--muted);line-height:1.5;margin:6px 0 0}
+.rw-winding{margin:6px 0 0}
+.tide-place-note{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:1.5;margin:0 0 10px}
 .venue-row-wrap .venue-row{flex:1;min-width:0}
 .venue-star{flex:0 0 46px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:10px;font-size:calc(20px * var(--fs,1));cursor:pointer}
 .venue-star[aria-pressed=true]{color:var(--yellow);border-color:var(--yellow)}
@@ -1085,7 +1099,7 @@ aria-label="Refresh weather data" title="Refresh weather data"></button>
 <div class="details-body about-text">
 <p><strong>Verdicts:</strong> GO / CAUTION / OFF WATER use the limits selected above (Seniors or Novices). Day verdicts use each day's strongest forecast wind and gusts, which usually come in the afternoon.</p>
 <p><strong>Lightning / CAPE:</strong> CAPE above 1000 J/kg = clear the water. The Lightning section shows live strikes (Blitzortung.org) or rain radar for the last 2 hours (RainViewer).</p>
-<p><strong>Tides:</strong> Forecast sea level off Fremantle from Open-Meteo's ocean model (tide plus weather effects), shown relative to mean sea level. It is a model forecast, not the official tide table — check BOM tide tables for anything critical. All other venues are freshwater.</p>
+<p><strong>Tides:</strong> Forecast sea level off Fremantle (for the Swan and Canning River venues), Bunbury or Albany from Open-Meteo's ocean model (tide plus weather effects), shown relative to mean sea level. It is a model forecast for the open coast, not the official tide table: up a river or inside an inlet the tide runs later and its height can differ. Check BOM tide tables for anything critical. All other venues are freshwater.</p>
 <p><strong>Wind:</strong> Forecast from Open-Meteo. Live observations from the nearest BOM station (named above); the status banner uses whichever of forecast or live wind is worse.</p>
 <p><strong>Days 17–21:</strong> A long-range outlook from the average of NOAA's GFS ensemble forecast (about a 50 km grid), via Open-Meteo. It is much less certain than the first 16 days and shows wind, rain and temperature only — use it for the trend, not for a decision.</p>
 <p><strong>Daylight:</strong> First and last light are civil twilight (sun 6° below the horizon), calculated in the page.</p>
@@ -1275,11 +1289,23 @@ Install Weatherow app</button>
 //   length      course length in metres for the Course Map (default 2000)
 //   mid         [lat, lon] of the MIDDLE of the course for the Course Map (default: the venue's lat/lon).
 //               To move a course line that's drawn in the wrong spot, set this to the mid-course point from Google Maps.
+//   ends        true = show Start and Finish on the Course Map even when the two directions have their own names
+//   marks       optional points along a straight course for the Course Map: [{ at: 1000, label: '1,000 m start' }]
+//   mapNote     optional extra sentence under the Course Map
+//   path        for a course that bends: [[lat, lon], …] from start to finish. The Course Map draws this line instead of
+//               a straight one, and `bearing` is then the straight line from start to finish (the "overall line").
+//   stretches   with a path: the straight parts, in start → finish order, listed under "Wind By Stretch":
+//               [{ label, bearing, length (m), from, to }] where from / to are positions in `path`
+//   winding     true = the course bends so much that the overall line is only a rough guide (a note says so)
+// Venue extras: group ('regatta' default, or 'wa') for the venue list; tidePlace ('fremantle' default, 'bunbury', 'albany')
+// and tideNote for the Tides panel.
 // The readable compass point (N, NNE…) is worked out from the bearing automatically.
 // Adding a venue = add one entry with lat/lon/tz and a course; everything else follows.
+// Venues without their own artwork get a plain lettered tile, drawn here so no image file is needed
+const badgeIcon = t => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="#0d2137"/><path d="M12 72q9-8 18 0t18 0 18 0 18 0" fill="none" stroke="#00b4d8" stroke-width="5" stroke-linecap="round"/><text x="48" y="54" text-anchor="middle" font-family="Arial Narrow,Arial,Helvetica,sans-serif" font-weight="700" font-size="36" fill="#fff">${t}</text></svg>`);
 const LOCATIONS = [
 {
-name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA",
+name: "Freshwater Bay, Mosman Park", short: "Freshwater Bay", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
 course: {
   bearing: 192, status: 'verified',
   raceLabel: 'Outbound', reverseLabel: 'Return',
@@ -1297,7 +1323,7 @@ windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~2 km", json
 tideDist: "~4 km"
 },
 {
-name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA",
+name: "Blackwall Reach, Bicton", short: "Blackwall Reach", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa',
 course: {
   bearing: 212, status: 'verified',
   raceLabel: 'Downstream', reverseLabel: 'Return',
@@ -1325,7 +1351,7 @@ course: {
 lat: -32.1078, lon: 115.9958, tz: "Australia/Perth", tidal: false, // regatta centre (was ~5 km south)
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.11;x=116.00;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-32.11&lon=116.00&zoom=9",
-obsStation: { name: "Perth Airport", dist: "~20 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json" }
+obsStation: { name: "Perth Airport", dist: "~20 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] } // BOM moved Perth Airport to a new station number (94151); the old one is tried second
 },
 {
 name: "Sydney International Regatta Centre, Penrith", short: "Sydney SIRC", icon: "icons/sydney_sirc.png", state: "NSW",
@@ -1410,6 +1436,139 @@ lat: -35.2925, lon: 149.0840, tz: "Australia/Sydney", tidal: false,
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-35.29;x=149.08;z=9;d=2;dl=2;dc=0;",
 bom: "https://weather.bom.gov.au/map/wind?lat=-35.29&lon=149.08&zoom=9",
 obsStation: { name: "Canberra Airport", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDN60801/IDN60801.94926.json" }
+},
+// ── WA rivers and training waters (added from a local coach's pins, measure-distance screenshots and club traffic maps) ──
+{
+name: "Matilda Bay, Crawley (Narrows Course)", short: "Matilda Bay", icon: badgeIcon("MB"), state: "WA", group: 'wa',
+course: {
+  bearing: 46, status: 'approximate', ends: true,
+  raceLabel: 'To The Narrows', reverseLabel: 'To Matilda Bay',
+  description: "2,000 m Narrows course: from Matilda Bay, south-east of the Crawley boatshed, north-east along the Kings Park shore to a finish just short of the Narrows Bridge.",
+  source: "Finish line pinned on Google Maps by a local coach (-31.96448, 115.84459). Start from the coach's Google Maps \"measure distance\" screenshot: 2.016 km, with the line measuring 046° on screen (±2°). Drawn as 2,000 m anchored on the finish.",
+  mid: [-31.97072, 115.83697], length: 2000,
+  presets: []
+},
+lat: -31.97072, lon: 115.83697, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "The tide reaches this part of the river later than at Fremantle and its height can differ, so treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.97;x=115.84;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-31.97&lon=115.84&zoom=9",
+obsStation: { name: "Perth Metro", dist: "~6 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94608.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
+},
+{
+name: "Perth Water, Swan River", short: "Perth Water", icon: badgeIcon("PW"), state: "WA", group: 'wa',
+course: {
+  bearing: 112, status: 'approximate', ends: true,
+  raceLabel: 'To Causeway', reverseLabel: 'To WARC',
+  description: "Perth Water is rowed as a circuit, not one straight course. The heading used here is the long straight along the north shore, from the WARC end towards the Causeway (about 1,500 m). The west leg, from WARC down to Mends Street Jetty, is under Adjust. Follow the club traffic plan for which way round to row.",
+  source: "Long straight: start and finish pinned on Google Maps by a local coach, who described the pins as rough (-31.96155, 115.85846 → -31.96666, 115.87336: 112°, 1,518 m). West leg ≈ 202°: read off the WARC (\"Westies\") traffic plan, an estimate only.",
+  mid: [-31.96411, 115.86591], length: 1500,
+  presets: [{ label: 'West leg (WARC to Mends St)', bearing: 202 }]
+},
+lat: -31.96411, lon: 115.86591, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "The tide reaches this part of the river later than at Fremantle and its height can differ, so treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.96;x=115.87;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-31.96&lon=115.87&zoom=9",
+obsStation: { name: "Perth Metro", dist: "~5 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94608.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
+},
+{
+name: "Canning Bridge, Canning River", short: "Canning Bridge", icon: badgeIcon("CB"), state: "WA", group: 'wa',
+course: {
+  bearing: 351, status: 'verified', ends: true,
+  raceLabel: 'Down River', reverseLabel: 'Up River',
+  description: "The Canning River course, also known as Mount Pleasant or Deep Water Point: 2,000 m rowed down river, from south of Deep Water Point north to Canning Bridge. Deep Water Point is the 1,000 m start and the start of the inside course, which runs alongside on the same heading. Follow the Rowing WA Canning River traffic map for where to row in each direction.",
+  source: "Start and finish pinned on Google Maps by a local coach (-32.02981, 115.85691 → -32.01269, 115.85368: 351°, 1,930 m). Drawn as 2,000 m: the finish is kept and the start is moved about 70 m south along the same line. Direction of travel (down river = north) from the Rowing WA Canning River Rowing Map, 3354-M-01-01 rev 6.",
+  mid: [-32.02156, 115.85536], length: 2000,
+  marks: [{ at: 1000, label: '1,000 m start' }],
+  mapNote: 'Deep Water Point is the 1,000 m start and the start of the inside course.',
+  presets: []
+},
+lat: -32.02156, lon: 115.85536, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "The tide reaches this part of the river later than at Fremantle and its height can differ, so treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.02;x=115.86;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-32.02&lon=115.86&zoom=9",
+obsStation: { name: "Perth Metro", dist: "~11 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94608.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~7 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
+},
+{
+name: "Shelley, Canning River", short: "Shelley", icon: badgeIcon("SH"), state: "WA", group: 'wa',
+course: {
+  bearing: 55, status: 'verified', ends: true,
+  raceLabel: 'Up River', reverseLabel: 'Down River',
+  description: "2,000 m on the Canning River between Salter Point and Shelley, rowed up river (east-north-east) from the Salter Point end; the return is down river. This reach has low-tide sandbars and a marked danger area at Salter Point: follow the Rowing WA Canning River traffic map.",
+  source: "Start and finish pinned on Google Maps by a local coach (-32.03087, 115.87402 → -32.01945, 115.89302: 055°, 2,198 m). Drawn as 2,000 m centred between the pins, leaving about 100 m clear at each end. Up-river direction from the Rowing WA Canning River Rowing Map, 3354-M-01-01 rev 6.",
+  mid: [-32.02516, 115.88352], length: 2000,
+  presets: []
+},
+lat: -32.02516, lon: 115.88352, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "The tide reaches this part of the river later than at Fremantle and its height can differ, so treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-32.03;x=115.88;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-32.03&lon=115.88&zoom=9",
+obsStation: { name: "Perth Metro", dist: "~12 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94608.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~9 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
+},
+{
+name: "Bayswater, Swan River (Redcliffe to Garrett)", short: "Bayswater", icon: badgeIcon("BW"), state: "WA", group: 'wa',
+course: {
+  bearing: 261, status: 'approximate', ends: true,
+  raceLabel: 'Downstream', reverseLabel: 'Upstream',
+  description: "About 2 km of the Swan River, rowed downstream from just above Redcliffe Bridge to ANA Rowing Club at Hinds Reserve, above the Garrett Road bridge. The river bends at the sandbank marker post below the power lines, so the two stretches are listed under Wind By Stretch. Sandbanks and marker posts are shown on the ANA river map: follow it.",
+  source: "2 km start pinned on Google Maps by a local coach (-31.92831, 115.93881). The line is traced from the ANA Rowing Club river map, fitted to two pinned points (the Guildford Road bridge and the 2 km start); the fit agrees with the map's scale bar to 1.3% and with the river's direction at the Guildford Road bridge on Google Maps. Bearings ±3°; the finish position is from the fit, not a pin.",
+  length: 2000,
+  path: [[-31.92831, 115.93881], [-31.92929, 115.93742], [-31.93014, 115.93475], [-31.93098, 115.9278], [-31.93096, 115.91916]],
+  stretches: [{"label": "2 km start to the sandbank post", "bearing": 254, "length": 1100, "from": 0, "to": 3}, {"label": "Sandbank post to ANA", "bearing": 270, "length": 820, "from": 3, "to": 4}],
+  presets: []
+},
+lat: -31.92965, lon: 115.92899, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "This is well up the river: the tide arrives much later than at Fremantle and its height can differ, so treat this as a rough guide only.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.93;x=115.93;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-31.93&lon=115.93&zoom=9",
+obsStation: { name: "Perth Airport", dist: "~5 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] },
+},
+{
+name: "Guildford to Garrett, Swan River", short: "Guildford", icon: badgeIcon("GG"), state: "WA", group: 'wa',
+course: {
+  bearing: 230, status: 'approximate', ends: true, winding: true,
+  raceLabel: 'Downstream', reverseLabel: 'Upstream',
+  description: "The Swan River from the Guildford Road bridge downstream to ANA Rowing Club at Hinds Reserve, above the Garrett Road bridge: about 6.9 km by the river markers (the ANA head race starts at Point Reserve, 6.5 km). The river bends many times, so no single heading describes it: use Wind By Stretch for each straight. Blind corners, rocks and sandbanks are marked on the ANA river map: follow it.",
+  source: "Start pinned on Google Maps by a local coach (Guildford Road bridge, -31.90057, 115.96138). The line is traced from the ANA Rowing Club river map, fitted to two pinned points (the Guildford Road bridge and the 2 km start by Redcliffe Bridge); the fit agrees with the map's scale bar to 1.3% and with the river's direction at the Guildford Road bridge on Google Maps. Each stretch uses its straight-line direction (±3°); the river curves within some of them.",
+  length: 6900,
+  path: [[-31.90057, 115.96138], [-31.90228, 115.96259], [-31.9042, 115.96319], [-31.90771, 115.96188], [-31.91097, 115.96195], [-31.91304, 115.96022], [-31.91581, 115.95638], [-31.92202, 115.95154], [-31.92243, 115.95049], [-31.9225, 115.94882], [-31.92029, 115.94419], [-31.92041, 115.94251], [-31.92091, 115.94152], [-31.92205, 115.94065], [-31.92712, 115.93938], [-31.92871, 115.93842], [-31.92929, 115.93742], [-31.93014, 115.93475], [-31.93098, 115.9278], [-31.93096, 115.91916]],
+  stretches: [{"label": "Guildford Road bridge to Point Reserve", "bearing": 157, "length": 440, "from": 0, "to": 2}, {"label": "Point Reserve to the first blind corner", "bearing": 189, "length": 770, "from": 2, "to": 4}, {"label": "First blind corner to Sandy Beach", "bearing": 219, "length": 1590, "from": 4, "to": 7}, {"label": "Sandy Beach to Ashfield Flats", "bearing": 285, "length": 770, "from": 7, "to": 10}, {"label": "Around Ron Courtney Island", "bearing": 240, "length": 420, "from": 10, "to": 13}, {"label": "Ron Courtney Island to Redcliffe Bridge", "bearing": 201, "length": 890, "from": 13, "to": 16}, {"label": "Redcliffe Bridge to the sandbank post", "bearing": 258, "length": 930, "from": 16, "to": 18}, {"label": "Sandbank post to ANA", "bearing": 270, "length": 820, "from": 18, "to": 19}],
+  presets: []
+},
+lat: -31.91578, lon: 115.94118, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "This is well up the river: the tide arrives much later than at Fremantle and its height can differ, so treat this as a rough guide only.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.92;x=115.94;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-31.92&lon=115.94&zoom=9",
+obsStation: { name: "Perth Airport", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94151.json", alt: ["https://www.bom.gov.au/fwo/IDW60901/IDW60901.94610.json"] },
+},
+{
+name: "Leschenault Inlet, Bunbury (Preston River Course)", short: "Bunbury", icon: badgeIcon("BY"), state: "WA", group: 'wa',
+course: {
+  bearing: 289, status: 'approximate', ends: true,
+  raceLabel: 'Racing', reverseLabel: 'Return',
+  description: "1,500 m Preston River course on Leschenault Inlet, Bunbury, with a bend part-way: about 700 m heading just north of west from the Koombana Drive end, then about 800 m north-west to the finish. The heading used is the straight line from start to finish; the two legs are listed under Wind By Stretch.",
+  source: "Finish line pinned on Google Maps by a local coach (-33.32331, 115.64171). Start and bend from the coach's \"measure distance\" screenshot: 1.516 km in two legs measuring 277° and 299° on screen (±3°; the finish marker was partly off the edge of the screenshot).",
+  length: 1500,
+  path: [[-33.32757, 115.65685], [-33.32684, 115.64919], [-33.32331, 115.64171]],
+  stretches: [{"label": "First leg: start to the bend", "bearing": 277, "length": 720, "from": 0, "to": 1}, {"label": "Final leg: bend to the finish", "bearing": 299, "length": 800, "from": 1, "to": 2}],
+  presets: []
+},
+lat: -33.32544, lon: 115.64928, tz: "Australia/Perth", tidal: true, tidePlace: "bunbury", tideNote: "Leschenault Inlet joins the sea through a narrow channel, so its level follows this with a delay. Treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-33.33;x=115.65;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-33.33&lon=115.65&zoom=9",
+obsStation: { name: "Bunbury", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94604.json" },
+},
+{
+name: "Kalgan River, Albany (Short Course)", short: "Albany", icon: badgeIcon("AL"), state: "WA", group: 'wa',
+course: {
+  bearing: 196, status: 'approximate', ends: true,
+  raceLabel: 'Racing', reverseLabel: 'Return',
+  description: "600 m short course on the lower Kalgan River, rowed south-south-west to a finish beside Albany Rowing Club.",
+  source: "Finish line pinned on Google Maps by a local coach (-34.94765, 117.97859). Start from the coach's \"measure distance\" screenshot: 600 m, with the line measuring 196° on screen (±2°).",
+  mid: [-34.94506, 117.97947], length: 600,
+  presets: []
+},
+lat: -34.94506, lon: 117.97947, tz: "Australia/Perth", tidal: true, tidePlace: "albany", tideNote: "The lower Kalgan River follows the sea through Oyster Harbour with a delay. Treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-34.95;x=117.98;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-34.95&lon=117.98&zoom=9",
+obsStation: { name: "Albany Airport", dist: "~15 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94802.json" },
 }
 ];
 
@@ -1644,6 +1803,14 @@ function pickHeadingFromSelect(sel) {
 if (sel.value === '') return;
 setHeading('custom', Number(sel.value));
 }
+// A stretch of a bent course (see "Wind By Stretch"): tap to put it on the dial, tap again to go back to the overall line
+function pickStretch(i) {
+const loc = LOCATIONS[currentLoc], st = loc.course?.stretches?.[i], ch = getHeadingChoice(loc);
+if (!st) return;
+const back = ch.mode === 'reverse' || ((ch.mode === 'custom' || ch.mode === 'preset') && !!ch.rev); // rowing the course the other way
+if (ch.mode === 'preset' && ch.label === st.label) return setHeading(back ? 'reverse' : 'race');
+setHeading('preset', st.bearing, st.label, back);
+}
 function pickPreset(i) {
 const p = LOCATIONS[currentLoc].course?.presets?.[i];
 if (p) setHeading('preset', p.bearing, p.label);
@@ -1675,7 +1842,12 @@ function cmUnproject(x, y, z) {
 const n = 256 * Math.pow(2, z);
 return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180];
 }
-const cmMid = loc => (loc.course && loc.course.mid) || [loc.lat, loc.lon];
+const cmPath = loc => { const p = loc.course && loc.course.path; return Array.isArray(p) && p.length > 1 ? p : null; };
+function cmMid(loc) {
+const p = cmPath(loc);
+if (p) { const la = p.map(q => q[0]), lo = p.map(q => q[1]); return [(Math.min(...la) + Math.max(...la)) / 2, (Math.min(...lo) + Math.max(...lo)) / 2]; } // middle of a bent course
+return (loc.course && loc.course.mid) || [loc.lat, loc.lon];
+}
 function cmZoom(d) { cmState.zoomAdj = Math.max(-3, Math.min(2, cmState.zoomAdj + d)); renderCourseMap(); }
 function renderCourseMap() {
 const box = document.getElementById('course-map');
@@ -1683,7 +1855,8 @@ const loc = rwState.loc || LOCATIONS[currentLoc];
 if (!box || !loc) return;
 if (cmState.loc !== loc) { cmState.loc = loc; cmState.zoomAdj = 0; cmState.key = ''; }
 const course = loc.course || {};
-const hasLine = RowingWind.isNum(course.bearing);
+const path = cmPath(loc);
+const hasLine = RowingWind.isNum(course.bearing) || !!path;
 if (!box.querySelector('.cm-panel')) {
 box.innerHTML = `<div class="section-title">Course Map</div>
 <div class="cm-panel"><div class="cm-map" id="cm-map"><div class="cm-tiles" id="cm-tiles"></div><svg id="cm-svg" aria-hidden="true"></svg>
@@ -1695,13 +1868,21 @@ cmState.key = '';
 const mapEl = document.getElementById('cm-map');
 const W = mapEl.clientWidth;
 if (!W) return; // folded away — drawn when it opens
-const H = Math.round(Math.min(420, Math.max(220, W * 0.7)));
+const H = Math.round(path ? Math.min(460, Math.max(260, W * 0.9)) : Math.min(420, Math.max(220, W * 0.7))); // bent courses get a taller map
 mapEl.style.height = H + 'px';
 const [mlat, mlon] = cmMid(loc);
 const len = course.length || 2000;
 const mpp0 = 156543.03392 * Math.cos(mlat * Math.PI / 180);
+// Ground that has to fit: the course length, or a bent course's east–west and north–south spread
+let spanX = len, spanY = len, fitX = 0.62 * Math.min(W, H), fitY = fitX;
+if (path) {
+const la = path.map(q => q[0]), lo = path.map(q => q[1]);
+spanY = (Math.max(...la) - Math.min(...la)) * 111320;
+spanX = (Math.max(...lo) - Math.min(...lo)) * 111320 * Math.cos(mlat * Math.PI / 180);
+fitX = 0.76 * W; fitY = 0.72 * H;
+}
 let z = 17;
-while (z > 3 && len / (mpp0 / Math.pow(2, z)) > 0.62 * Math.min(W, H)) z--;
+while (z > 3 && (spanX / (mpp0 / Math.pow(2, z)) > fitX || spanY / (mpp0 / Math.pow(2, z)) > fitY)) z--;
 z = Math.max(3, Math.min(18, z + cmState.zoomAdj));
 document.getElementById('cm-in').disabled = z >= 18 || cmState.zoomAdj >= 2;
 document.getElementById('cm-out').disabled = cmState.zoomAdj <= -3;
@@ -1733,12 +1914,63 @@ return `<rect x="${x0.toFixed(1)}" y="${(y - 9).toFixed(1)}" width="${w.toFixed(
 <text x="${(x0 + w / 2).toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="11" font-weight="700" fill="${ink}">${esc(text)}</text>`;
 };
 let g = '';
-if (hasLine) {
-const twoWay = !!course.reverseLabel;
+const twoWay = !!course.reverseLabel && !course.ends;
+const head = (x, y, dx, dy) => `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x - dx * 14 - dy * 8).toFixed(1)} ${(y - dy * 14 + dx * 8).toFixed(1)} L${(x - dx * 14 + dy * 8).toFixed(1)} ${(y - dy * 14 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+// End labels sit just beyond each end, kept inside the map
+const lab = (x, y, dx, dy, text) => pill(Math.max(34, Math.min(W - 34, x + dx * 26)), Math.max(48, Math.min(H - 34, y + dy * 26)), text);
+const sts = path && Array.isArray(course.stretches) ? course.stretches : [];
+if (path) {
+// A bent course: the line follows the path; numbered dots mark the stretches listed under "Wind By Stretch"
+const P = path.map(q => px(q[0], q[1]));
+const cum = [0], met = [0];
+for (let i = 1; i < P.length; i++) {
+cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+met.push(met[i - 1] + Math.hypot((path[i][0] - path[i - 1][0]) * 111320, (path[i][1] - path[i - 1][1]) * 111320 * Math.cos(mlat * Math.PI / 180)));
+}
+const total = cum[cum.length - 1] || 1, pathM = met[met.length - 1] || 1;
+const at = d => { // the point, and the direction of travel, this far along the line (screen pixels)
+let i = 1; while (i < P.length - 1 && cum[i] < d) i++;
+const seg = cum[i] - cum[i - 1] || 1, f = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
+return { x: P[i - 1][0] + (P[i][0] - P[i - 1][0]) * f, y: P[i - 1][1] + (P[i][1] - P[i - 1][1]) * f, ux: (P[i][0] - P[i - 1][0]) / seg, uy: (P[i][1] - P[i - 1][1]) / seg };
+};
+const d = pts => pts.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ');
+g += `<path d="${d(P)}" fill="none" stroke="${ink}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="${d(P)}" fill="none" stroke="${line}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+const chosen = getHeadingChoice(loc);
+const selI = chosen.mode === 'preset' ? sts.findIndex(s => s.label === chosen.label) : -1;
+if (selI >= 0) g += `<path d="${d(P.slice(sts[selI].from, sts[selI].to + 1))}" fill="none" stroke="#0077b6" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>`; // the stretch on the dial
+if (pathM <= 2600) for (let m = 500; m < pathM - 150; m += 500) { // 500 m marks on the shorter courses
+const t = at(total * m / pathM);
+g += `<line x1="${(t.x - t.uy * 7).toFixed(1)}" y1="${(t.y + t.ux * 7).toFixed(1)}" x2="${(t.x + t.uy * 7).toFixed(1)}" y2="${(t.y - t.ux * 7).toFixed(1)}" stroke="${ink}" stroke-width="2.5"/>`;
+}
+const a0 = at(0), a1 = at(total);
+g += head(a1.x, a1.y, a1.ux, a1.uy);
+if (twoWay) g += head(a0.x, a0.y, -a0.ux, -a0.uy);
+else g += `<circle cx="${a0.x.toFixed(1)}" cy="${a0.y.toFixed(1)}" r="6" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
+if (sts.length > 1) sts.forEach((s, i) => {
+const t = at((cum[s.from] + cum[s.to]) / 2), on = i === selI;
+g += `<circle cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" r="8.5" fill="${on ? '#0077b6' : '#fff'}" stroke="${ink}" stroke-width="1.5"/>
+<text x="${t.x.toFixed(1)}" y="${(t.y + 3.6).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="10.5" font-weight="700" fill="${on ? '#fff' : ink}">${i + 1}</text>`;
+});
+const endLab = (x, y, dx, dy, text) => { // beyond the end if there is room, otherwise to one side of it (never back along the line)
+const ix = x + dx * 26, iy = y + dy * 26, w = text.length * 6.4 + 12;
+if (ix >= 34 && ix <= W - 34 && iy >= 48 && iy <= H - 34) return pill(ix, iy, text);
+for (const [nx, ny] of [[-dy, dx], [dy, -dx]]) {
+if (Math.abs(nx) > Math.abs(ny)) { // sideways
+const x0 = nx < 0 ? x - 15 - w : x + 15, cy = y + ny * 10;
+if (x0 >= 4 && x0 + w <= W - 4 && cy >= 20 && cy <= H - 20 && !(cy < 50 && (x0 < 170 || x0 + w > W - 46))) return pill(nx < 0 ? x - 15 : x + 15, cy, text, nx < 0 ? 'end' : 'start');
+} else { // above or below
+const cx = Math.max(34, Math.min(W - 34, x + nx * 10)), cy = y + Math.sign(ny) * 22;
+if (cy >= 48 && cy <= H - 34) return pill(cx, cy, text);
+}
+}
+return pill(Math.max(34, Math.min(W - 34, ix)), Math.max(48, Math.min(H - 34, iy)), text);
+};
+if (!twoWay) g += endLab(a0.x, a0.y, -a0.ux, -a0.uy, 'Start') + endLab(a1.x, a1.y, a1.ux, a1.uy, 'Finish');
+} else if (hasLine) {
 const [sx, sy] = px(...cmOffset(mlat, mlon, course.bearing, -len / 2));
 const [fx, fy] = px(...cmOffset(mlat, mlon, course.bearing, len / 2));
 const L = Math.hypot(fx - sx, fy - sy) || 1, ux = (fx - sx) / L, uy = (fy - sy) / L; // unit vector start → finish
-const head = (x, y, dx, dy) => `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x - dx * 14 - dy * 8).toFixed(1)} ${(y - dy * 14 + dx * 8).toFixed(1)} L${(x - dx * 14 + dy * 8).toFixed(1)} ${(y - dy * 14 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
 g += `<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${ink}" stroke-width="8" stroke-linecap="round"/>
 <line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${line}" stroke-width="4.5" stroke-linecap="round"/>`;
 if (len >= 1000) for (let m = 500; m < len; m += 500) { // 500 m marks
@@ -1748,8 +1980,11 @@ g += `<line x1="${(tx - uy * 7).toFixed(1)}" y1="${(ty + ux * 7).toFixed(1)}" x2
 g += head(fx, fy, ux, uy);
 if (twoWay) g += head(sx, sy, -ux, -uy);
 else g += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
-// End labels sit just beyond each end, kept inside the map
-const lab = (x, y, dx, dy, text) => pill(Math.max(34, Math.min(W - 34, x + dx * 26)), Math.max(48, Math.min(H - 34, y + dy * 26)), text);
+(course.marks || []).forEach(mk => { // named points along the course, e.g. a 1,000 m start
+const tx = sx + ux * L * mk.at / len, ty = sy + uy * L * mk.at / len, w = mk.label.length * 6.4 + 12;
+const right = tx + 14 + w <= W - 4; // label goes on whichever side has room
+g += `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="5" fill="#fff" stroke="${ink}" stroke-width="2"/>` + pill(right ? tx + 14 : tx - 14, ty, mk.label, right ? 'start' : 'end');
+});
 if (!twoWay) g += lab(sx, sy, -ux, -uy, 'Start') + lab(fx, fy, ux, uy, 'Finish');
 }
 // North arrow (top-right)
@@ -1774,8 +2009,10 @@ const svg = document.getElementById('cm-svg');
 svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 svg.innerHTML = g;
 
+const lenTxt = len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m';
 document.getElementById('cm-note').textContent = !hasLine ? 'No fixed course direction set for this venue.'
-: `${(len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m')} course on ${deg3(course.bearing)}${course.reverseLabel ? ', rowed both ways' : ', arrow = racing direction'}.${course.midApprox ? ' The line\'s position here is an estimate.' : ''}`;
+: path ? `${lenTxt} course with ${sts.length > 1 ? sts.length + ' stretches (the numbers match Wind By Stretch)' : 'a bend'}. Overall line ${deg3(course.bearing)}, start to finish.${course.status === 'approximate' ? ' The line is traced from a map, so its position is approximate.' : ''}${course.mapNote ? ' ' + course.mapNote : ''}`
+: `${lenTxt} course on ${deg3(course.bearing)}${twoWay ? ', rowed both ways' : ', arrow = ' + (course.reverseLabel && course.raceLabel ? course.raceLabel : 'racing direction')}.${course.midApprox ? ' The line\'s position here is an estimate.' : ''}${course.mapNote ? ' ' + course.mapNote : ''}`;
 document.getElementById('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
 }
 
@@ -2253,7 +2490,29 @@ stats = comp(H < 0.5 ? 'HEAD / TAIL' : c.head > 0 ? 'HEADWIND' : 'TAILWIND', H <
 comp('CROSSWIND', X < 0.5 ? 'None' : `${Math.round(X)} ${WU()}`, X < 0.5 ? '' : `from ${c.cross > 0 ? 'right' : 'left'}`, X, X < 0.5 ? 'calm' : 'cross');
 } else stats = `<div class="rw-hint">No wind reading to analyse yet.</div>`;
 rows = statLine('Crew heading', `${compassLong(heading)} (${deg3(heading)})`) +
+(ch.mode === 'preset' && ch.label ? statLine('On the dial', esc(ch.label)) : '') +
 (primary ? statLine('Wind', fmtWind(primary.speed, primary.dir, primary.dirTxt)) : '');
+}
+// Bent courses: head / tail and cross wind for each straight stretch, for the wind on the dial
+const stretches = Array.isArray(course.stretches) && course.stretches.length > 1 ? course.stretches : null;
+let stretchBox = '';
+if (stretches && primary && RowingWind.isNum(primary.speed)) {
+const list = stretches.map((st, i) => ({ st, i }));
+if (returning) list.reverse(); // rowing it the other way: last stretch first, each heading turned round
+const fmtLen = m => m >= 1000 ? (m / 1000).toLocaleString('en-AU', { maximumFractionDigits: 1 }) + ' km' : m + ' m';
+stretchBox = `<div class="rw-sub">Wind By Stretch <span class="rw-legend">${esc(returning ? (course.reverseLabel || 'Reverse') : (course.raceLabel || 'Race direction'))} · ${WU()}</span></div>
+<div class="rw-stretches">${list.map(({ st, i }) => {
+const hdg = RowingWind.norm(st.bearing + (returning ? 180 : 0));
+const r = RowingWind.analyse(primary.dir, primary.speed, hdg), c = r ? r.comps : null;
+const H = c ? Math.abs(c.head) : 0, X = c ? Math.abs(c.cross) : 0, on = ch.mode === 'preset' && ch.label === st.label;
+return `<button type="button" class="rw-st${on ? ' sel' : ''}" aria-pressed="${on}" onclick="pickStretch(${i})">
+<span class="rw-st-n">${i + 1}</span>
+<span class="rw-st-name">${esc(st.label)}<small>${fmtLen(st.length)} · ${deg2comp(hdg)} ${deg3(hdg)}</small></span>
+<span class="rw-st-v rw-k-${H < 0.5 ? 'calm' : c.head > 0 ? 'head' : 'tail'}">${H < 0.5 ? '—' : `${c.head > 0 ? 'Head' : 'Tail'} ${Math.round(H)}`}</span>
+<span class="rw-st-v rw-k-${X < 0.5 ? 'calm' : 'cross'}">${X < 0.5 ? '—' : `${c.cross > 0 ? 'Right' : 'Left'} ${Math.round(X)}`}</span>
+</button>`;
+}).join('')}</div>
+<p class="rw-st-note">For the wind on the dial. Each stretch uses its straight-line direction, and the numbers match the Course Map. Tap a stretch to put it on the dial${ch.mode === 'preset' && stretches.some(st => st.label === ch.label) ? '; tap it again for the overall line' : ''}.</p>`;
 }
 const src = `<div class="rw-src">${primary ? esc(primary.src) : ''}${b ? ` · Forecast for now: ${rwDescribe(b.comps).text.toLowerCase()} (${fmtWind(secondary.speed, secondary.dir)})` : ''}</div>`;
 const insight = hd && a ? `<div class="rw-insight"><span class="rw-insight-t">Rowing insight · ${rwBoat}</span>${esc(rwInsight(rwBoat, a.comps))}</div>` : '';
@@ -2307,10 +2566,11 @@ el.innerHTML = `<div class="section-title">Rowing Wind</div>
 <div class="rw-panel">
 <div class="rw-top">
 <div class="rw-course">
-<div class="rw-course-name">${hasRace ? `Course: ${compassLong(course.bearing)} (${deg3(course.bearing)})` : (course.status === 'none' ? 'No fixed racing course' : 'Course direction not set')}</div>
+<div class="rw-course-name">${hasRace ? `${course.path ? 'Overall line' : 'Course'}: ${compassLong(course.bearing)} (${deg3(course.bearing)})` : (course.status === 'none' ? 'No fixed racing course' : 'Course direction not set')}</div>
 ${course.status === 'none' ? '' : `<span class="chip ${st.chip}">${st.text}</span>`}
 </div>
 </div>
+${course.winding && (ch.mode === 'race' || ch.mode === 'reverse') ? '<div class="rw-hint rw-winding">This course bends a lot, so the dial\'s overall line is only a rough guide. Use Wind By Stretch below for each straight.</div>' : ''}
 ${headline}
 ${boatSel}
 <div class="rw-body">
@@ -2336,6 +2596,7 @@ ${presets}
 </div>
 ${compare}
 </div>` : ''}
+${stretchBox}
 ${hours}
 <details class="rw-about"${rwState.aboutOpen ? ' open' : ''} ontoggle="rwState.aboutOpen=this.open"><summary>About This Course</summary>
 <p>${esc(course.description || '')}</p>
@@ -2395,37 +2656,53 @@ function gustCls(g) { return level(g, THRESHOLDS.gust); }
 const above = (v, t) => v > t.danger ? 'danger' : v > t.caution ? 'warn' : 'ok';
 const tempCls = t => above(t, THRESHOLDS.temp);
 
-// ── TIDES: forecast sea level off Fremantle (Open-Meteo Marine) ───────────
+// ── TIDES: forecast sea level (Open-Meteo Marine) ─────────────────────────
 // Hourly sea level (tide + weather effects) relative to mean sea level, from a forecast ocean model.
 // Replaces the old built-in formula, which did not match the published Fremantle tables.
-const TIDE_URL = 'https://marine-api.open-meteo.com/v1/marine?latitude=-32.05&longitude=115.70&hourly=sea_level_height_msl&timeformat=unixtime&past_days=1&forecast_days=7&cell_selection=sea';
+// One data set per place: Fremantle for the Swan and Canning venues, plus Bunbury and Albany.
+const TIDE_PLACES = {
+fremantle: { name: 'Fremantle', lat: -32.05, lon: 115.70, key: 'tide' },
+bunbury: { name: 'Bunbury', lat: -33.30, lon: 115.60, key: 'tide.bunbury' },
+albany: { name: 'Albany', lat: -35.06, lon: 117.97, key: 'tide.albany' }
+};
+const tidePlaceOf = loc => (loc && TIDE_PLACES[loc.tidePlace]) ? loc.tidePlace : 'fremantle';
+const tideUrl = pl => `https://marine-api.open-meteo.com/v1/marine?latitude=${pl.lat}&longitude=${pl.lon}&hourly=sea_level_height_msl&timeformat=unixtime&past_days=1&forecast_days=7&cell_selection=sea`;
 const TIDE_KEEP_MS = 3 * 3600000;
-let tideData = null, tideLoading = false, tideError = '';
+const tideSets = {}, tideBusy = {}, tideErrs = {};
+let tidePlace = 'fremantle', tideData = null, tideError = ''; // the place in use, and its data
 const tideEnd = d => d.t0 + (d.h.length - 1) * 3600000;
-try { // last saved copy, if it still reaches at least 6 h ahead
-const d = JSON.parse(store.get('tide', 'null'));
-if (d && Array.isArray(d.h) && d.h.length > 24 && tideEnd(d) > Date.now() + 6 * 3600000) tideData = d;
+for (const k in TIDE_PLACES) try { // last saved copies, if they still reach at least 6 h ahead
+const d = JSON.parse(store.get(TIDE_PLACES[k].key, 'null'));
+if (d && Array.isArray(d.h) && d.h.length > 24 && tideEnd(d) > Date.now() + 6 * 3600000) tideSets[k] = d;
 } catch {}
+tideData = tideSets.fremantle || null;
+// Point the tide functions at this venue's place
+function tideUse(loc) {
+if (!loc || !loc.tidal) return;
+tidePlace = tidePlaceOf(loc); tideData = tideSets[tidePlace] || null; tideError = tideErrs[tidePlace] || '';
+}
+function tideRetry() { tideErrs[tidePlace] = ''; tideError = ''; renderTides(LOCATIONS[currentLoc]); }
 async function loadTides(force) {
-if (tideLoading) return;
-if (!force && tideData && Date.now() - tideData.at < TIDE_KEEP_MS && tideEnd(tideData) > Date.now() + 6 * 3600000) return;
-tideLoading = true;
+const k = tidePlace, cur = tideSets[k];
+if (tideBusy[k]) return;
+if (!force && cur && Date.now() - cur.at < TIDE_KEEP_MS && tideEnd(cur) > Date.now() + 6 * 3600000) return;
+tideBusy[k] = true;
 try {
-const r = await fetchJSON(TIDE_URL);
+const r = await fetchJSON(tideUrl(TIDE_PLACES[k]));
 const t = r.hourly.time, raw = r.hourly.sea_level_height_msl;
 let n = raw.length;
 while (n && raw[n - 1] == null) n--; // drop empty hours at the end
 const h = raw.slice(0, n);
 if (h.length < 25 || h.some(v => typeof v !== 'number')) throw new Error('no tide data');
-tideData = { at: Date.now(), t0: t[0] * 1000, h };
-tideError = '';
-store.set('tide', JSON.stringify(tideData));
+tideSets[k] = { at: Date.now(), t0: t[0] * 1000, h };
+tideErrs[k] = '';
+store.set(TIDE_PLACES[k].key, JSON.stringify(tideSets[k]));
 } catch (err) {
-tideError = err.message || 'failed';
+tideErrs[k] = err.message || 'failed';
 } finally {
-tideLoading = false;
+tideBusy[k] = false;
 const loc = LOCATIONS[currentLoc];
-if (loc.tidal) { renderTides(loc); if (typeof renderSession === 'function') renderSession(); }
+if (loc.tidal && tidePlaceOf(loc) === k) { tideUse(loc); renderTides(loc); if (typeof renderSession === 'function') renderSession(); }
 }
 }
 // Height at any moment: a smooth curve through the hourly values (null outside the data)
@@ -2486,10 +2763,12 @@ sec.innerHTML = `<div class="tide-freshwater"><strong style="color:var(--text)">
 return;
 }
 tideLocRef = loc;
+tideUse(loc);
+const tidePl = TIDE_PLACES[tidePlace];
 if (!tideData) {
-sec.innerHTML = `<div class="section-title">Tides · Fremantle (${loc.short})</div>
+sec.innerHTML = `<div class="section-title">Tides · ${tidePl.name}${tidePl.name === loc.short ? '' : ` (${loc.short})`}</div>
 <div class="tide-widget"><div class="obs-pending">${tideError
-? `Couldn't load tide data (${esc(tideError)}). <button type="button" class="btn btn-outline" style="margin-left:8px" onclick="tideError='';renderTides(LOCATIONS[currentLoc])">Retry</button>`
+? `Couldn't load tide data (${esc(tideError)}). <button type="button" class="btn btn-outline" style="margin-left:8px" onclick="tideRetry()">Retry</button>`
 : '<span class="spinner"></span> Loading tide data…'}</div></div>`;
 if (!tideError) loadTides();
 return;
@@ -2519,12 +2798,13 @@ const highCard = nextHigh ? `
 </div>` : '';
 
 sec.innerHTML = `
-<div class="section-title">Tides · Fremantle (${loc.short})</div>
+<div class="section-title">Tides · ${tidePl.name}${tidePl.name === loc.short ? '' : ` (${loc.short})`}</div>
 <div class="tide-widget">
 <div class="tide-header">
-<div class="tide-title">Sea Level off Fremantle${loc.tideDist ? ` — ${loc.tideDist} from venue` : ''}</div>
+<div class="tide-title">Sea Level off ${tidePl.name}${loc.tideDist ? ` — ${loc.tideDist} from venue` : ''}</div>
 <div class="tide-note">Now: <strong style="color:var(--tide)">${fmtTideH(tideHeight(Date.now()))} m</strong> vs mean sea level</div>
 </div>
+${loc.tideNote ? `<div class="tide-place-note">${esc(loc.tideNote)}</div>` : ''}
 <div class="tide-next">${lowCard}${highCard}</div>
 <div class="tide-range-seg">
 <button class="tide-seg-btn ${tideRangeDays===1?'active':''}" id="tide-seg-1" onclick="setTideRange(1)">1 day</button>
@@ -2533,7 +2813,7 @@ sec.innerHTML = `
 </div>
 <div class="tide-chart-label">Tide Height <span style="opacity:.75">· slide along the graph to read any time</span></div>
 <div class="tide-chart-scroll"><canvas id="tide-canvas"></canvas></div>
-<div style="font-size:calc(10px * var(--fs,1));color:var(--muted);margin-top:8px;line-height:1.5">Forecast sea level (tide plus weather effects) from an ocean model, shown above (+) or below (−) mean sea level. Heights use a different zero from the official tables, and times in the river run later than at Fremantle. Not for navigation — check official tide tables for anything critical.</div>
+<div style="font-size:calc(10px * var(--fs,1));color:var(--muted);margin-top:8px;line-height:1.5">Forecast sea level (tide plus weather effects) from an ocean model, shown above (+) or below (−) mean sea level. Heights use a different zero from the official tables, and times in a river or inlet run later than on the coast. Not for navigation — check official tide tables for anything critical.</div>
 </div>`;
 
 bindTideTrack(document.getElementById('tide-canvas'));
@@ -3013,8 +3293,8 @@ function bomFeedCandidates(url) {
  return codes.map(c => url.replace(/\/ID[A-Z]\d{5}\/ID[A-Z]\d{5}\./, `/${m[1]}${c}/${m[1]}${c}.`));
 }
 const bomFeedOk = {}; // station feed that last worked, so later refreshes go straight to it
-async function fetchBomLatest(url, label) {
- const tries = bomFeedOk[url] ? [bomFeedOk[url]] : bomFeedCandidates(url);
+async function fetchBomLatest(url, label, alt) {
+ const tries = bomFeedOk[url] ? [bomFeedOk[url]] : [url, ...(alt || [])].flatMap(bomFeedCandidates); // alt = other station numbers to try
  let lastErr;
  for (const u of tries) {
  try {
@@ -3066,9 +3346,9 @@ async function renderObservations(loc) {
  // Fetch both stations in parallel — or just one if they're the same feed
  // If only one of two stations answers, its readings are used for everything rather than showing nothing.
  let obs, wObs, onlyOne = '';
- if (sameStation) { obs = wObs = await fetchBomLatest(stn.json, stn.name); }
+ if (sameStation) { obs = wObs = await fetchBomLatest(stn.json, stn.name, stn.alt); }
  else {
- const [a, b] = await Promise.allSettled([fetchBomLatest(stn.json, stn.name), fetchBomLatest(wStn.json, wStn.name)]);
+ const [a, b] = await Promise.allSettled([fetchBomLatest(stn.json, stn.name, stn.alt), fetchBomLatest(wStn.json, wStn.name, wStn.alt)]);
  if (a.status === 'rejected' && b.status === 'rejected') throw b.reason;
  obs = a.status === 'fulfilled' ? a.value : b.value;
  wObs = b.status === 'fulfilled' ? b.value : a.value;
@@ -3510,6 +3790,7 @@ st.innerHTML = `${icon} <span><b>GO</b> — ${wmoDesc(fc.code)}, wind ${wind} ${
 // ── RENDER LIVE ───────────────────────────────────────────────────────────
 function render(data, loc) {
 data = unitData(data);
+tideUse(loc);
 const c = data.current;
 const temp = Math.round(c.temperature_2m);
 const feels = Math.round(c.apparent_temperature);
@@ -3704,6 +3985,7 @@ el.textContent = stale ? `⚠ Updated ${ago} — tap Refresh` : `Updated ${ago}`
 function selectLocation(idx) {
 currentLoc = idx;
 store.set('venue', LOCATIONS[idx].short);
+tideUse(LOCATIONS[idx]); // tide figures follow the venue's own place (Fremantle, Bunbury or Albany)
 lastObs = null;
 closeVenueSheet();
 updateVenueButton();
@@ -3760,14 +4042,18 @@ const o = overview[i];
 return o && (Date.now() - o.at) < REFRESH_MS ? o : null;
 }
 function renderVenueList() {
+let lastGroup = null;
 document.getElementById('venue-list').innerHTML = venueOrder().map(i => {
 const loc = LOCATIONS[i], fav = favVenues.has(loc.short);
+const group = fav ? 'Favourites' : VENUE_GROUPS.find(g => g[0] === venueGroup(i))[1];
+const groupHead = group !== lastGroup ? `<div class="venue-group">${group}</div>` : '';
+lastGroup = group;
 const sum = venueSummary(i);
 let right;
 if (!sum) right = `<span class="chip none">Loading…</span>`;
 else if (sum.error) right = `<span class="chip none">Unavailable</span>`;
 else right = `${chipHTML(assess(sum).level)}<span class="venue-row-wind">Wind ${sum.wind} · gust ${sum.gust} ${WU()}</span>`;
-return `<div class="venue-row-wrap"><button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="selectLocation(${i})"${i === currentLoc ? ' aria-current="true"' : ''}>
+return `${groupHead}<div class="venue-row-wrap"><button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="selectLocation(${i})"${i === currentLoc ? ' aria-current="true"' : ''}>
 <img src="${loc.icon}" alt="">
 <span><span class="venue-row-name">${loc.short}</span><br><span class="venue-row-meta">${loc.state} · ${venueLocalTime(loc)}</span></span>
 <span class="venue-row-right">${right}</span>
@@ -4652,7 +4938,13 @@ addEventListener('touchend', end, { passive: true }); addEventListener('touchcan
 // ── FAVOURITE VENUES + SWIPE BETWEEN VENUES ───────────────────────────────
 const favVenues = new Set((() => { try { return JSON.parse(store.get('favs', '[]')); } catch { return []; } })());
 // List order: starred venues first, each group in the usual order
-const venueOrder = () => LOCATIONS.map((_, i) => i).sort((a, b) => (favVenues.has(LOCATIONS[b].short) - favVenues.has(LOCATIONS[a].short)) || a - b);
+// Favourites first, then the WA rivers and training waters, then the regatta venues
+const VENUE_GROUPS = [['wa', 'WA Rivers & Training Waters'], ['regatta', 'Regatta Venues']];
+const venueGroup = i => LOCATIONS[i].group === 'wa' ? 'wa' : 'regatta';
+const venueOrder = () => {
+const all = LOCATIONS.map((_, i) => i), fav = i => favVenues.has(LOCATIONS[i].short);
+return [...all.filter(fav), ...VENUE_GROUPS.flatMap(([k]) => all.filter(i => !fav(i) && venueGroup(i) === k))];
+};
 function toggleFav(i) { const k = LOCATIONS[i].short; favVenues.has(k) ? favVenues.delete(k) : favVenues.add(k); store.set('favs', JSON.stringify([...favVenues])); renderVenueList(); }
 function stepVenue(d) {
 const order = venueOrder(), at = order.indexOf(currentLoc);
