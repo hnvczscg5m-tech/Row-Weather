@@ -835,9 +835,11 @@ border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transfo
 .coll.collapsed > .section-title .range-btn{display:none}
 .coll.collapsed > .section-title{color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.coll > .section-title::before{transition:none}}
-/* Home-screen saves ticker: deliberately quiet, no label */
-.saves{display:block;margin-top:6px;font-size:calc(9px * var(--fs,1));letter-spacing:.5px;opacity:.45;font-variant-numeric:tabular-nums}
+/* Home-screen saves and site visits tickers: deliberately quiet, no labels (saves first, visits second) */
+.ticks{display:block}
+.saves{display:inline-block;margin-top:6px;font-size:calc(9px * var(--fs,1));letter-spacing:.5px;opacity:.45;font-variant-numeric:tabular-nums}
 .saves[hidden]{display:none}
+#saves:not([hidden]) + #visits:not([hidden])::before{content:"·";margin:0 7px}
 .install-steps{list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:10px;margin:4px 0 12px}
 .install-steps li{counter-increment:st;display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:start;font-size:calc(15px * var(--fs,1));line-height:1.45}
 .install-steps li::before{content:counter(st);width:32px;height:32px;border-radius:50%;background:var(--accent2);color:#fff;
@@ -1286,7 +1288,7 @@ Install Weatherow app</button>
 </div>
 </div>
 
-<footer>Weatherow · Rowing venues · Open-Meteo CC BY 4.0<span class="saves" id="saves" aria-hidden="true" hidden></span></footer>
+<footer>Weatherow · Rowing venues · Open-Meteo CC BY 4.0<span class="ticks" aria-hidden="true"><span class="saves" id="saves" hidden></span><span class="saves" id="visits" hidden></span></span></footer>
 <script>
 // ── LOCATIONS ──────────────────────────────────────────────────────────────
 // Each venue's `course` describes the racing direction (start → finish):
@@ -5219,6 +5221,29 @@ return true;
 }
 window.addEventListener('appinstalled', countSave);
 if (!(isStandalone() && countSave())) setTimeout(() => showSaves('get'), 1500); // after the forecast, never ahead of it
+
+// ── SITE VISITS TICKER ────────────────────────────────────────────────────
+// Anonymous count of visits to the live site. A visit is opening Weatherow, or coming back to it after
+// 30 minutes or more away, so reloads and pull-to-refresh don't add to it. Same free Abacus counter as the
+// saves ticker (no sign-up, no personal data). Shown unlabelled after the saves number; hidden if unreachable.
+const VISITS_URL = 'https://abacus.jasoncameron.dev/%s/weatherow-row-weather/site-visits';
+const VISIT_GAP_MS = 30 * 60000;
+const visitDue = () => countsSaves && Date.now() - (Number(store.get('visitAt', '0')) || 0) > VISIT_GAP_MS;
+let visitBusy = false;
+async function showVisits() {
+if (visitBusy) return;
+visitBusy = true;
+try {
+const count = visitDue();
+const r = await fetchWithTimeout(VISITS_URL.replace('%s', count ? 'hit' : 'get'), 8000);
+if (!r.ok) return;
+if (count) store.set('visitAt', String(Date.now())); // counted: not again for 30 minutes from this device
+const v = (await r.json()).value;
+if (Number.isFinite(v) && v > 0) { const el = document.getElementById('visits'); el.textContent = v.toLocaleString('en-AU'); el.hidden = false; }
+} catch {} finally { visitBusy = false; }
+}
+setTimeout(showVisits, 1800); // after the forecast, never ahead of it
+document.addEventListener('visibilitychange', () => { if (!document.hidden && visitDue()) showVisits(); }); // back after a long gap = a new visit
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
 {
