@@ -1707,18 +1707,19 @@ blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-34.9
 bom: "https://weather.bom.gov.au/map/wind?lat=-34.95&lon=117.98&zoom=9",
 obsStation: { name: "Albany Airport", dist: "~15 km", json: "https://www.bom.gov.au/fwo/IDW60801/IDW60801.94802.json" },
 },
-// ── International venues ── start and finish points are PROVISIONAL (from the supplied venue list, confidence low or very low).
+// ── International venues ── course lines were re-fitted to the OpenStreetMap water outlines in November 2026 (see each `source`).
+// Lucerne and Seville still use the supplied venue-list points; Long Beach and Piediluco remain PROVISIONAL.
 // No BOM station: live readings are the nearest airport's weather report (see AIRPORT WEATHER REPORTS), when one can be fetched.
 {
 name: "Henley-on-Thames, United Kingdom", short: "Henley", icon: flagIcon('gb'), state: "UK", group: 'intl',
 course: {
-  bearing: 199, status: 'approximate', midApprox: true,
-  description: "Henley Royal Regatta course: 2,112 m on the Thames, raced upstream from Temple Island on two stations, Berkshire and Buckinghamshire. The line shown is an approximate midline between the two stations.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 51.5567, -0.8892 → 51.5391, -0.899, which measure 199° and 2,073 m against an official 2,112 m. Centre reference: centre between Berkshire/Buckinghamshire stations. Lanes: 2 stations. Reference: https://www.hrr.co.uk/about/regatta-course/",
-  mid: [51.5479, -0.8941], length: 2112,
+  bearing: 203, status: 'approximate', midApprox: true,
+  description: "Henley Royal Regatta course: 2,112 m on the Thames, raced upstream from Temple Island on two stations, Berkshire and Buckinghamshire. The line shown is an approximate midline, fitted to the river on OpenStreetMap.",
+  source: "Midline fitted (November 2026) to the river on OpenStreetMap: start beside the downstream end of Temple Island on the Berkshire side, finish in mid-river 2,112 m upstream at Poplar Point; bearing good to about ±1°: 51.55714, -0.88867 → 51.53968, -0.90059, which measure 203° and 2,112 m. This replaces the supplied venue-list points (51.5567, -0.8892 → 51.5391, -0.899, 199°), whose finish lay about 90 m east of the river. Lanes: 2 stations. Reference: https://www.hrr.co.uk/about/regatta-course/",
+  mid: [51.54841, -0.89463], length: 2112,
   presets: []
 },
-lat: 51.5479, lon: -0.8941, tz: "Europe/London", tidal: false,
+lat: 51.54841, lon: -0.89463, tz: "Europe/London", tidal: false,
 obsStation: { metar: ['EGUB', 'EGLL'], cc: 'GB' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=51.55;x=-0.89;z=9;d=2;dl=2;dc=0;"
 },
@@ -1738,13 +1739,13 @@ blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=37.40
 {
 name: "Plovdiv, Bulgaria", short: "Plovdiv", icon: flagIcon('bg'), state: "Bulgaria", group: 'intl',
 course: {
-  bearing: 56, status: 'approximate', midApprox: true,
-  description: "2,000 m, 8-lane regatta course, raced towards the east-north-east. The official finish tower (42.148333, 24.716194) stands on the bank, so the finish point used here is not the middle of the water.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 42.1384, 24.696 → 42.1483, 24.716, which measure 056° and 1,985 m against an official 2,000 m. Centre reference: between lanes 4 and 5. Lanes: 8 lanes. Reference: https://2026worldcup.plovdivrowing.com/downloads/TMM_WR_CUP_II_2026%20-%20with_link--6.pdf",
-  mid: [42.14335, 24.706], length: 2000,
+  bearing: 49, status: 'approximate', midApprox: true,
+  description: "2,000 m, 8-lane regatta course, raced towards the north-east. The line is the centreline of the canal on OpenStreetMap; the official finish tower (42.148333, 24.716194) stands on the south-east bank, about 100 m from it.",
+  source: "Centreline fitted (November 2026) to the OpenStreetMap outline of the canal, about 125 m between parallel banks, with the finish placed level with the official finish tower; bearing good to about ±1°: 42.13727, 24.69710 → 42.14905, 24.71538, which measure 049° and 2,000 m. This replaces the supplied venue-list points (42.1384, 24.696 → 42.1483, 24.716, 056°), whose finish was the tower on the bank, so the line ran off the water at that end. Direction: finish tower and boathouse at the north-east end (plovdivrowing.com; 2021 World Rowing Junior Championships bulletin). Lanes: 8 lanes. Reference: https://2026worldcup.plovdivrowing.com/downloads/TMM_WR_CUP_II_2026%20-%20with_link--6.pdf",
+  mid: [42.14316, 24.70624], length: 2000,
   presets: []
 },
-lat: 42.14335, lon: 24.706, tz: "Europe/Sofia", tidal: false,
+lat: 42.14316, lon: 24.70624, tz: "Europe/Sofia", tidal: false,
 obsStation: { metar: ['LBPD'], cc: 'BG' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=42.14;x=24.71;z=9;d=2;dl=2;dc=0;"
 },
@@ -1764,52 +1765,52 @@ blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=47.07
 {
 name: "Račice, Czechia", short: "Racice", icon: flagIcon('cz'), state: "Czechia", group: 'intl',
 course: {
-  bearing: 46, status: 'approximate', midApprox: true,
-  description: "2,000 m, 8-lane course at Račice, raced towards the north-east. The course axis is extrapolated from venue maps and the buoy line has not been verified.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 50.4456, 14.3219 → 50.4582, 14.3427, which measure 046° and 2,035 m against an official 2,000 m. Centre reference: between lanes 4 and 5. Lanes: 8 lanes. Reference: https://www.rowingracice.com/en/23-informace/informace-2018/99-venue-maps",
-  mid: [50.4519, 14.3323], length: 2000,
+  bearing: 56, status: 'approximate', midApprox: true,
+  description: "2,000 m, 8-lane course at Račice, raced towards the north-east, to the finish tower at the Račice end. The line is the centreline of the main racing channel on OpenStreetMap; the narrow return canal runs along its south-east side.",
+  source: "Centreline fitted (November 2026) to the OpenStreetMap outline of the main channel, about 118 m between parallel banks, starting about 60 m from the south-west end; bearing good to about ±1°: 50.44800, 14.32188 → 50.45804, 14.34528, which measure 056° and 2,000 m. This replaces the supplied venue-list points (50.4456, 14.3219 → 50.4582, 14.3427, 046°), whose start lay in the gravel lake south of the channel. Direction: Labe aréna Račice (finish tower at the north-east end). Lanes: 8 lanes. Reference: https://www.rowingracice.com/en/23-informace/informace-2018/99-venue-maps · https://canoeracice.com/cz/informace/labe-arena-racice",
+  mid: [50.45302, 14.33358], length: 2000,
   presets: []
 },
-lat: 50.4519, lon: 14.3323, tz: "Europe/Prague", tidal: false,
+lat: 50.45302, lon: 14.33358, tz: "Europe/Prague", tidal: false,
 obsStation: { metar: ['LKPR'], cc: 'CZ' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=50.45;x=14.33;z=9;d=2;dl=2;dc=0;"
 },
 {
 name: "Duisburg (Wedau), Germany", short: "Duisburg", icon: flagIcon('de'), state: "Germany", group: 'intl',
 course: {
-  bearing: 356, status: 'approximate', midApprox: true,
-  description: "2,000 m regatta course at Wedau, raced south to north. The lane layout depends on the event, so the line shown is the geometric centre of the racing water.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 51.39465, 6.7925 → 51.41263, 6.7905, which measure 356° and 2,006 m against an official 2,000 m. Centre reference: geometric racing centreline. Lanes: varies by event. Reference: https://regatta-duisburg.com/en/oc/regatta-course/",
-  mid: [51.40364, 6.7915], length: 2000,
+  bearing: 337, status: 'approximate', midApprox: true,
+  description: "2,000 m regatta course at Wedau, raced south to north towards the finish tower and grandstand at the northern end. The line is the centreline of the main basin on OpenStreetMap; the lane layout depends on the event.",
+  source: "Centreline fitted (November 2026) to the OpenStreetMap outline of the main basin, about 127 m between parallel banks with the Parallelkanal left out; bearing good to about ±1°, position along the basin approximate: 51.39521, 6.79765 → 51.41175, 6.78639, which measure 337° and 2,000 m. This replaces the supplied venue-list points (51.39465, 6.7925 → 51.41263, 6.7905, 356°), which started on the land between the two channels and crossed the basin at an angle. Direction: DuisburgSport (finish tower and grandstand at the north end). Lanes: varies by event. Reference: https://regatta-duisburg.com/en/oc/regatta-course/ · https://www.duisburgsport.eu/index.php/de/sporteinrichtungen/sportanlagen/regattabahn-duisburg.html",
+  mid: [51.40348, 6.79202], length: 2000,
   presets: []
 },
-lat: 51.40364, lon: 6.7915, tz: "Europe/Berlin", tidal: false,
+lat: 51.40348, lon: 6.79202, tz: "Europe/Berlin", tidal: false,
 obsStation: { metar: ['EDDL'], cc: 'DE' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=51.40;x=6.79;z=9;d=2;dl=2;dc=0;"
 },
 {
 name: "Szeged (Maty-ér), Hungary", short: "Szeged", icon: flagIcon('hu'), state: "Hungary", group: 'intl',
 course: {
-  bearing: 202, status: 'approximate', midApprox: true,
-  description: "2,000 m course at Maty-ér. The end points come from venue and grandstand positions, not a verified line on the water, and the lane layout varies by event.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 46.2472, 20.08 → 46.2304, 20.0703, which measure 202° and 2,014 m against an official 2,000 m. Centre reference: geometric racing centreline. Lanes: varies by event. Reference: https://worldrowing.com/event/2024-european-rowing-championships/",
-  mid: [46.2388, 20.07515], length: 2000,
+  bearing: 188, status: 'approximate', midApprox: true,
+  description: "2,000 m course at Maty-ér, raced north to south: the finish tower and grandstand are at the southern end. The line follows the western strip of the lake on OpenStreetMap, about 115 m wide and taken to be the racing course; the lane layout varies by event.",
+  source: "Line fitted (November 2026) to the OpenStreetMap lake outline: the centre of the western strip of water, about 115 m wide (the course is 122 m), with the finish about 200 m from the southern dam; bearing good to about ±2°: 46.24838, 20.07689 → 46.23058, 20.07327, which measure 188° and 2,000 m. Which strip of the lake carries the lanes has not been checked against a course plan. This replaces the supplied venue-list points (46.2472, 20.08 → 46.2304, 20.0703, 202°), whose finish lay on the west bank. Direction: szegedma.hu, 2011 site tour (finish buoys by the southern closing dam, start machines at the far end). Lanes: varies by event. Reference: https://worldrowing.com/event/2024-european-rowing-championships/ · https://szegedma.hu/sport/2011/07/gozerovel-keszulnek-a-kajak-kenu-vb-re-a-maty-eren-video-fotok",
+  mid: [46.23948, 20.07508], length: 2000,
   presets: []
 },
-lat: 46.2388, lon: 20.07515, tz: "Europe/Budapest", tidal: false,
+lat: 46.23948, lon: 20.07508, tz: "Europe/Budapest", tidal: false,
 obsStation: { metar: ['LHUD', 'LHKE'], cc: 'HU' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=46.24;x=20.08;z=9;d=2;dl=2;dc=0;"
 },
 {
 name: "Varese (Schiranna), Italy", short: "Varese", icon: flagIcon('it'), state: "Italy", group: 'intl',
 course: {
-  bearing: 130, status: 'approximate', midApprox: true,
-  description: "2,000 m, 8-lane course on Lake Varese, finishing at Schiranna. The finish tower (near 45.80122, 8.78156) stands on the shore, so the line on the water is approximate.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 45.813, 8.7615 → 45.8016, 8.781, which measure 130° and 1,975 m against an official 2,000 m. Centre reference: between lanes 4 and 5. Lanes: 8 lanes. Reference: https://vareserowingmasters2027.com/venues/",
-  mid: [45.8073, 8.77125], length: 2000,
+  bearing: 117, status: 'approximate', midApprox: true,
+  description: "2,000 m, 8-lane course on Lake Varese, finishing in front of the Canottieri Varese tower at Schiranna (near 45.80122, 8.78156). The line is an estimate, not taken from a course plan: it ends about 85 m off the tower and is angled to clear the Calcinate del Pesce headland.",
+  source: "Line estimated (November 2026) on the OpenStreetMap lake outline: finish about 85 m offshore of the finish tower, on a bearing that keeps the lanes about 100 m clear of the Calcinate del Pesce headland; bearing good to about ±3°: 45.80870, 8.75810 → 45.80054, 8.78106, which measure 117° and 2,000 m. This replaces the supplied venue-list points (45.813, 8.7615 → 45.8016, 8.781, 130°), which ran along the shore and over the headland. Direction: Canottieri Varese (historic course from the Calcinate del Pesce dock to Schiranna). Lanes: 8 lanes. Reference: https://vareserowingmasters2027.com/venues/",
+  mid: [45.80462, 8.76958], length: 2000,
   presets: []
 },
-lat: 45.8073, lon: 8.77125, tz: "Europe/Rome", tidal: false,
+lat: 45.80462, lon: 8.76958, tz: "Europe/Rome", tidal: false,
 obsStation: { metar: ['LIMC'], cc: 'IT' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=45.81;x=8.77;z=9;d=2;dl=2;dc=0;"
 },
@@ -1818,24 +1819,24 @@ name: "Poznań (Lake Malta), Poland", short: "Poznan", icon: flagIcon('pl'), sta
 course: {
   bearing: 101, status: 'approximate', midApprox: true,
   description: "2,000 m, 8-lane course on Lake Malta, raced west to east: the official course diagram confirms the direction. The centreline is approximate.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: low): 52.4042, 16.9562 → 52.4009, 16.985, which measure 101° and 1,990 m against an official 2,000 m. Centre reference: between lanes 4 and 5. Lanes: 8 lanes. Reference: https://www.rowing.poznan.pl/docs/bulletin-2.pdf",
-  mid: [52.40255, 16.9706], length: 2000,
+  source: "Supplied venue-list line (52.4042, 16.9562 → 52.4009, 16.985, 101°), moved 45 m east along the same bearing (November 2026) so that the start sits clear of the west bank on OpenStreetMap: 52.40418, 16.95680 → 52.40076, 16.98570, which measure 101° and 2,000 m. The bearing itself was not re-measured. Direction: the City of Poznań places the start area by Jana Pawła II Street, at the west end. Centre reference: between lanes 4 and 5. Lanes: 8 lanes. Reference: https://www.rowing.poznan.pl/docs/bulletin-2.pdf",
+  mid: [52.40247, 16.97125], length: 2000,
   presets: []
 },
-lat: 52.40255, lon: 16.9706, tz: "Europe/Warsaw", tidal: false,
+lat: 52.40247, lon: 16.97125, tz: "Europe/Warsaw", tidal: false,
 obsStation: { metar: ['EPPO'], cc: 'PL' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=52.40;x=16.97;z=9;d=2;dl=2;dc=0;"
 },
 {
 name: "Long Beach Marine Stadium (LA 2028), United States", short: "Long Beach", icon: flagIcon('us'), state: "USA", group: 'intl',
 course: {
-  bearing: 279, status: 'provisional', midApprox: true,
-  description: "Planned 1,500 m, 6-lane course for the LA 2028 Olympic regatta at Long Beach Marine Stadium, finishing at the west or north-west end. The lane plan has not been published and these end points are provisional: check the line on the Course Map before relying on the headwind and crosswind figures.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: very low): 33.7599, -118.113 → 33.7621, -118.129, which measure 279° and 1,501 m against an official 1,500 m. Centre reference: between lanes 3 and 4. Lanes: 6 lanes (planned). Reference: https://worldrowing.com/2026/07/14/two-years-to-go-until-la28-rowing-set-to-make-history-in-los-angeles/",
-  mid: [33.761, -118.121], length: 1500,
+  bearing: 317, status: 'provisional', midApprox: true,
+  description: "Planned 1,500 m, 6-lane course for the LA 2028 Olympic regatta at Long Beach Marine Stadium, from just north-west of the Davies Bridge (2nd Street) to a finish at the north-west end. The lane plan and finish tower position have not been published, so the line shown is the centreline of the channel and is still provisional.",
+  source: "Centreline fitted (November 2026) to the OpenStreetMap outline of the Marine Stadium channel, starting about 30 m north-west of the bridge; the banks are not parallel, so the bearing is good to about ±2°: 33.75712, -118.11721 → 33.76698, -118.12827, which measure 317° and 1,500 m. This replaces the supplied venue-list points (33.7599, -118.113 → 33.7621, -118.129, 279°), which cut across the channel with both ends on land. Direction: local sprint regattas race from the 2nd St bridge to a finish at the north end of the stadium, and row2k (March 2026) expects the LA28 finish tower a little north-west of that finish line. Lanes: 6 lanes (planned). Reference: https://worldrowing.com/2026/07/14/two-years-to-go-until-la28-rowing-set-to-make-history-in-los-angeles/ · https://www.row2k.com/features/6727/marine-stadium-in-2026-a-look-at-the-la-2028-rowing-venue/",
+  mid: [33.76205, -118.12274], length: 1500,
   presets: []
 },
-lat: 33.761, lon: -118.121, tz: "America/Los_Angeles", tidal: true, tidePlace: "longbeach",
+lat: 33.76205, lon: -118.12274, tz: "America/Los_Angeles", tidal: true, tidePlace: "longbeach",
 tideNote: "Marine Stadium is tidal salt water, joined to Alamitos Bay, so its level follows the sea with a short delay. Times are Long Beach local time.",
 obsStation: { metar: ['KLGB'], nws: 'KLGB', cc: 'US', state2: 'CA' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=33.76;x=-118.12;z=9;d=2;dl=2;dc=0;"
@@ -1843,13 +1844,13 @@ blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=33.76
 {
 name: "Lake Piediluco, Italy", short: "Piediluco", icon: flagIcon('it'), state: "Italy", group: 'intl',
 course: {
-  bearing: 292, status: 'provisional', midApprox: true,
-  description: "2,000 m, 8-lane course on Lake Piediluco. Start in the east and finish in the west is a tentative reading: the direction of racing and the midline still need checking on the water.",
-  source: "Provisional start and finish points from the international venue list supplied for Weatherow (coordinate confidence: very low): 42.527, 12.766 → 42.534, 12.743, which measure 292° and 2,041 m against an official 2,000 m. Centre reference: between lanes 4 and 5. Lanes: 8 lanes on Italian federation diagram. Reference: https://www.canottaggio.org/wp-content/uploads/2024/04/PIEDILUCO-TRAFFIC-RULES-DURING-RACES.pdf",
-  mid: [42.5305, 12.7545], length: 2000,
+  bearing: 275, status: 'provisional', midApprox: true,
+  description: "2,000 m, 8-lane course on Lake Piediluco, drawn down the middle of the main east–west basin from the Aramarina (east) end to a finish at the west end. This is a fit to the lake outline, not a surveyed lane line: the direction of racing and the midline still need checking against the federation's course plan.",
+  source: "Line fitted (November 2026) to the OpenStreetMap lake outline, down the middle of the main basin; the basin leaves room for about ±4° either way: 42.53285, 12.77040 → 42.53441, 12.74612, which measure 275° and 2,000 m. This replaces the supplied venue-list points (42.527, 12.766 → 42.534, 12.743, 292°), most of which lay over the Monte Caperno peninsula. Layout: a 2022 Comune di Terni study describes the lanes as laid out between the east shore (Aramarina) and the west shore (Vocabolo Porto), with the finish tower at the Centro Nautico; which end that is has not been confirmed from a course plan. Lanes: 8 lanes on Italian federation diagram. Reference: https://www.canottaggio.org/wp-content/uploads/2024/04/PIEDILUCO-TRAFFIC-RULES-DURING-RACES.pdf",
+  mid: [42.53363, 12.75826], length: 2000,
   presets: []
 },
-lat: 42.5305, lon: 12.7545, tz: "Europe/Rome", tidal: false,
+lat: 42.53363, lon: 12.75826, tz: "Europe/Rome", tidal: false,
 obsStation: { metar: ['LIQN', 'LIRV', 'LIRZ'], cc: 'IT' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=42.53;x=12.75;z=9;d=2;dl=2;dc=0;"
 }
@@ -2181,7 +2182,7 @@ function renderCourseMap(sfx = '') {
 const $c = id => document.getElementById(id + sfx);
 const cms = sfx ? (cmStates[sfx] = cmStates[sfx] || { key: '', zoomAdj: 0, loc: null }) : cmState;
 const box = document.getElementById('course-map');
-const loc = rwState.loc || LOCATIONS[currentLoc];
+const loc = LOCATIONS[currentLoc] || rwState.loc; // the venue picked in the list, even before its forecast has loaded
 if (!loc || (sfx ? !$c('cm-map') : !box)) return;
 if (cms.loc !== loc || cms.ck !== (loc.courseKey || '')) { cms.loc = loc; cms.ck = loc.courseKey || ''; cms.zoomAdj = 0; cms.key = ''; }
 const course = loc.course || {};
@@ -4465,6 +4466,7 @@ if (saved) { cache[idx] = saved; render(currentFromHourly(saved.data, LOCATIONS[
 }
 loadWeather();
 }
+try { renderCourseMap(); } catch (e) { console.warn('course map', e); } // show the new venue's course at once; its wind label follows with the forecast
 }
 
 // ── TIME AT A VENUE, AGAINST YOUR OWN ─────────────────────────────────────
