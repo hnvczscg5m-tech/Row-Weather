@@ -647,9 +647,34 @@ display:inline-flex;align-items:center;gap:8px}
 [data-theme="sun"] .cm-tiles{filter:none}
 .cm-tiles img{position:absolute;width:256px;height:256px;max-width:none;display:block;-webkit-user-drag:none;user-select:none}
 .cm-map svg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
-.cm-zoom{position:absolute;right:8px;bottom:26px;display:flex;flex-direction:column;gap:6px}
-.cm-zoom button{width:38px;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:calc(20px * var(--fs,1));line-height:1;cursor:pointer}
+.cm-map{touch-action:pan-x pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.cm-map-full{touch-action:none}
+.cm-layer{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
+.cm-zoom{position:absolute;right:6px;bottom:22px;display:flex;flex-direction:column;gap:4px}
+.cm-zoom button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:18px;line-height:1;cursor:pointer;padding:0}
 .cm-zoom button:disabled{opacity:.35}
+.cm-zoom button[hidden]{display:none}
+.cm-zoom button.off{opacity:.55;text-decoration:line-through}
+.cm-zoom button[id^=cm-lab]{font-size:13px;font-weight:700}
+.cm-north{position:absolute;right:6px;top:6px;width:36px;height:36px;border-radius:50%;border:1px solid #0b1726;background:#fff;padding:0;cursor:pointer}
+.cm-north svg{position:static;width:100%;height:100%;pointer-events:none}
+.cm-north path{fill:#0b1726}.cm-north text{font:700 8px Barlow,sans-serif;fill:#0b1726}
+.cm-north.on{box-shadow:0 0 0 2px var(--accent)}
+.cm-north:disabled{opacity:.5}
+.cm-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(11,23,38,.88);color:#fff;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;white-space:nowrap;pointer-events:none}
+.cm-hint[hidden]{display:none}
+.cmf{position:fixed;inset:0;z-index:550;overflow:auto;background:var(--navy);color:var(--text);padding:0 10px calc(16px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.cmf[hidden]{display:none}
+.cmf-bar{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 0 8px;background:var(--navy);font-family:'Barlow Condensed',sans-serif;font-size:calc(18px * var(--fs,1));font-weight:700}
+.cmf-bar button{min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--text);font:inherit;font-size:14px;cursor:pointer;flex:0 0 auto}
+#cmf-stretch{margin-top:6px}
+#rw-side{display:none}
+@media(min-width:900px){
+html.cm-side #course-map{display:none}
+html.cm-side #rowing-wind{column-span:all;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}
+html.cm-side #rowing-wind > .section-title{grid-column:1/-1}
+html.cm-side #rowing-wind:not(.collapsed) > #rw-side{display:block;position:sticky;top:64px}
+}
 .cm-attr{position:absolute;right:0;bottom:0;font-size:calc(9px * var(--fs,1));padding:2px 6px;background:rgba(255,255,255,.75);color:#222;border-top-left-radius:4px}
 .cm-attr a{color:#222}
 .cm-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:8px;font-size:calc(11px * var(--fs,1));color:var(--muted);line-height:1.5}
@@ -1365,6 +1390,15 @@ Install Weatherow app</button>
 </div>
 <div id="install-body"></div>
 </div>
+</div>
+
+<!-- Course Map, full screen -->
+<div class="cmf" id="cm-full" hidden role="dialog" aria-modal="true" aria-label="Course map, full screen">
+<div class="cmf-bar"><span id="cmf-title"></span><button type="button" id="cmf-close" onclick="cmCloseFull()">✕ Close</button></div>
+<div id="cm-pick-f"></div>
+<div id="cmf-map"></div>
+<div class="cm-foot"><span id="cm-note-f"></span></div>
+<div id="cmf-stretch"></div>
 </div>
 
 <!-- Crew briefing: a plain, printable one-page summary (always on a white page, whatever the theme) -->
@@ -2176,26 +2210,87 @@ const p = cmPath(loc);
 if (p) { const la = p.map(q => q[0]), lo = p.map(q => q[1]); return [(Math.min(...la) + Math.max(...la)) / 2, (Math.min(...lo) + Math.max(...lo)) / 2]; } // middle of a bent course
 return (loc.course && loc.course.mid) || [loc.lat, loc.lon];
 }
-function cmZoom(d) { cmState.zoomAdj = Math.max(-3, Math.min(2, cmState.zoomAdj + d)); renderCourseMap(); }
-// (sfx = '' draws the Course Map section; sfx = '-b' draws a copy, without controls, into the crew briefing page)
+// Map preferences (shared by every copy of the map) and the copies themselves:
+//   ''   the Course Map section      '-w' beside the dial on wide screens
+//   '-f' the full-screen view        '-b' the crew briefing page (no controls, always north-up)
+let cmUp = store.get('cmUp', '') === '1';          // course-up: the map is turned so the course runs up the screen
+let cmLabels = store.get('cmLabels', '1') !== '0'; // Start / Finish tags, wind and scale shown
+const cmSt = sfx => sfx ? (cmStates[sfx] = cmStates[sfx] || { key: '', zoomAdj: 0, loc: null }) : cmState;
+const cmShell = sfx => `<div class="cm-map${sfx === '-f' ? ' cm-map-full' : ''}" id="cm-map${sfx}">
+<div class="cm-layer" id="cm-layer${sfx}"><div class="cm-tiles" id="cm-tiles${sfx}"></div><svg id="cm-svg${sfx}" aria-hidden="true"></svg></div>
+<svg class="cm-hud" id="cm-hud${sfx}" aria-hidden="true"></svg>
+<button type="button" class="cm-north" id="cm-north${sfx}" onclick="cmToggleUp()"><svg viewBox="-16 -16 32 32" aria-hidden="true"><g><path d="M0 -11 L5 4 L0 1 L-5 4Z"/><text y="13" text-anchor="middle">N</text></g></svg></button>
+<div class="cm-zoom">${sfx === '-f' ? '' : `<button type="button" onclick="cmOpenFull()" aria-label="Open the map full screen">⤢</button>`}
+<button type="button" id="cm-lab${sfx}" onclick="cmToggleLabels()">Aa</button>
+<button type="button" id="cm-home${sfx}" onclick="cmHome('${sfx}')" aria-label="Back to the whole course" hidden>◎</button>
+<button type="button" id="cm-in${sfx}" onclick="cmZoom(1,'${sfx}')" aria-label="Zoom in">+</button><button type="button" id="cm-out${sfx}" onclick="cmZoom(-1,'${sfx}')" aria-label="Zoom out">−</button></div>
+<div class="cm-hint" id="cm-hint${sfx}" hidden>Use two fingers to move the map</div>
+<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>`;
+const cmCopies = () => ['', '-w', '-f'].filter(s => document.getElementById('cm-map' + s));
+const cmRedraw = () => cmCopies().forEach(s => { try { renderCourseMap(s); } catch (e) { console.warn('course map', e); } });
+function cmZoom(d, sfx = '') { const st = cmSt(sfx); st.zoomAdj = Math.max(-3, Math.min(3, st.zoomAdj + d)); renderCourseMap(sfx); }
+function cmHome(sfx = '') { const st = cmSt(sfx); st.zoomAdj = 0; st.c = null; renderCourseMap(sfx); }
+function cmToggleUp() { cmUp = !cmUp; store.set('cmUp', cmUp ? '1' : '0'); cmCopies().forEach(s => { cmSt(s).c = null; cmSt(s).zoomAdj = 0; }); cmRedraw(); }
+function cmToggleLabels() { cmLabels = !cmLabels; store.set('cmLabels', cmLabels ? '1' : '0'); cmRedraw(); }
+// Moving the map: drag with the mouse, two fingers on a phone (one finger still scrolls the page), pinch or wheel to zoom.
+// In the full-screen view one finger moves it. The layer is slid and scaled while the fingers are down, then redrawn sharp.
+function cmBind(sfx) {
+const el = document.getElementById('cm-map' + sfx);
+if (!el || el.dataset.bound) return;
+el.dataset.bound = '1';
+const one = sfx === '-f', layer = () => document.getElementById('cm-layer' + sfx);
+let g = null, hintAt = null, hintTimer = 0;
+const pts = e => [...e.touches].map(t => [t.clientX, t.clientY]);
+const show = () => { layer().style.transform = `translate(${g.tx}px,${g.ty}px) scale(${g.s})`; };
+const begin = p => { const d = p.length > 1 ? Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) : 0; g = { n: p.length, x: p.reduce((a, q) => a + q[0], 0) / p.length, y: p.reduce((a, q) => a + q[1], 0) / p.length, d, tx: g ? g.tx : 0, ty: g ? g.ty : 0, s: g ? g.s : 1, bx: g ? g.tx : 0, by: g ? g.ty : 0, bs: g ? g.s : 1 }; };
+const move = p => { const x = p.reduce((a, q) => a + q[0], 0) / p.length, y = p.reduce((a, q) => a + q[1], 0) / p.length;
+g.tx = g.bx + x - g.x; g.ty = g.by + y - g.y;
+if (p.length > 1 && g.d > 0) g.s = Math.max(0.25, Math.min(8, g.bs * Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) / g.d));
+show(); };
+const commit = () => {
+if (!g) return;
+const st = cmSt(sfx), v = st.view, done = g; g = null;
+layer().style.transform = '';
+if (!v || (Math.abs(done.tx) < 2 && Math.abs(done.ty) < 2 && Math.abs(done.s - 1) < 0.05)) return;
+const a = v.theta * Math.PI / 180, sx = -done.tx / done.s, sy = -done.ty / done.s; // screen shift of the centre, turned back into map directions
+const wx = v.cx + sx * Math.cos(a) - sy * Math.sin(a), wy = v.cy + sx * Math.sin(a) + sy * Math.cos(a);
+st.c = cmUnproject(wx, wy, v.z);
+st.zoomAdj = Math.max(-3, Math.min(3, st.zoomAdj + Math.round(Math.log2(done.s))));
+renderCourseMap(sfx);
+};
+el.addEventListener('touchstart', e => { const p = pts(e); if (p.length >= 2 || one) begin(p.slice(0, 2)); else { g = null; hintAt = p[0]; } }, { passive: true });
+el.addEventListener('touchmove', e => {
+const p = pts(e);
+if (g) { if (p.length !== g.n) begin(p.slice(0, 2)); e.preventDefault(); move(p.slice(0, 2)); return; }
+if (hintAt && p.length === 1 && Math.abs(p[0][0] - hintAt[0]) > 14 && Math.abs(p[0][0] - hintAt[0]) > Math.abs(p[0][1] - hintAt[1])) { // a sideways one-finger drag: say how
+const h = document.getElementById('cm-hint' + sfx); h.hidden = false; clearTimeout(hintTimer); hintTimer = setTimeout(() => { h.hidden = true; }, 1800); hintAt = null;
+}
+}, { passive: false });
+const end = e => { const p = pts(e); if (g && p.length && (p.length >= 2 || one)) begin(p.slice(0, 2)); else commit(); };
+el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+el.addEventListener('mousedown', e => { if (e.button || e.target.closest('button,a')) return; e.preventDefault(); begin([[e.clientX, e.clientY]]);
+const mm = ev => { if (g) move([[ev.clientX, ev.clientY]]); }, mu = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', mu); commit(); };
+addEventListener('mousemove', mm); addEventListener('mouseup', mu); });
+let wheelAt = 0;
+el.addEventListener('wheel', e => { e.preventDefault(); if (Date.now() - wheelAt < 180) return; wheelAt = Date.now(); cmZoom(e.deltaY < 0 ? 1 : -1, sfx); }, { passive: false });
+}
 function renderCourseMap(sfx = '') {
 const $c = id => document.getElementById(id + sfx);
-const cms = sfx ? (cmStates[sfx] = cmStates[sfx] || { key: '', zoomAdj: 0, loc: null }) : cmState;
+const cms = cmSt(sfx);
 const box = document.getElementById('course-map');
 const loc = LOCATIONS[currentLoc] || rwState.loc; // the venue picked in the list, even before its forecast has loaded
 if (!loc || (sfx ? !$c('cm-map') : !box)) return;
-if (cms.loc !== loc || cms.ck !== (loc.courseKey || '')) { cms.loc = loc; cms.ck = loc.courseKey || ''; cms.zoomAdj = 0; cms.key = ''; }
+if (cms.loc !== loc || cms.ck !== (loc.courseKey || '')) { cms.loc = loc; cms.ck = loc.courseKey || ''; cms.zoomAdj = 0; cms.c = null; cms.key = ''; }
 const course = loc.course || {};
 const path = cmPath(loc);
 const hasLine = RowingWind.isNum(course.bearing) || !!path;
 if (!sfx && !box.querySelector('.cm-panel')) {
 box.innerHTML = `<div class="section-title">Course Map</div>
-<div class="cm-panel"><div id="cm-pick"></div><div class="cm-map" id="cm-map"><div class="cm-tiles" id="cm-tiles"></div><svg id="cm-svg" aria-hidden="true"></svg>
-<div class="cm-zoom"><button type="button" id="cm-in" onclick="cmZoom(1)" aria-label="Zoom in">+</button><button type="button" id="cm-out" onclick="cmZoom(-1)" aria-label="Zoom out">−</button></div>
-<div class="cm-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div></div>
+<div class="cm-panel"><div id="cm-pick"></div>${cmShell('')}
 <div class="cm-foot"><span id="cm-note"></span><a id="cm-link" target="_blank" rel="noopener">Satellite view ↗</a></div></div>`;
 cms.key = '';
 }
+if (sfx !== '-b') cmBind(sfx);
 const pickEl = $c('cm-pick'), pickKey = loc.short + '|' + (loc.courseKey || '');
 if (pickEl && pickEl.dataset.k !== pickKey) { pickEl.dataset.k = pickKey; pickEl.innerHTML = coursePickHTML(loc, 'rw-pick cm-pick'); }
 const mapEl = $c('cm-map');
@@ -2205,55 +2300,86 @@ const [mlat, mlon] = cmMid(loc);
 const len = course.length || 2000;
 const mpp0 = 156543.03392 * Math.cos(mlat * Math.PI / 180);
 const mppAt = zz => mpp0 / Math.pow(2, zz);
-let z = 17, H = Math.round(Math.min(420, Math.max(220, W * 0.7)));
-if (path) { // a bent course: zoom to fit its east–west spread, then make the map as tall as its north–south spread needs
-const la = path.map(q => q[0]), lo = path.map(q => q[1]);
-const spanY = (Math.max(...la) - Math.min(...la)) * 111320;
-const spanX = (Math.max(...lo) - Math.min(...lo)) * 111320 * Math.cos(mlat * Math.PI / 180);
-while (z > 3 && (spanX / mppAt(z) > 0.76 * W || spanY / mppAt(z) > 0.72 * 480)) z--;
-H = Math.round(Math.min(480, Math.max(260, spanY / mppAt(z) / 0.72)));
+const full = sfx === '-f', sts = path && Array.isArray(course.stretches) ? course.stretches : [];
+// Course-up turns the map so start → finish runs up the screen (the briefing copy always stays north-up)
+const theta = cmUp && sfx !== '-b' && RowingWind.isNum(course.bearing) ? course.bearing : 0;
+const ta = -theta * Math.PI / 180, cosT = Math.cos(ta), sinT = Math.sin(ta);
+// The course's own points (both ends of a straight course, or every point of a bent one), in metres on the turned map
+const ends = path || [cmOffset(mlat, mlon, course.bearing || 0, -len / 2), cmOffset(mlat, mlon, course.bearing || 0, len / 2)];
+const m0 = cmProject(mlat, mlon, 20), turned = ends.map(q => { const p = cmProject(q[0], q[1], 20), dx = (p.x - m0.x) * mppAt(20), dy = (p.y - m0.y) * mppAt(20); return [dx * cosT - dy * sinT, dx * sinT + dy * cosT]; });
+const spanX = Math.max(...turned.map(t => t[0])) - Math.min(...turned.map(t => t[0])), spanY = Math.max(...turned.map(t => t[1])) - Math.min(...turned.map(t => t[1]));
+let z = 17, H;
+if (full) { // as tall as the screen allows, leaving room for the stretch table when there is one
+H = Math.round(Math.max(300, innerHeight * (sts.length > 1 ? 0.52 : 0.72)));
+while (z > 3 && (spanX / mppAt(z) > 0.8 * W || spanY / mppAt(z) > 0.76 * H)) z--;
+} else if (path || theta) { // zoom to fit the width, then make the map as tall as the course needs
+const maxH = sfx === '-w' ? 560 : 480;
+while (z > 3 && (spanX / mppAt(z) > 0.76 * W || spanY / mppAt(z) > 0.72 * maxH)) z--;
+H = Math.round(Math.min(maxH, Math.max(sfx === '-w' ? 320 : 260, spanY / mppAt(z) / 0.72)));
 } else {
+H = Math.round(Math.min(420, Math.max(sfx === '-w' ? 320 : 220, W * 0.7)));
 while (z > 3 && len / mppAt(z) > 0.62 * Math.min(W, H)) z--;
 }
 mapEl.style.height = H + 'px';
 z = Math.max(3, Math.min(18, z + cms.zoomAdj));
-if ($c('cm-in')) { $c('cm-in').disabled = z >= 18 || cms.zoomAdj >= 2; $c('cm-out').disabled = cms.zoomAdj <= -3; }
+if ($c('cm-in')) { $c('cm-in').disabled = z >= 18 || cms.zoomAdj >= 3; $c('cm-out').disabled = z <= 3 || cms.zoomAdj <= -3; }
+if ($c('cm-home')) $c('cm-home').hidden = !cms.c && !cms.zoomAdj;
 const mpp = mpp0 / Math.pow(2, z);
-const c = cmProject(mlat, mlon, z);
-cms.view = { cx: c.x, cy: c.y, z };
-const ox = c.x - W / 2, oy = c.y - H / 2; // world pixel at the map's top-left
-const px = (lat, lon) => { const p = cmProject(lat, lon, z); return [p.x - ox, p.y - oy]; };
+const [clat, clon] = cms.c || [mlat, mlon]; // where the map is centred: the course, unless it has been moved
+const c = cmProject(clat, clon, z);
+cms.view = { cx: c.x, cy: c.y, z, theta };
+const ox = c.x - W / 2, oy = c.y - H / 2; // world pixel at the (unturned) map's top-left
+const px = (lat, lon) => { const p = cmProject(lat, lon, z), dx = p.x - c.x, dy = p.y - c.y; return [W / 2 + dx * cosT - dy * sinT, H / 2 + dx * sinT + dy * cosT]; };
 
-// Tiles: only rebuilt when the venue, zoom or size changes (not on every wind update)
-const key = [loc.short, z, W, H, mlat, mlon].join('|');
+// Tiles: only rebuilt when the venue, zoom, size, centre or turn changes (not on every wind update)
+const key = [loc.short, z, W, H, clat, clon, theta].join('|');
 if (key !== cms.key) {
 cms.key = key;
-const n = Math.pow(2, z), imgs = [];
-for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++)
-for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) {
+const n = Math.pow(2, z), imgs = [], R = (theta ? Math.hypot(W, H) / 2 : 0) + 96; // a turned map needs tiles out to its corners; plus a margin for dragging
+const x0 = theta ? c.x - R : ox - 96, x1 = theta ? c.x + R : ox + W + 96, y0 = theta ? c.y - R : oy - 96, y1 = theta ? c.y + R : oy + H + 96;
+for (let ty = Math.floor(y0 / 256); ty <= Math.floor(y1 / 256); ty++)
+for (let tx = Math.floor(x0 / 256); tx <= Math.floor(x1 / 256); tx++) {
 if (ty < 0 || ty >= n) continue;
 imgs.push(`<img alt="" loading="lazy" decoding="async" src="${CM_TILE(z, ((tx % n) + n) % n, ty)}" style="left:${Math.round(tx * 256 - ox)}px;top:${Math.round(ty * 256 - oy)}px" onerror="this.style.display='none'">`);
 }
-$c('cm-tiles').innerHTML = imgs.join('');
+const tiles = $c('cm-tiles');
+tiles.innerHTML = imgs.join('');
+tiles.style.transformOrigin = `${W / 2}px ${H / 2}px`;
+tiles.style.transform = theta ? `rotate(${-theta}deg)` : '';
 }
 
 // Overlay
 const ink = '#0b1726', line = '#ff7a00';
+const pw = text => text.length * 5.7 + 10; // width of a label
 const pill = (x, y, text, anchor = 'middle') => {
-const w = text.length * 6.4 + 12;
+const w = pw(text);
 const x0 = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
-return `<rect x="${x0.toFixed(1)}" y="${(y - 9).toFixed(1)}" width="${w.toFixed(1)}" height="18" rx="9" fill="#fff" stroke="${ink}" stroke-width="1"/>
-<text x="${(x0 + w / 2).toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="11" font-weight="700" fill="${ink}">${esc(text)}</text>`;
+return `<rect x="${x0.toFixed(1)}" y="${(y - 8).toFixed(1)}" width="${w.toFixed(1)}" height="16" rx="8" fill="#fff" stroke="${ink}" stroke-width="1"/>
+<text x="${(x0 + w / 2).toFixed(1)}" y="${(y + 3.6).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="10" font-weight="700" fill="${ink}">${esc(text)}</text>`;
 };
-let g = '';
+let g = '', hud = '';
 const twoWay = !!course.reverseLabel && !course.ends;
 const head = (x, y, dx, dy) => `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x - dx * 14 - dy * 8).toFixed(1)} ${(y - dy * 14 + dx * 8).toFixed(1)} L${(x - dx * 14 + dy * 8).toFixed(1)} ${(y - dy * 14 - dx * 8).toFixed(1)}Z" fill="${line}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
-// End labels sit just beyond each end, kept inside the map
-const lab = (x, y, dx, dy, text) => pill(Math.max(34, Math.min(W - 34, x + dx * 26)), Math.max(48, Math.min(H - 34, y + dy * 26)), text);
-const sts = path && Array.isArray(course.stretches) ? course.stretches : [];
+// The line on screen: every label is placed where it covers neither the line nor the map's own buttons
+const P = hasLine ? ends.map(q => px(q[0], q[1])) : [];
+const offLine = (x0, y0, w) => !P.some((v, k) => {
+if (!k) return false;
+for (let f = 0; f <= 1; f += 0.0625) { const sx = P[k - 1][0] + (v[0] - P[k - 1][0]) * f, sy = P[k - 1][1] + (v[1] - P[k - 1][1]) * f; if (sx > x0 - 4 && sx < x0 + w + 4 && sy > y0 - 4 && sy < y0 + 20) return true; }
+return false;
+});
+const onMap = (x0, y0, w) => x0 >= 4 && x0 + w <= W - 4 && y0 >= 4 && y0 + 16 <= H - 4 &&
+!(y0 < 44 && x0 < 150) && !(y0 < 48 && x0 + w > W - 46) && !(x0 + w > W - 50 && y0 + 16 > H - 190) && !(y0 + 16 > H - 34 && x0 < 120); // wind, north, buttons, scale
+// Try spots around a point in turn: [dx, dy] steps from it, the label centred on each
+const place = (x, y, text, steps) => {
+const w = pw(text);
+for (const [dx, dy] of steps) { const cx = x + dx, cy = y + dy; if (onMap(cx - w / 2, cy - 8, w) && offLine(cx - w / 2, cy - 8, w)) return pill(cx, cy, text); }
+return '';
+};
+const endLab = (x, y, dx, dy, text) => { const w = pw(text) / 2 + 12; // beyond the end, then to either side, then further out
+return place(x, y, text, [[dx * 24, dy * 24], [-dy * w, dx * 20], [dy * w, -dx * 20], [dx * 40, dy * 40], [-dy * (w + 14), dx * 34], [dy * (w + 14), -dx * 34], [0, -22], [0, 22]]); };
+const markLab = (x, y, text) => { const w = pw(text) / 2 + 12; return place(x, y, text, [[w, 0], [-w, 0], [0, -20], [0, 20], [w, -18], [-w, -18], [w, 18], [-w, 18]]); };
 if (path) {
 // A bent course: the line follows the path; numbered dots mark the stretches listed under "Wind By Stretch"
-const P = path.map(q => px(q[0], q[1]));
 const cum = [0], met = [0];
 for (let i = 1; i < P.length; i++) {
 cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
@@ -2284,37 +2410,13 @@ const t = at((cum[s.from] + cum[s.to]) / 2), on = i === selI;
 g += `<circle cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" r="8.5" fill="${on ? '#0077b6' : '#fff'}" stroke="${ink}" stroke-width="1.5"/>
 <text x="${t.x.toFixed(1)}" y="${(t.y + 3.6).toFixed(1)}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="10.5" font-weight="700" fill="${on ? '#fff' : ink}">${i + 1}</text>`;
 });
-const endLab = (x, y, dx, dy, text) => { // beyond the end if there is room, otherwise to one side of it (never back along the line)
-const ix = x + dx * 26, iy = y + dy * 26, w = text.length * 6.4 + 12;
-if (ix >= 34 && ix <= W - 34 && iy >= 48 && iy <= H - 34) return pill(ix, iy, text);
-for (const [nx, ny] of [[-dy, dx], [dy, -dx]]) {
-if (Math.abs(nx) > Math.abs(ny)) { // sideways
-const x0 = nx < 0 ? x - 15 - w : x + 15, cy = y + ny * 10;
-if (x0 >= 4 && x0 + w <= W - 4 && cy >= 20 && cy <= H - 20 && !(cy < 50 && (x0 < 170 || x0 + w > W - 46))) return pill(nx < 0 ? x - 15 : x + 15, cy, text, nx < 0 ? 'end' : 'start');
-} else { // above or below
-const cx = Math.max(34, Math.min(W - 34, x + nx * 10)), cy = y + Math.sign(ny) * 22;
-if (cy >= 48 && cy <= H - 34) return pill(cx, cy, text);
-}
-}
-return pill(Math.max(34, Math.min(W - 34, ix)), Math.max(48, Math.min(H - 34, iy)), text);
-};
-if (!twoWay) g += endLab(a0.x, a0.y, -a0.ux, -a0.uy, 'Start') + endLab(a1.x, a1.y, a1.ux, a1.uy, 'Finish');
-(course.marks || []).forEach(mk => { // named points, e.g. a second start: the label goes wherever it does not cover the line
+if (cmLabels && !twoWay) g += endLab(a0.x, a0.y, -a0.ux, -a0.uy, 'Start') + endLab(a1.x, a1.y, a1.ux, a1.uy, 'Finish');
+(course.marks || []).forEach(mk => { // named points, e.g. a second start
 const q = RowingWind.isNum(mk.i) && P[mk.i] ? { x: P[mk.i][0], y: P[mk.i][1] } : at(total * Math.min(1, (mk.at || 0) / pathM));
-const w = mk.label.length * 6.4 + 12;
-const spots = [[q.x + 13, q.y - 9, 'start'], [q.x - 13 - w, q.y - 9, 'end'], [q.x - w / 2, q.y - 30, 'middle'], [q.x - w / 2, q.y + 12, 'middle']]; // right, left, above, below (top-left corner of the label)
-const clear = ([x0, y0]) => x0 >= 4 && x0 + w <= W - 4 && y0 >= 46 && y0 + 18 <= H - 30 && !P.some((v, k) => {
-if (!k) return false;
-for (let f = 0; f <= 1; f += 0.125) { const sx = P[k - 1][0] + (v[0] - P[k - 1][0]) * f, sy = P[k - 1][1] + (v[1] - P[k - 1][1]) * f; if (sx > x0 - 4 && sx < x0 + w + 4 && sy > y0 - 4 && sy < y0 + 22) return true; }
-return false;
-});
-const spot = spots.find(clear) || spots[0];
-g += `<circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="5" fill="#fff" stroke="${ink}" stroke-width="2"/>` +
-pill(spot[2] === 'start' ? spot[0] : spot[2] === 'end' ? spot[0] + w : spot[0] + w / 2, spot[1] + 9, mk.label, spot[2]);
+g += `<circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="5" fill="#fff" stroke="${ink}" stroke-width="2"/>` + (cmLabels ? markLab(q.x, q.y, mk.label) : '');
 });
 } else if (hasLine) {
-const [sx, sy] = px(...cmOffset(mlat, mlon, course.bearing, -len / 2));
-const [fx, fy] = px(...cmOffset(mlat, mlon, course.bearing, len / 2));
+const [sx, sy] = P[0], [fx, fy] = P[1];
 const L = Math.hypot(fx - sx, fy - sy) || 1, ux = (fx - sx) / L, uy = (fy - sy) / L; // unit vector start → finish
 g += `<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${ink}" stroke-width="8" stroke-linecap="round"/>
 <line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${fx.toFixed(1)}" y2="${fy.toFixed(1)}" stroke="${line}" stroke-width="4.5" stroke-linecap="round"/>`;
@@ -2326,40 +2428,72 @@ g += head(fx, fy, ux, uy);
 if (twoWay) g += head(sx, sy, -ux, -uy);
 else g += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
 (course.marks || []).forEach(mk => { // named points along the course, e.g. a 1,000 m start
-const tx = sx + ux * L * mk.at / len, ty = sy + uy * L * mk.at / len, w = mk.label.length * 6.4 + 12;
-const right = tx + 14 + w <= W - 4; // label goes on whichever side has room
-g += `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="5" fill="#fff" stroke="${ink}" stroke-width="2"/>` + pill(right ? tx + 14 : tx - 14, ty, mk.label, right ? 'start' : 'end');
+const tx = sx + ux * L * mk.at / len, ty = sy + uy * L * mk.at / len;
+g += `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="5" fill="#fff" stroke="${ink}" stroke-width="2"/>` + (cmLabels ? markLab(tx, ty, mk.label) : '');
 });
-if (!twoWay) g += lab(sx, sy, -ux, -uy, 'Start') + lab(fx, fy, ux, uy, 'Finish');
+if (cmLabels && !twoWay) g += endLab(sx, sy, -ux, -uy, 'Start') + endLab(fx, fy, ux, uy, 'Finish');
 }
-// North arrow (top-right)
-g += `<g transform="translate(${W - 24} 28)"><circle r="16" fill="#fff" stroke="${ink}" stroke-width="1"/><path d="M0 -11 L5 4 L0 1 L-5 4Z" fill="${ink}"/><text y="13" text-anchor="middle" font-family="Barlow, sans-serif" font-size="8" font-weight="700" fill="${ink}">N</text></g>`;
+// North button (top-right): the arrow always points to true north; tap it to switch north-up / course-up
+const north = $c('cm-north');
+if (north) { north.querySelector('g').setAttribute('transform', `rotate(${-theta})`); north.classList.toggle('on', !!theta); north.disabled = !RowingWind.isNum(course.bearing);
+north.setAttribute('aria-label', theta ? 'Course-up. Tap for north-up' : 'North-up. Tap to turn the map so the course runs up the screen'); north.setAttribute('aria-pressed', String(!!theta)); }
+else hud += `<g transform="translate(${W - 24} 28)"><circle r="16" fill="#fff" stroke="${ink}" stroke-width="1"/><path d="M0 -11 L5 4 L0 1 L-5 4Z" fill="${ink}"/><text y="13" text-anchor="middle" font-family="Barlow, sans-serif" font-size="8" font-weight="700" fill="${ink}">N</text></g>`;
+if ($c('cm-lab')) { $c('cm-lab').classList.toggle('off', !cmLabels); $c('cm-lab').setAttribute('aria-label', cmLabels ? 'Hide the labels on the map' : 'Show the labels on the map'); $c('cm-lab').setAttribute('aria-pressed', String(cmLabels)); }
+if (cmLabels) {
 // Wind (top-left): live reading if there is one, otherwise the forecast for now
 const w = (rwState.loc === loc && rwState.live && RowingWind.isNum(rwState.live.speed)) ? rwState.live : (rwState.loc === loc ? rwState.fc : null);
 if (w && RowingWind.isNum(w.speed)) {
 const calm = w.speed < wk(2) || !RowingWind.isNum(w.dir);
 const text = calm ? 'Wind calm' : `${w.dirTxt || deg2comp(w.dir)} ${Math.round(w.speed)} ${WU()}`;
-const bw = text.length * 6.4 + (calm ? 14 : 36);
-g += `<g transform="translate(8 14)"><rect width="${bw.toFixed(1)}" height="28" rx="14" fill="#fff" stroke="${ink}" stroke-width="1"/>
-${calm ? '' : `<g transform="translate(16 14) rotate(${(w.dir + 180) % 360})"><path d="M0 -9 L5 3 L1.6 1.5 L1.6 9 L-1.6 9 L-1.6 1.5 L-5 3Z" fill="#0077b6"/></g>`}
-<text x="${calm ? 8 : 30}" y="18.5" font-family="Barlow, sans-serif" font-size="11.5" font-weight="700" fill="${ink}">${esc(text)}</text></g>`;
+const bw = text.length * 6 + (calm ? 14 : 34);
+hud += `<g transform="translate(8 10)"><rect width="${bw.toFixed(1)}" height="24" rx="12" fill="#fff" stroke="${ink}" stroke-width="1"/>
+${calm ? '' : `<g transform="translate(14 12) rotate(${(w.dir + 180 - theta + 720) % 360})"><path d="M0 -8 L4.5 2.5 L1.5 1.3 L1.5 8 L-1.5 8 L-1.5 1.3 L-4.5 2.5Z" fill="#0077b6"/></g>`}
+<text x="${calm ? 8 : 27}" y="16" font-family="Barlow, sans-serif" font-size="11" font-weight="700" fill="${ink}">${esc(text)}</text></g>`;
 }
 // Scale bar (bottom-left)
 const barM = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].find(m => m / mpp >= 46) || 20000;
 const barPx = barM / mpp;
-g += `<g transform="translate(10 ${H - 12})"><rect x="-4" y="-17" width="${(barPx + 8).toFixed(1)}" height="23" rx="4" fill="#fff" opacity=".85"/>
+hud += `<g transform="translate(10 ${H - 10})"><rect x="-4" y="-15" width="${(barPx + 8).toFixed(1)}" height="20" rx="4" fill="#fff" opacity=".85"/>
 <path d="M0 -4 V0 H${barPx.toFixed(1)} V-4" fill="none" stroke="${ink}" stroke-width="2"/>
-<text x="${(barPx / 2).toFixed(1)}" y="-6" text-anchor="middle" font-family="Barlow, sans-serif" font-size="10" font-weight="700" fill="${ink}">${barM >= 1000 ? barM / 1000 + ' km' : barM + ' m'}</text></g>`;
-const svg = $c('cm-svg');
+<text x="${(barPx / 2).toFixed(1)}" y="-6" text-anchor="middle" font-family="Barlow, sans-serif" font-size="9.5" font-weight="700" fill="${ink}">${barM >= 1000 ? barM / 1000 + ' km' : barM + ' m'}</text></g>`;
+}
+const svg = $c('cm-svg'), hudEl = $c('cm-hud');
 svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-svg.innerHTML = g;
+svg.innerHTML = hudEl ? g : g + hud; // the briefing copy has one layer for everything
+if (hudEl) { hudEl.setAttribute('viewBox', `0 0 ${W} ${H}`); hudEl.innerHTML = hud; }
 
 const lenTxt = len >= 1000 ? (len / 1000).toLocaleString('en-AU') + ' km' : len + ' m';
-$c('cm-note').textContent = !hasLine ? 'No fixed course direction set for this venue.'
+if ($c('cm-note')) $c('cm-note').textContent = (!hasLine ? 'No fixed course direction set for this venue.'
 : path ? `${lenTxt} course with ${sts.length > 1 ? sts.length + ' stretches (the numbers match Wind By Stretch)' : 'a bend'}. Overall line ${deg3(course.bearing)}, start to finish.${course.status === 'approximate' ? ' The line is traced from a map, so its position is approximate.' : ''}${course.mapNote ? ' ' + course.mapNote : ''}`
-: `${lenTxt} course on ${deg3(course.bearing)}${twoWay ? ', rowed both ways' : ', arrow = ' + (course.reverseLabel && course.raceLabel ? course.raceLabel : 'racing direction')}.${course.midApprox ? ' The line\'s position here is an estimate.' : ''}${course.mapNote ? ' ' + course.mapNote : ''}`;
+: `${lenTxt} course on ${deg3(course.bearing)}${twoWay ? ', rowed both ways' : ', arrow = ' + (course.reverseLabel && course.raceLabel ? course.raceLabel : 'racing direction')}.${course.midApprox ? ' The line\'s position here is an estimate.' : ''}${course.mapNote ? ' ' + course.mapNote : ''}`)
++ (theta ? ' Map turned course-up: tap the N button for north-up.' : '');
 if ($c('cm-link')) $c('cm-link').href = `https://www.google.com/maps/@?api=1&map_action=map&center=${mlat},${mlon}&zoom=${Math.min(17, z + 1)}&basemap=satellite`;
 }
+// ── Full-screen map ── the same map, as large as the screen, with the stretch table underneath
+function cmOpenFull() {
+const f = document.getElementById('cm-full'), loc = LOCATIONS[currentLoc];
+document.getElementById('cmf-title').textContent = loc.short + (loc.courseName ? ' · ' + loc.courseName : '');
+f.hidden = false; f.scrollTop = 0;
+if (!document.getElementById('cm-map-f')) document.getElementById('cmf-map').innerHTML = cmShell('-f');
+delete cmStates['-f'];
+cmFullSync(); renderCourseMap('-f');
+document.getElementById('cmf-close').focus();
+}
+function cmCloseFull() { const f = document.getElementById('cm-full'); if (f.hidden) return; f.hidden = true; }
+function cmFullSync() { // keeps the stretch table under the full-screen map in step with Rowing Wind
+const f = document.getElementById('cm-full'); if (!f || f.hidden) return;
+const src = document.getElementById('rw-stretchbox'), loc = LOCATIONS[currentLoc];
+document.getElementById('cmf-title').textContent = loc.short + (loc.courseName ? ' · ' + loc.courseName : '');
+document.getElementById('cmf-stretch').innerHTML = src ? src.innerHTML : '';
+}
+// ── Wide screens ── the map sits beside the dial inside Rowing Wind, and the separate Course Map section steps aside
+function cmSideSync() {
+const on = matchMedia('(min-width:900px)').matches && typeof secShown === 'function' && secShown('rowing-wind') && secShown('course-map');
+if (document.documentElement.classList.contains('cm-side') !== on) { document.documentElement.classList.toggle('cm-side', on); if (typeof renderJumpBar === 'function') renderJumpBar(); }
+return on;
+}
+addEventListener('resize', () => { cmSideSync(); cmRedraw(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cmCloseFull(); });
 
 
 // Thunderstorm in the forecast now or within 3 hours (or CAPE at the "clear the water" level):
@@ -2768,6 +2902,7 @@ return t;
 }
 
 function renderRowingWind() {
+const sideOn = cmSideSync();
 try { renderCourseMap(); renderWindMap(); } catch (e) { console.warn('course map', e); }
 try { if (typeof renderSession === 'function') renderSession(); } catch (e) { console.warn('session card', e); }
 const el = document.getElementById('rowing-wind');
@@ -2906,6 +3041,10 @@ const boatSel = `<div class="rw-boats" role="radiogroup" aria-label="Boat class"
 `<button type="button" role="radio" aria-checked="${k === rwBoat}" aria-label="${k} — ${RW_BOATS[k].name}" class="rw-boat-btn${k === rwBoat ? ' active' : ''}" onclick="setBoat('${k}')">${k}</button>`).join('')}</div>`;
 const dialLabel = `Compass. ${RW_BOATS[rwBoat].name}${RowingWind.isNum(heading) ? ` heading ${compassLong(heading)}, ${Math.round(heading)} degrees` : ', heading not set'}. ${primary && RowingWind.isNum(primary.speed) ? (primary.speed < wk(2) ? 'Calm.' : `Wind from ${primary.dirTxt || (RowingWind.isNum(primary.dir) ? deg2comp(primary.dir) : 'unknown direction')} at ${Math.round(primary.speed)} ${windUnit === 'kn' ? 'knots' : windUnit === 'mph' ? 'miles per hour' : 'kilometres per hour'}${desc ? ': ' + desc.text.toLowerCase() : ''}.`) : 'No wind data.'} Tap the dial to set the direction your crew is rowing.`;
 const keepScroll = document.getElementById('rw-hours')?.scrollLeft || 0;
+// The map beside the dial (wide screens) is lifted out while the panel is rebuilt, so its tiles are not reloaded
+let side = document.getElementById('rw-side');
+if (side) side.remove();
+else { side = document.createElement('div'); side.id = 'rw-side'; side.innerHTML = `<div class="cm-panel">${cmShell('-w')}<div class="cm-foot"><span id="cm-note-w"></span></div></div>`; }
 
 el.innerHTML = `<div class="section-title">Rowing Wind</div>
 <div class="rw-panel">
@@ -2942,7 +3081,7 @@ ${presets}
 </div>
 ${compare}
 </div>` : ''}
-${stretchBox}
+<div id="rw-stretchbox">${stretchBox}</div>
 ${hours}
 <details class="rw-about"${rwState.aboutOpen ? ' open' : ''} ontoggle="rwState.aboutOpen=this.open"><summary>About This Course</summary>
 <p>${esc(course.description || '')}</p>
@@ -2950,6 +3089,9 @@ ${course.source ? `<p><strong>Source:</strong> ${esc(course.source)}</p>` : ''}
 <p>Left and right are relative to the direction of travel (the way the boat is moving, not the way rowers face). Headwind and crosswind components are calculated from the wind vector; these labels describe the wind's direction only, not whether conditions are safe to row. The 4+ and 4x+ are drawn stern-coxed.</p>
 </details>
 </div>`;
+el.appendChild(side);
+if (sideOn) try { renderCourseMap('-w'); } catch (e) { console.warn('course map', e); }
+try { cmFullSync(); if (!document.getElementById('cm-full').hidden) renderCourseMap('-f'); } catch (e) { console.warn('course map', e); }
 const rail = document.getElementById('rw-hours');
 if (rail) rail.scrollLeft = keepScroll;
 // Let the boat turn to its new heading (CSS transition; instant when reduced motion is on)
@@ -5575,6 +5717,7 @@ const secHidden = new Set((() => { try { return JSON.parse(store.get('secHidden'
 // The order on screen: your saved order, except Lightning comes first (and is never hidden) during a storm alert
 const secShown = key => !(secHidden.has(key) && !(key === 'lightning' && lxAlert));
 function applySections() {
+setTimeout(() => { try { if (cmSideSync()) renderCourseMap('-w'); } catch {} }, 0); // a hidden section changes whether the map sits beside the dial
 const panel = document.getElementById('panel-live'), about = panel.querySelector(':scope > details.about-data');
 const want = lxAlert ? ['lightning', ...secOrder.filter(k => k !== 'lightning')] : secOrder;
 const now = [...panel.querySelectorAll(':scope > .coll')].map(el => el.dataset.sec);
@@ -5584,7 +5727,8 @@ renderJumpBar();
 }
 function jumpKeys() { // sections that are on the page for this venue, in screen order
 const loc = LOCATIONS[currentLoc];
-return (lxAlert ? ['lightning', ...secOrder.filter(k => k !== 'lightning')] : secOrder).filter(k => secShown(k) && !(k === 'tides' && loc && !loc.tidal));
+return (lxAlert ? ['lightning', ...secOrder.filter(k => k !== 'lightning')] : secOrder).filter(k => secShown(k) && !(k === 'tides' && loc && !loc.tidal) &&
+!(k === 'course-map' && document.documentElement.classList.contains('cm-side'))); // on wide screens the map lives inside Rowing Wind
 }
 function renderJumpBar() {
 const chips = document.getElementById('jump-chips');
