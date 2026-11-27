@@ -387,6 +387,8 @@ width:100%;text-align:left;background:var(--panel);border:1px solid var(--border
 cursor:pointer;font:inherit}
 .venue-row:hover{border-color:var(--accent2)}
 .venue-row.active{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+.venue-new{display:inline-block;vertical-align:middle;margin-left:4px;padding:1px 6px;border-radius:999px;background:var(--orange);color:#0b1726;font:700 10px Barlow,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.venue-new-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-left:5px;vertical-align:middle}
 .venue-row img{width:28px;height:28px;border-radius:6px;object-fit:contain}
 .venue-row-text{min-width:0}
 .venue-row-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-family:'Barlow Condensed',sans-serif;font-size:calc(17px * var(--fs,1));font-weight:600;line-height:1.1}
@@ -1887,6 +1889,37 @@ course: {
 lat: 42.53363, lon: 12.75826, tz: "Europe/Rome", tidal: false,
 obsStation: { metar: ['LIQN', 'LIRV', 'LIRZ'], cc: 'IT' }, // nearest airports that issue weather reports, closest first
 blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=42.53;x=12.75;z=9;d=2;dl=2;dc=0;"
+},
+{
+name: "Trinity Bridges, Swan River (East Perth)", short: "Trinity Bridges", icon: "icons/freshwater_bay.png", state: "WA", group: 'wa', area: 'Swan River',
+newUntil: '2026-11-30T00:00:00+08:00', // shown with a "New" tag in the venue list until the end of 29 November (Perth time)
+// The Trinity Bridges Regatta courses, both finishing off Trinity College.
+courses: [
+{ key: 'long', name: '2,200 m (under both bridges)', course: {
+  bearing: 178, status: 'approximate', ends: true,
+  raceLabel: 'Racing', reverseLabel: 'Progress to start',
+  description: "The Trinity Bridges Regatta long course: about 2,200 m down the Swan River from the start line above Windan Bridge (the Graham Farmer Freeway), under Windan Bridge and Matagarup Bridge, to the finish line off Trinity College. The course turns slightly at Windan Bridge, so the two stretches are listed under Wind By Stretch. Crews go up to the start along the eastern (Burswood) side: follow the regatta course map.",
+  source: "Traced from the Trinity Bridges Regatta Course Map (a north-up street map) supplied by a local coach. It is placed on the published positions of Windan Bridge and Matagarup Bridge, with the finish 500 m below Matagarup Bridge as drawn on the 500 m map. No start or finish pin was supplied: the lines are within about 100 m and the bearings within about ±5°.",
+  length: 2200,
+  path: [[-31.93997, 115.88449], [-31.9474, 115.88263], [-31.95939, 115.88515]],
+  stretches: [{"label": "Start to Windan Bridge", "bearing": 192, "length": 850, "from": 0, "to": 1}, {"label": "Windan Bridge to the finish at Trinity", "bearing": 170, "length": 1360, "from": 1, "to": 2}],
+  marks: [{ at: 1700, label: 'Matagarup Bridge' }],
+  presets: []
+} },
+{ key: 'sprint', name: '500 m (Matagarup Bridge to Trinity)', course: {
+  bearing: 174, status: 'approximate', ends: true,
+  raceLabel: 'Racing', reverseLabel: 'Progress to start',
+  description: "The Trinity Bridges Regatta sprint course: 500 m down the Swan River from just below Matagarup Bridge to the finish line off Trinity College, along the western (East Perth) side. Crews go up to the marshalling area above the bridge along the eastern side: follow the regatta course map.",
+  source: "Traced from the Trinity Bridges Regatta Course Map (a north-up street map) supplied by a local coach, placed on the published position of Matagarup Bridge and scaled from the bridge's 370 m length. No start or finish pin was supplied: the line is within about 100 m and the bearing within about ±5°.",
+  mid: [-31.95716, 115.88487], length: 500, midApprox: true,
+  presets: []
+} }
+],
+lat: -31.9520, lon: 115.8845, tz: "Australia/Perth", tidal: true, tidePlace: "fremantle", tideNote: "The tide reaches this part of the river later than at Fremantle and its height can differ, so treat the times as a rough guide.",
+blitz: "https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=-31.95;x=115.88;z=9;d=2;dl=2;dc=0;",
+bom: "https://weather.bom.gov.au/map/wind?lat=-31.95&lon=115.88&zoom=9",
+obsStation: { name: "Perth Metro", dist: "~4 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.94608.json" },
+windStation: { name: "Melville Water (Inner Dolphin Pylon)", dist: "~9 km", json: "https://www.bom.gov.au/fwo/IDW60901/IDW60901.95620.json" }
 }
 ];
 
@@ -4695,10 +4728,11 @@ else if (c) out.push({ i, ck: c.key });
 return out;
 }
 function pickVenue(i, ck) { if (ck) setCourse(ck, i); selectLocation(i); }
+const venueIsNew = loc => !!loc.newUntil && Date.now() < Date.parse(loc.newUntil); // a venue added recently: tagged "New" until that moment
 function renderVenueList() {
 const q = venueQuery(), shown = venueShown();
 document.getElementById('venue-tabs').innerHTML = VENUE_TABS.map(([k, label]) =>
-`<button type="button" role="tab" aria-selected="${!q && k === venueTab}" class="venue-tab${!q && k === venueTab ? ' active' : ''}" onclick="setVenueTab('${k}')">${label}</button>`).join('');
+`<button type="button" role="tab" aria-selected="${!q && k === venueTab}" class="venue-tab${!q && k === venueTab ? ' active' : ''}" onclick="setVenueTab('${k}')">${label}${k !== 'fav' && LOCATIONS.some((l, i) => venueIsNew(l) && venueGroup(i) === k) ? '<span class="venue-new-dot" aria-label=", has a new venue"></span>' : ''}</button>`).join('');
 const others = shown.some(({ i }) => venueTimeDiff(LOCATIONS[i]));
 document.getElementById('venue-note').textContent = `Forecast wind / gust in ${WU()} and a verdict for each venue right now, using your current limits.${others ? ` Times are local to each venue; ahead and behind are against ${myCity}.` : ''} Tap a venue to open it.`;
 let lastArea = null;
@@ -4724,7 +4758,7 @@ if (q || venueTab !== 'wa') bits.push(`${loc.state} · ${venueTimeLine(loc)}`);
 const opens = venueOpens[venueSlug(loc)];
 return `${areaHead}<div class="venue-row-wrap"><button type="button" class="venue-row${i === currentLoc ? ' active' : ''}" onclick="pickVenue(${i}${ck ? `,'${ck}'` : ''})"${i === currentLoc ? ' aria-current="true"' : ''}>
 <img src="${loc.icon}" alt="">
-<span class="venue-row-text"><span class="venue-row-name">${loc.short}</span>${bits.length ? `<span class="venue-row-meta">${esc(bits.join(' · '))}</span>` : ''}</span>
+<span class="venue-row-text"><span class="venue-row-name">${loc.short}${venueIsNew(loc) ? ' <span class="venue-new">New</span>' : ''}</span>${bits.length ? `<span class="venue-row-meta">${esc(bits.join(' · '))}</span>` : ''}</span>
 <span class="venue-row-right">${right}</span>
 </button><button type="button" class="venue-star" aria-pressed="${fav}" aria-label="${fav ? 'Remove' : 'Add'} ${loc.short} ${fav ? 'from' : 'to'} favourites" onclick="toggleFav(${i})">${fav ? '★' : '☆'}${opens && opens.v ? `<span class="venue-opens" aria-hidden="true">${opens.v.toLocaleString('en-AU')}</span>` : ''}</button></div>`;
 }).join('');
